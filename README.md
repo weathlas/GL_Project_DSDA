@@ -2,4 +2,4 @@
 
 [Statue v1 3D model](https://free3d.com/3d-model/statue-v1--541832.html)
 
-[glass texture](https://www.vecteezy.com/png/9314271-transparent-glass-plate-clip-art)
+[Abandoned Cottage House 3D Model](https://free3d.com/3d-model/abandoned-cottage-house-825251.html)

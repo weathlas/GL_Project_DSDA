@@ -30,161 +30,48 @@ namespace glimac {
 
         public:
             ShadowMap(const FilePath &applicationPath, const glimac::FilePath &vsFile, const glimac::FilePath &fsFile)
-                        : m_program(applicationPath, vsFile, fsFile, (ProgramType::DEPTH_COMPUTE)) {}
+                        : m_program(applicationPath, vsFile, fsFile, ProgramType::DEPTH_COMPUTE) {
+                float bias = 0.005;
+                m_lightProjToTexture = translate(mat4(1), vec3(0.5, 0.5, 0.5 - bias)) * scale(mat4(1), vec3(0.5));
+                m_lightProjection = glm::ortho(-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
+            }
             
             ShadowMap(const FilePath &applicationPath) : ShadowMap(applicationPath, "src/shaders/utils/shadow.vs.glsl", "src/shaders/utils/shadow.fs.glsl") {}
 
-            ~ShadowMap(){}
-
-            // bool init(unsigned int width, unsigned int height) {
-            //     m_width = width;
-            //     m_height = height;
-
-            //     glGenTextures(1, &m_depthMap);
-            //     glBindTexture(GL_TEXTURE_2D, m_depthMap);
-
-            //     // glActiveTexture(GL_TEXTURE2);
-
-            //     // Allocate memory to the GPU for our depth map
-            //     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                
-            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE); 
-            //     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-            //     // float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-            //     // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-            //     // glActiveTexture(GL_TEXTURE2);
-            //     // glBindTexture(GL_TEXTURE_2D, 0);
-
-            //     // not talked about
-
-
-            //     // depth output
-            //     glGenRenderbuffers(1, &m_depthBuffer);
-            //     glBindRenderbuffer( GL_RENDERBUFFER, m_depthBuffer);
-            //     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 4096, 4096);
-
-
-            //     glGenFramebuffers(1, &m_depthMapFBO);
-
-
-            //     glBindFramebuffer(GL_FRAMEBUFFER, m_depthMapFBO);
-            //     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthBuffer);
-
-            //     // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthMap, 0);
-            //     // glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_depthMap, 0);
-            //     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR, m_depthMap, 0);
-
-            //     GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0};
-            //     glDrawBuffers(1, drawBuffers);
-
-            //     // glDrawBuffer(GL_NONE);
-            //     // glReadBuffer(GL_NONE);
-                
-            //     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-            //     {
-            //         std::cout << "Could not validate framebuffer" << std::endl;
-            //     }
-            //     else {
-            //         std::cout << "framebuffer is valid" << std::endl;
-            //     }
-
-
-            //     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-            //     m_program.linkDepthMap(m_depthMapFBO, m_depthMap);
-
-            //     m_initialized = true;
-
-            //     m_lights.add(LightStruct());
-
-            //     return true;
-            // }
+            ~ShadowMap(){
+                glDeleteTextures(1, &m_depthMap);
+                glDeleteFramebuffers(1, &m_depthMapFBO);
+            }
 
             bool init(unsigned int width, unsigned int height) {
                 m_width = width;
                 m_height = height;
 
-                glGenFramebuffers(1, &m_depthMapFBO);
-
-                GLuint m_depthMap;
                 glGenTextures(1, &m_depthMap);
                 glBindTexture(GL_TEXTURE_2D, m_depthMap);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 4096, 4096, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+                // white outside of the shadow map (no shadows)
                 float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
                 glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
+                // Framebuffer setup for shadow mapping
+                glGenFramebuffers(1, &m_depthMapFBO);
                 glBindFramebuffer(GL_FRAMEBUFFER, m_depthMapFBO);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthMap, 0);
                 glDrawBuffer(GL_NONE);
                 glReadBuffer(GL_NONE);
+
+                if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+                    std::cout << "Framebuffer is not complete!" << std::endl;
+                }
+
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-
-
-
-
-
-
-                // glGenTextures(1, &m_depthMap);
-                // glBindTexture(GL_TEXTURE_2D, m_depthMap);
-
-                // // glActiveTexture(GL_TEXTURE2);
-
-                // // Allocate memory to the GPU for our depth map
-                // glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE); 
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
-                // // float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-                // // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-                // // glActiveTexture(GL_TEXTURE2);
-                // // glBindTexture(GL_TEXTURE_2D, 0);
-
-                // // not talked about
-
-
-                // // depth output
-                // glGenRenderbuffers(1, &m_depthBuffer);
-                // glBindRenderbuffer( GL_RENDERBUFFER, m_depthBuffer);
-                // glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 4096, 4096);
-
-
-
-                // glBindFramebuffer(GL_FRAMEBUFFER, m_depthMapFBO);
-                // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_depthBuffer);
-
-                // // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthMap, 0);
-                // // glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_depthMap, 0);
-                // glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR, m_depthMap, 0);
-
-                // GLenum drawBuffers[1] = { GL_COLOR_ATTACHMENT0};
-                // glDrawBuffers(1, drawBuffers);
-
-                // // glDrawBuffer(GL_NONE);
-                // // glReadBuffer(GL_NONE);
-                
-                // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-                // {
-                //     std::cout << "Could not validate framebuffer" << std::endl;
-                // }
-                // else {
-                //     std::cout << "framebuffer is valid" << std::endl;
-                // }
-
-
-                // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-                m_program.linkDepthMap(m_depthMapFBO, m_depthMap);
+                glBindTexture(GL_TEXTURE_2D, 0);
 
                 m_initialized = true;
 
@@ -197,133 +84,81 @@ namespace glimac {
                 return init(widthShadowMap, heightShadowMap);
             }
 
-            void computeTransforms(LightStruct light, mat4 camProjTemp, mat4 camViewTemp, vec3 camPosTemp) {
+            void computeTransforms(LightStruct light) {
                 m_lights.updateAt(0, light);
 
-                // m_lights.updatePosition(0, camPosTemp);
-                m_lights.updatePosition(0, vec3(0, 1.78, 0));
+                // set static for now for now
+                // m_lights.updatePosition(0, vec3(40, 40, -40));
 
-                // m_lightModelToView = glm::lookAt(m_lights.getPositionAt(0), vec3(0.0f), vec3( 0.0f, 1.0f,  0.0f)); // light.pos is considered the direction of the light
-                m_lightProjection = glm::ortho(-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
-                
-                // m_lightProjection = perspective(glm::radians(90.0f), 1.0f, 0.01f, 1000.f);
-                m_lightModelToView = glm::lookAt(vec3(0, 1.78, 0), vec3(1, 1.78, -1), vec3( 0.0f, 1.0f,  0.0f)); // light.pos is considered the direction of the light
-                m_lightModelToView = glm::lookAt(vec3(40, 40, -40), vec3(0, 0, 0), vec3( 0.0f, 1.0f,  0.0f)); // light.pos is considered the direction of the light
-                
-
-                // m_lightProjection = camProjTemp;
-                // m_lightModelToView = camViewTemp; // light.pos is considered the direction of the light
+                // light.pos is considered to be the direction of the light
+                // m_lightModelToView = glm::lookAt(m_lights.getPositionAt(0), vec3(0, 0, 0), vec3( 0.0f, 1.0f,  0.0f));
+                m_lightModelToView = glm::lookAt(m_lights.getPositionAt(0), vec3(0, 0, 0), vec3( 0.0f, 1.0f,  0.0f));
                 float bias = 0.005;
                 m_lightProjToTexture = translate(mat4(1), vec3(0.5, 0.5, 0.5 - bias)) * scale(mat4(1), vec3(0.5));
-
-                // m_lightProjToTexture = scale(translate(mat4(1), vec3(0.5)), vec3(0.5));
-                // m_lightProjToTexture = translate(scale(mat4(1), vec3(0.5)), vec3(0.5)); // could be static
+                m_lightProjection = glm::ortho(-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
 
                 m_lightSpaceMatrix = m_lightProjection * m_lightModelToView;
                 m_normalMatrix = glm::transpose(glm::inverse(m_lightModelToView));
-
                 m_shadowMatrix = m_lightProjToTexture * m_lightSpaceMatrix;
             }
 
+
+
             void renderTexture(Scene &scene) {
                 if (!m_initialized) {
+                    std::cout << "uninitialized shadow map" << std::endl;
                     return;
                 }
 
-                // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_depthMapFBO);
-                // glClear(GL_DEPTH_BUFFER_BIT);
-                // std::cout << "Binding draw buffer to " << m_depthMapFBO << std::endl;
+                vec3 lightPos = m_lights.getPositionAt(0);
 
-                // float near_plane = 1.0f, far_plane = 75.0f;
-
-                //  // ModelToViewVMatrix
-                // // glm::mat4 lightModelToView = glm::lookAt(pos+light.pos, light.pos, vec3( 0.0f, 1.0f,  0.0f)); // light.pos is considered the direction of the light
-                // glm::mat4 lightModelToView = glm::lookAt(light.pos, vec3(0), vec3( 0.0f, 1.0f,  0.0f)); // light.pos is considered the direction of the light
-                // glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
-                // m_lightSpaceMatrix = lightProjection * lightModelToView;
-                // glm::mat4 NormalMatrix = glm::transpose(glm::inverse(lightModelToView));
-
-                // m_program.activate(pos, NormalMatrix, );
-
-                // save the viewport dimension
                 GLint m_viewport[4];
                 GLint origFB;
-                if (true) {
-                    glGetIntegerv( GL_VIEWPORT, m_viewport);
-                    glGetIntegerv( GL_DRAW_FRAMEBUFFER_BINDING, &origFB);
 
-                    // set to the texture dimensions
-                    glViewport(0, 0, m_width, m_height);
+                // /// slow !!!!!!
+                glGetIntegerv( GL_VIEWPORT, m_viewport);
+                glGetIntegerv( GL_DRAW_FRAMEBUFFER_BINDING, &origFB);
 
-                    glClear(GL_DEPTH_BUFFER_BIT);
-                    glDepthFunc(GL_LESS); // default mode
-                }
-
+                // 1. Render scene to depth map
+                glViewport(0, 0, m_width, m_height);
                 glBindFramebuffer(GL_FRAMEBUFFER, m_depthMapFBO);
                 glClear(GL_DEPTH_BUFFER_BIT);
 
-                m_program.activate(m_lights.getPositionAt(0), m_normalMatrix, m_shadowMatrix, m_lights);
-                
-                // draw into the shadow map hopefully
-                // scene.drawScene(m_program, m_lightModelToView, m_lightProjection, m_normalMatrix, m_lights.getPositionAt(0), m_shadowMatrix, m_lights);
+                // programm.activate(camPos, m_normalMatrix, m_shadowMatrix, m_lights);
+                m_program.activate(lightPos, m_normalMatrix, m_shadowMatrix, m_lights);
+                // Set uniforms and render scene from light's perspective
 
-                // glClearColor(0.1,0.1,0.1,1);
+                scene.drawScene(m_program, m_lightModelToView, m_lightProjection, m_normalMatrix, lightPos, m_shadowMatrix, m_lights, 0);
+                // scene.drawScene(programm, m_lightSpaceMatrix, m_lightProjection, m_normalMatrix, camPos, m_shadowMatrix, m_lights, m_depthMap);
 
-                if (true && false) {
+                glReadBuffer(GL_NONE);
 
-                    // tutorial
-                    glGenerateMipmap(m_depthMap);
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, m_depthMapFBO);
 
-                    // after drawing shadow
-                    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, origFB); // origFB is probably 0 so it should be ok
-                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // origFB is probably 0 so it should be ok
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, m_depthMap);
 
-                    // restore the viewport
-                    glViewport(m_viewport[0], m_viewport[1], m_viewport[2], m_viewport[3]);
+                glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, m_width, m_height, 0);
 
-                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_viewport[2] - m_viewport[0], m_viewport[3] - m_viewport[1], GL_DEPTH_BUFFER_BIT, GL_NEAREST);
 
-                    // activate the program which use the texture
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
 
-                    // send the MVP matrix of the program camera
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-                    // send the light shadow matrix of the program camera which is different from the MLP matrix
-                    // its a model to depthMap texture coordinate
-
-                    // draw the scene
-
-                    // glClearColor(0.1f, 0.0f, 0.0f, 0.0f);
-
-                    // glBindFramebuffer(GL_READ_FRAMEBUFFER, m_depthMapFBO);
-                    // glBindTexture(GL_TEXTURE_2D, m_depthMap);
-
-                    // copy the texture ???
-                    // glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-                    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_depthMapFBO);
-                    // glBlitFramebuffer(0, 0, 4096, 4096, 0, 0, 1600, 900, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-                    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-                    // glCopyTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 0, 0, m_width, m_height);
-                    // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-                    // glPopAttrib();
-                    // ConfigureShaderAndMatrices();
-
-                    // ATTENTION
-                    // glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-                    // glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-                    // glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-                    // glDrawBuffer(GL_BACK);
-                    // glReadBuffer(GL_BACK);
-
-                }
-
+                // 2. Render scene with shadows
+                glViewport(m_viewport[0], m_viewport[1], m_viewport[2], m_viewport[3]);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
             void use() {
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, m_depthMap);
+            }
+
+            GLuint getDepthMap() {
+                return m_depthMap;
             }
 
             mat4 getLightTransform() {

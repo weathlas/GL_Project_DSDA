@@ -78,6 +78,7 @@ int main(int /*argc*/, char * argv[])
 
     BasicProgram programRoom(applicationPath, "src/shaders/ground/ground.vs.glsl", "src/shaders/ground/ground.fs.glsl");
     // BasicProgram programRoom(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
+    BasicProgram programSimpleDepth(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
     // BasicProgram programRoom(applicationPath, "src/shaders/utils/pattern.vs.glsl", "src/shaders/utils/pattern.fs.glsl");
     BasicProgram programShadow(applicationPath, "src/shaders/utils/shadow.vs.glsl", "src/shaders/utils/shadow.fs.glsl", ProgramType::DEPTH_COMPUTE);
     BasicProgram programShadowTest(applicationPath, "src/shaders/utils/check_shadow.vs.glsl", "src/shaders/utils/check_shadow.fs.glsl");
@@ -86,15 +87,7 @@ int main(int /*argc*/, char * argv[])
     BasicProgram programDepth(applicationPath, "src/shaders/utils/depth.vs.glsl", "src/shaders/utils/depth.fs.glsl", ProgramType::NONE);
     BasicProgram programLight(applicationPath, "src/shaders/light/light.vs.glsl", "src/shaders/light/light.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programVoronoi(applicationPath, "src/shaders/utils/voronoi.vs.glsl", "src/shaders/utils/voronoi.fs.glsl", ProgramType::LIGHTS);
-    std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth};
-
-    
-    std::cout << "BEFORE" << std::endl;
-    ShadowMap shadowMap(applicationPath);
-    std::cout << "MIDDLE"<< std::endl;
-    shadowMap.init();
-    std::cout << "AFTER" << std::endl;
-
+    std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
 
     GLuint imageEarthInt = bind_texture(applicationPath.dirPath() + "/assets/textures/EarthMap.jpg");
     GLuint imageCloudInt = bind_texture(applicationPath.dirPath() + "/assets/textures/CloudMap.jpg");
@@ -107,7 +100,6 @@ int main(int /*argc*/, char * argv[])
     GLuint imageStatueInt = bind_texture(applicationPath.dirPath() + "/assets/textures/statue.jpg");
     GLuint imageMarbleInt = bind_texture(applicationPath.dirPath() + "/assets/textures/marble.jpg");
     GLuint imageMarbleFootDiffuseInt = bind_texture(applicationPath.dirPath() + "/assets/textures/MarbleFoot.jpg");
-
     GLuint imageWhiteInt = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
     GLuint imageGlassInt = bind_texture(applicationPath.dirPath() + "/assets/textures/GlassFinalAlpha.png");
 
@@ -353,44 +345,18 @@ int main(int /*argc*/, char * argv[])
     glm::mat4 lightProj;
     glm::mat4 lightNormal;
 
+    ShadowMap shadowMap(applicationPath);
+    shadowMap.init();
+
+    shadowMap.computeTransforms(LightStruct(vec3(40, 40, -40), vec3(1), vec3(100, 0.85, LightType::directionalLight)));
+
+    GLuint depthMapId;
+    depthMapId = shadowMap.getDepthMap();
+    shadowMatrix = shadowMap.getShadowMatrix();
+
     vec3 currentCamPos;
     vec2 oldMouse;
     FPSCamera fpsCam = FPSCamera(win.width(), win.height());
-
-    // glfwSetWindowAttrib(window, GLFW_FOCUSED, GLFW_TRUE);
-    // glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
-    // glfwSetWindowAttrib(window, GLFW_MAXIMIZED, GLFW_TRUE);
-
-    // shadowMap.computeTransforms(LightStruct(vec3(0, -1, 0), vec3(1), vec3(100, 0.85, LightType::directionalLight)), fpsCam.getProjMatrix(), fpsCam.getViewMatrix(), fpsCam.getPos());
-
-    GLuint depthMap;
-    glGenTextures(1, &depthMap);
-    glBindTexture(GL_TEXTURE_2D, depthMap);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 4096, 4096, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
-    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
-    // Framebuffer setup for shadow mapping
-    GLuint depthMapFBO;
-    glGenFramebuffers(1, &depthMapFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
-    glDrawBuffer(GL_NONE);
-    glReadBuffer(GL_NONE);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    float data[100];
-    float dataAfter[100];
-
-    int width = 4096 ;
-    int height = 4096;
-    std::vector<float> textureData(width * height);
 
     /* Loop until the user closes the window */
     while (win.running()) {
@@ -430,6 +396,8 @@ int main(int /*argc*/, char * argv[])
                 citadelInstances.get()->updatePosition(0, currentCamPos + vec3(0, 180, -150));
                 citadelInstances.get()->computeAll();
             }
+
+            // shadowMap.computeTransforms(LightStruct(vec3(40, 40, -40), vec3(1), vec3(100, 0.85, LightType::directionalLight)));
 
             for (size_t i = 0; i < particulesInstances.get()->size(); i++) {
                 particulesInstances.get()->updateAngles(i, vec3(0, timer, 0));
@@ -476,7 +444,6 @@ int main(int /*argc*/, char * argv[])
                 if (distanceToPlane < 450) {
                     fpsCam.shake(1/(1+distanceToPlane));
                 }
-            
 
             }
             else {
@@ -486,135 +453,30 @@ int main(int /*argc*/, char * argv[])
 
         { // RENDERING
 
-            shadowMap.computeTransforms(LightStruct(vec3(0, -1, 0), vec3(1), vec3(100, 0.85, LightType::directionalLight)), fpsCam.getProjMatrix(), fpsCam.getViewMatrix(), fpsCam.getPos());
-            // shadowMap.renderTexture(scene);
+            shadowMap.computeTransforms(LightStruct(vec3(40, 40, -40), vec3(1), vec3(100, 0.85, LightType::directionalLight)));
+            shadowMap.renderTexture(scene);
 
-            // programRoom.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-            // shadowMap.use();
+            programSky.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
+            glCullFace(GL_FRONT);
+            skyboxInstances.get()->drawAll(programSky, ModelToViewVMatrix, projMatrix, depthMapId);
+            glCullFace(GL_BACK);
 
-            shadowMatrix = shadowMap.getShadowMatrix();
-            lightSpaceMatrix = shadowMap.getModelToLight();
-            lightProj = shadowMap.getLightProj();
-            lightNormal = shadowMap.getLightNormal();
-
-
-            // 1. Render scene to depth map
-            glViewport(0, 0, 4096, 4096);
-            glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-            glClear(GL_DEPTH_BUFFER_BIT);
-
-            programShadow.dumb(currentCamPos, NormalMatrix);
-            // Set uniforms and render scene from light's perspective
-
-            scene.drawScene(programRoom, lightSpaceMatrix, lightProj, lightNormal, currentCamPos, shadowMatrix, lightsRoomLeft, depthMap);
-
-            glReadPixels(0, 0, 5, 5, GL_DEPTH_COMPONENT, GL_FLOAT, data);
-
-
-
-
-
-            glReadBuffer(GL_NONE);
-
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, depthMapFBO);
-
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, depthMap);
-
-            glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, 4096, 4096, 0);
-
-            // glCopyTextureD(depthMap, 0, 0, 0, 0, 0, 4096, 4096);
-            glBlitFramebuffer(0, 0, 4096, 4096, 0, 0, 1600, 900, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-
-            glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-            glReadPixels(0, 0, 5, 5, GL_DEPTH_COMPONENT, GL_FLOAT, dataAfter);
-
-            glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_FLOAT, textureData.data());
-
-            if (true) {
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-                // 2. Render scene with shadows
-                glViewport(0, 0, 1600, 900);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-                programSky.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-                glCullFace(GL_FRONT);
-                skyboxInstances.get()->drawAll(programSky, ModelToViewVMatrix, projMatrix, depthMap);
-                glCullFace(GL_BACK);
-
-                scene.drawScene(programRoom, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMap);
-                // glUseProgram(shaderProgram);
-                // programRoom.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-                // glActiveTexture(GL_TEXTURE0);
-                // glBindTexture(GL_TEXTURE_2D, depthMap);
+            if(currentCamPos.x < -0.5) {
+                boolRightRoom = false;
             }
-            // Set uniforms and render scene from camera's perspective
-
-            // scene.drawScene(programRoom, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft);
-            // glfwSwapBuffers(window);
-            // glfwPollEvents();
-
-
-
-            std::cout << data[0] << " -> " << dataAfter[0] << " -> " << textureData.at(0) << std::endl;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            if (false) {
-
-                shadowMap.computeTransforms(LightStruct(vec3(0, -1, 0), vec3(1), vec3(100, 0.85, LightType::directionalLight)), fpsCam.getProjMatrix(), fpsCam.getViewMatrix(), fpsCam.getPos());
-                shadowMap.renderTexture(scene);
-
-                programRoom.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-                shadowMap.use();
-
-                shadowMatrix = shadowMap.getShadowMatrix();
-
-                scene.drawScene(programRoom, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMap);
-                // scene.drawScene(programShadow, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, lightsRoomLeft);
-
-                // programShadowTest.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-                // debugCubeInstances.get()->drawAll(programShadowTest, ModelToViewVMatrix, projMatrix);
-
-                // if(currentRoom == )
-
-                programSky.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-                glCullFace(GL_FRONT);
-                skyboxInstances.get()->drawAll(programSky, ModelToViewVMatrix, projMatrix, depthMap);
-                glCullFace(GL_BACK);
+            if(currentCamPos.x > 0.5) {
+                boolRightRoom = true;
             }
-
-            if (false) {
-                if(currentCamPos.x < -0.5) {
-                    boolRightRoom = false;
-                }
-                if(currentCamPos.x > 0.5) {
-                    boolRightRoom = true;
-                }
-                
-                if(boolRightRoom) {
-                    scene.drawScene(*currentProgram, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomRight, depthMap);
-                    programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-                    lightInstances2.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMap);
-                }
-                else {
-                    scene.drawScene(programRoom, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMap);
-                    programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomLeft);
-                    lightInstances.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMap);
-                }
+            
+            if(boolRightRoom) {
+                scene.drawScene(*currentProgram, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomRight, depthMapId);
+                programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
+                lightInstances2.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMapId);
+            }
+            else {
+                scene.drawScene(programRoom, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
+                programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomLeft);
+                lightInstances.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMapId);
             }
         }
 
@@ -702,6 +564,27 @@ int main(int /*argc*/, char * argv[])
     skyboxInstances.get()->~Instance();
     lightInstances2.get()->~Instance();
     scene.~Scene();
+
+    for(auto prgm : allPrograms) {
+        prgm->~BasicProgram();
+    }
+
+    shadowMap.~ShadowMap();
+
+    glDeleteTextures(1, &imageEarthInt);
+    glDeleteTextures(1, &imageCloudInt);
+    glDeleteTextures(1, &imageMoonInt);
+    glDeleteTextures(1, &imageSkyboxInt);
+    glDeleteTextures(1, &imageBrickInt);
+    glDeleteTextures(1, &imageBrickRoughInt);
+    glDeleteTextures(1, &imageHouseDiffuseInt);
+    glDeleteTextures(1, &imageHouseRoughnessInt);
+    glDeleteTextures(1, &imageStatueInt);
+    glDeleteTextures(1, &imageMarbleInt);
+    glDeleteTextures(1, &imageMarbleFootDiffuseInt);
+    glDeleteTextures(1, &imageWhiteInt);
+    glDeleteTextures(1, &imageGlassInt);
+
     win.close();
     return 0;
 }

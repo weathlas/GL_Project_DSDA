@@ -31,7 +31,7 @@ namespace glimac
     const GLchar *ulightsArrayName = "uLights";
     const GLchar *ulightsCountName = "uLightsCount";
     const GLchar *uLightDepthMapName = "uLightDepthMap";
-    const GLchar *uuShadowMatrixName = "uShadowMatrix";
+    const GLchar *uShadowMatrixName = "uShadowMatrix";
 
     enum ProgramType {
         NONE              = 0u,
@@ -83,7 +83,7 @@ namespace glimac
             uLightsArrayLoc      = (m_programType & LIGHTS)            ? glGetUniformLocation(m_Program.getGLId(), ulightsArrayName)      : 0;
             uLightsCountLoc      = (m_programType & LIGHTS)            ? glGetUniformLocation(m_Program.getGLId(), ulightsCountName)      : 0;
             uLightDepthMapLoc    = (m_programType & SHADOWS)           ? glGetUniformLocation(m_Program.getGLId(), uLightDepthMapName)    : 0;
-            uShadowMatrixLoc     = (m_programType & SHADOWS)           ? glGetUniformLocation(m_Program.getGLId(), uuShadowMatrixName)    : 0;
+            uShadowMatrixLoc     = (m_programType & SHADOWS)           ? glGetUniformLocation(m_Program.getGLId(), uShadowMatrixName)    : 0;
 
             // baseTextureid = baseTex;
             // alternateTextureid = alternateTex;
@@ -93,6 +93,10 @@ namespace glimac
 
         BasicProgram(const FilePath &applicationPath, const glimac::FilePath &vsFile, const glimac::FilePath &fsFile)
                     : BasicProgram(applicationPath, vsFile, fsFile, ProgramType::DEFAULT) {}
+
+        ~BasicProgram() {
+            m_Program.~Program();
+        }
 
         void linkDepthMap(GLuint depthFBO, GLuint depthMapInt) {
             if ( ! (m_programType & ProgramType::DEPTH_COMPUTE)) {
@@ -148,19 +152,10 @@ namespace glimac
                 glBindTexture(GL_TEXTURE_2D, m_depthMapInt);
             }
             // if (m_programType & DEPTH_COMPUTE) {
-            //     // return; // remove when done
-
             //     std::cout << "This programm compute the shadow map, hopefully: " << m_depthFBO << std::endl;
-
             //     glBindFramebuffer(GL_FRAMEBUFFER, m_depthFBO);
             //     glClear(GL_DEPTH_BUFFER_BIT);
-            //     // glPushAttrib(GL_VIEWPORT_BIT);
 
-            //     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthMapInt, 0);
-            //     glDrawBuffer(GL_NONE);
-            //     glReadBuffer(GL_NONE);
-            //     glViewport(0, 0, 4096, 4096);
-            //     glClear(GL_DEPTH_BUFFER_BIT); 
             // }
         }
     };

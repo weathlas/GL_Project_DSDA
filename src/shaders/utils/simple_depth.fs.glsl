@@ -16,19 +16,23 @@ void main() {
     // dot(normal, normalize(vec3(1, 1, 1))) > 0
 
 
-    color = vec4(texture(uBaseTexture, vec2(vUV.x, 1 - vUV.y)).rgb, 1);
-    vec3 p = lightViewPosition.xyz / lightViewPosition.w;
-    color *= texture(uLightDepthMap, p.xy).r < p.z ? 0 : 1;
+    // color = vec4(texture(uBaseTexture, vec2(vUV.x, 1 - vUV.y)).rgb, 1);
+    // vec3 p = lightViewPosition.xyz / lightViewPosition.w;
+    // color *= texture(uLightDepthMap, p.xy).r < p.z ? 0 : 1;
+    // color *= dot(normalize(normal), normalize(vec3(1, 1, -1))) > 0 ? 1.0 : 0.0;
 
-    color *= dot(normalize(normal), normalize(vec3(1, 1, -1))) > 0 ? 1.0 : 0.0;
+
+    color = vec4(1, 1, 1, 1);
+
     // color.rgb *= texture(uBaseTexture, p.xy).r;
     // color.rgb *= texture(uAlternateTexture, p.xy).r;
     // color.rgb *= texture(uLightDepthMap, p.xy).r+0.1;
     // color.rgb *= texture(uLightDepthMap, p.xy).r+0.1;
     // float val = texture(uLightDepthMap, p.xy).r;
     // color.rgb *= max(0, (1-pow(val, 16)));
-    // float val = texture(uLightDepthMap, vUV).r;
+    float val = texture(uLightDepthMap, vUV).r;
     // color.rgb *= texture(uLightDepthMap, vUV).r;
-    // color.rgb *= max(0, (1-pow(val, 1)));
+    // color.rgb *= max(0, (1-pow(val, 256)));
+    color.rgb *= val;
     // color.rgb *= val;
 }

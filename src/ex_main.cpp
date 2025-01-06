@@ -87,6 +87,7 @@ int main(int /*argc*/, char * argv[])
     BasicProgram programDepth(applicationPath, "src/shaders/utils/depth.vs.glsl", "src/shaders/utils/depth.fs.glsl", ProgramType::NONE);
     BasicProgram programLight(applicationPath, "src/shaders/light/light.vs.glsl", "src/shaders/light/light.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programVoronoi(applicationPath, "src/shaders/utils/voronoi.vs.glsl", "src/shaders/utils/voronoi.fs.glsl", ProgramType::LIGHTS);
+    BasicProgram programSun(applicationPath, "src/shaders/utils/white.vs.glsl", "src/shaders/utils/white.fs.glsl", ProgramType::NONE);
     std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
 
     GLuint imageEarthInt = bind_texture(applicationPath.dirPath() + "/assets/textures/EarthMap.jpg");
@@ -112,20 +113,22 @@ int main(int /*argc*/, char * argv[])
     auto lightInstances = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0);
     auto lightInstances2 = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0);
     auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0);
-    auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda2", imageBrickInt, imageBrickRoughInt);
+    auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda", imageBrickInt, imageBrickRoughInt);
     auto collumnInstances = std::make_shared<Instance>(applicationPath.dirPath(), "collumn3", imageMarbleInt, 0);
     auto houseInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cottage", imageHouseDiffuseInt, imageHouseRoughnessInt);
     auto statueInstances = std::make_shared<Instance>(applicationPath.dirPath(), "statue", imageStatueInt, 0);
     auto footInstances = std::make_shared<Instance>(applicationPath.dirPath(), "foot", imageMarbleFootDiffuseInt, 0);
-
     auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube", imageGlassInt, 0);
-    auto debugCubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube", 0, 0);
+    auto sunInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0);
+
+
+    // auto debugCubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube", 0, 0);
     // auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cube", imageWhiteInt, 0);
 
     auto shelveInstances = std::make_shared<Instance>(applicationPath.dirPath(), "shelve", imageMoonInt, 0);
     auto titleInstances = std::make_shared<Instance>(applicationPath.dirPath(), "title", imageBrickInt, 0);
     auto spaceShipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "Farragut", imageBrickInt, 0);
-    auto planeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "plane", imageBrickInt, 0);
+    auto planeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "plane", imageWhiteInt, 0);
     auto citadelInstances = std::make_shared<Instance>(applicationPath.dirPath(), "citadel", imageStatueInt, 0);
 
     Scene scene;
@@ -143,9 +146,9 @@ int main(int /*argc*/, char * argv[])
         scene.addInstance(statueInstances);
         scene.addInstance(citadelInstances);
         scene.addInstance(footInstances);
+        scene.addInstance(houseInstances);
 
         // transparents objects
-        scene.addInstance(houseInstances);
         scene.addInstance(cubeInstances);
 
         cubeInstances.get()->setBlendToTransparent();
@@ -157,6 +160,8 @@ int main(int /*argc*/, char * argv[])
     // Add all objects positions
     {
         const float heightFoot = footInstances.get()->getDefautBBox().size().y;
+
+        sunInstances.get()->add(Transform(vec3(100, 100, -100), vec3(0), vec3(1)));
 
         earthInstances.get()->add(Transform(vec3(100, 100, 100), vec3(0), vec3(50)));
 
@@ -181,6 +186,7 @@ int main(int /*argc*/, char * argv[])
         citadelInstances.get()->add(Transform(vec3(0, 180, -150), vec3(), vec3(0.06)));
 
         spaceShipInstances.get()->add(Transform(vec3(10, 5, 0), vec3(degToRad*75, 0, degToRad*15), vec3(0.1f)));
+        spaceShipInstances.get()->add(Transform(vec3(-160, 60, 256), vec3(0, degToRad*60, degToRad*15), vec3(3.0f)));
 
         const uint amountParticules = 3200;
         const float particuleSize = 0.01f;
@@ -212,14 +218,15 @@ int main(int /*argc*/, char * argv[])
             } 
         }
 
-        debugCubeInstances.get()->add(Transform(vec3(0, 3, 0)));
+        // debugCubeInstances.get()->add(Transform(vec3(0, 3, 0)));
     }
 
     std::vector<BBox3f> walls;
 
     // Add all the walls
     {
-        for (auto bbox : spaceShipInstances.get()->getBBox()) {
+        {
+            auto bbox = spaceShipInstances.get()->getBBox().at(0);
             vec3 size = bbox.size();
             auto fooCenter = center(bbox);
             cubeInstances.get()->add(Transform(vec3(center(bbox)), vec3(), size));
@@ -361,12 +368,9 @@ int main(int /*argc*/, char * argv[])
     /* Loop until the user closes the window */
     while (win.running()) {
 
-        // std::cout << "NEWFRAME" << std::endl;
-
         { // INIT CODE
             clear_screen();
             colliding = fpsCam.updatePhysic(walls, deltaT);
-            // fpsCam.updateCollision(walls);
             timer = glfwGetTime();
             deltaT = std::min(timer - oldTime, 1.0f/24);
             if(oldTime < 0) { // first frame
@@ -390,6 +394,9 @@ int main(int /*argc*/, char * argv[])
                 earthInstances.get()->updatePosition(0, vec3(100, 100, 100) + currentCamPos);
                 earthInstances.get()->computeLast();
 
+                sunInstances.get()->updatePosition(0, vec3(100, 100, -100) + currentCamPos);
+                sunInstances.get()->computeLast();
+
                 skyboxInstances.get()->updatePosition(0, currentCamPos);
                 skyboxInstances.get()->computeAll();
                 
@@ -397,7 +404,7 @@ int main(int /*argc*/, char * argv[])
                 citadelInstances.get()->computeAll();
             }
 
-            // shadowMap.computeTransforms(LightStruct(vec3(40, 40, -40), vec3(1), vec3(100, 0.85, LightType::directionalLight)));
+            shadowMap.computeTransforms(LightStruct(vec3(40, 40, -40), vec3(1), vec3(100, 0.85, LightType::directionalLight)));
 
             for (size_t i = 0; i < particulesInstances.get()->size(); i++) {
                 particulesInstances.get()->updateAngles(i, vec3(0, timer, 0));
@@ -410,7 +417,6 @@ int main(int /*argc*/, char * argv[])
 
             }
             particulesInstances.get()->computeAll();
-
 
             if (animateSwitch) {
                 for (size_t i = 0; i < lightInstances2.get()->size(); i++) {
@@ -453,13 +459,15 @@ int main(int /*argc*/, char * argv[])
 
         { // RENDERING
 
-            shadowMap.computeTransforms(LightStruct(vec3(40, 40, -40), vec3(1), vec3(100, 0.85, LightType::directionalLight)));
             shadowMap.renderTexture(scene);
 
             programSky.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
             glCullFace(GL_FRONT);
-            skyboxInstances.get()->drawAll(programSky, ModelToViewVMatrix, projMatrix, depthMapId);
+            skyboxInstances.get()->drawAll(programSky, ModelToViewVMatrix, projMatrix, 0);
             glCullFace(GL_BACK);
+
+            programSun.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
+            sunInstances.get()->drawAll(programSun, ModelToViewVMatrix, projMatrix, 0);
 
             if(currentCamPos.x < -0.5) {
                 boolRightRoom = false;
@@ -563,6 +571,7 @@ int main(int /*argc*/, char * argv[])
     lightInstances.get()->~Instance();
     skyboxInstances.get()->~Instance();
     lightInstances2.get()->~Instance();
+    sunInstances.get()->~Instance();
     scene.~Scene();
 
     for(auto prgm : allPrograms) {

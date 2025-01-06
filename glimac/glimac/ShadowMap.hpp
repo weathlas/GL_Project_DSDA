@@ -31,7 +31,7 @@ namespace glimac {
         public:
             ShadowMap(const FilePath &applicationPath, const glimac::FilePath &vsFile, const glimac::FilePath &fsFile)
                         : m_program(applicationPath, vsFile, fsFile, ProgramType::DEPTH_COMPUTE) {
-                float bias = 0.005;
+                float bias = 0.0005;
                 m_lightProjToTexture = translate(mat4(1), vec3(0.5, 0.5, 0.5 - bias)) * scale(mat4(1), vec3(0.5));
                 m_lightProjection = glm::ortho(-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
             }

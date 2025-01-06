@@ -15,6 +15,7 @@
 #include <glimac/Instance.hpp>
 #include <glimac/WindowManager.hpp>
 #include <glimac/ShadowMap.hpp>
+#include <glimac/Mirror.hpp>
 #include <glimac/common.hpp>
 
 
@@ -79,6 +80,7 @@ int main(int /*argc*/, char * argv[])
     BasicProgram programRoom(applicationPath, "src/shaders/ground/ground.vs.glsl", "src/shaders/ground/ground.fs.glsl");
     // BasicProgram programRoom(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
     BasicProgram programSimpleDepth(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
+    BasicProgram programMirrorTex(applicationPath, "src/shaders/utils/mirror_texture_test.vs.glsl", "src/shaders/utils/mirror_texture_test.fs.glsl");
     // BasicProgram programRoom(applicationPath, "src/shaders/utils/pattern.vs.glsl", "src/shaders/utils/pattern.fs.glsl");
     BasicProgram programShadow(applicationPath, "src/shaders/utils/shadow.vs.glsl", "src/shaders/utils/shadow.fs.glsl", ProgramType::DEPTH_COMPUTE);
     BasicProgram programShadowTest(applicationPath, "src/shaders/utils/check_shadow.vs.glsl", "src/shaders/utils/check_shadow.fs.glsl");
@@ -88,9 +90,11 @@ int main(int /*argc*/, char * argv[])
     BasicProgram programLight(applicationPath, "src/shaders/light/light.vs.glsl", "src/shaders/light/light.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programVoronoi(applicationPath, "src/shaders/utils/voronoi.vs.glsl", "src/shaders/utils/voronoi.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programSun(applicationPath, "src/shaders/utils/white.vs.glsl", "src/shaders/utils/white.fs.glsl", ProgramType::NONE);
-    std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
+    BasicProgram programmMirror(applicationPath, "src/shaders/utils/mirror.vs.glsl", "src/shaders/utils/mirror.fs.glsl");
+    std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programMirrorTex, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
 
-    std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom, &programNormal, &programDepth};
+    // std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom, &programNormal, &programDepth};
+    std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programMirrorTex, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
 
     GLuint imageEarthInt = bind_texture(applicationPath.dirPath() + "/assets/textures/EarthMap.jpg");
     GLuint imageCloudInt = bind_texture(applicationPath.dirPath() + "/assets/textures/CloudMap.jpg");
@@ -131,6 +135,7 @@ int main(int /*argc*/, char * argv[])
     auto spaceShipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "Farragut", imageBrickInt, 0);
     auto planeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "plane", imageWhiteInt, 0);
     auto citadelInstances = std::make_shared<Instance>(applicationPath.dirPath(), "citadel", imageStatueInt, 0);
+    auto mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", imageWhiteInt, 0);
 
     Scene scene;
 
@@ -148,6 +153,7 @@ int main(int /*argc*/, char * argv[])
         scene.addInstance(citadelInstances);
         scene.addInstance(footInstances);
         scene.addInstance(houseInstances);
+        // scene.addInstance(mirrorInstances);
 
         // transparents objects
         scene.addInstance(cubeInstances);
@@ -198,7 +204,7 @@ int main(int /*argc*/, char * argv[])
         // at each walls of the map
         for (int z = -12; z <= 12; z++) {
             for (int x = -21; x <= 21; x++) {
-                if((x == -1 && z == -4) || (x == -1 && z == -3)) {
+                if((x == -1 && z == -4) || (x == -1 && z == -3) || (x == 10 && z == 12) || (x == 11 && z == 12)) {
                     continue;
                 }
 
@@ -370,6 +376,16 @@ int main(int /*argc*/, char * argv[])
     vec2 oldMouse;
     FPSCamera fpsCam = FPSCamera(win.width(), win.height());
 
+    Mirror mirror(vec3(10.5, 1.5, 9), vec3(0, 0, -1), applicationPath);
+    mirror.init(win.width(), win.height());
+    mirrorInstances.get()->add(Transform(vec3(10.5, 1.5, 9), vec3(-degToRad*90, 0, 0), vec3(3.0f, 3.0f, 3.0f)));
+    mirrorInstances.get()->add(Transform(vec3(10.5, 1.5, 9), vec3(degToRad*90, 0, 0), vec3(3.0f, 3.0f, 3.0f)));
+    GLuint mirrorMapId = mirror.getMirrorMap();
+
+    mirror.computeCamera(fpsCam);
+
+    bool fromMirror = false;
+
     /* Loop until the user closes the window */
     while (win.running()) {
 
@@ -467,34 +483,151 @@ int main(int /*argc*/, char * argv[])
 
             shadowMap.renderTexture(scene);
 
-            programSky.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-            glCullFace(GL_FRONT);
-            skyboxInstances.get()->drawAll(programSky, ModelToViewVMatrix, projMatrix, 0);
-            glCullFace(GL_BACK);
+            // mirroir
+            auto mirrorCamPos = mirror.getMirrorCamPos();
+            auto mirrorModelToViewMatrix = mirror.getViewMatrix();
+            auto mirrorTexjMatrix = mirror.getMirrorProj();
+            auto mirrorNormalMatrix = mirror.getNormalMatrix();
+            auto mirrorProjMatrix = mirror.getMirrorProj();
+            mirror.computeCamera(fpsCam);
+            if (true) {
+                // mirror.drawStencil(fpsCam);
+                // mirror.startRenderMirrorTexture();
 
-            // if the sun is active
-            if (depthMapId != 0) {
-                programSun.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-                sunInstances.get()->drawAll(programSun, ModelToViewVMatrix, projMatrix, 0);
+                glViewport(0, 0, 1600, 900);
+                glBindFramebuffer(GL_FRAMEBUFFER, mirror.getMirrorFBO());
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                programSky.activate(mirrorCamPos, mirrorNormalMatrix, shadowMatrix, lightsRoomRight);
+                glCullFace(GL_FRONT);
+                skyboxInstances.get()->drawAll(programSky, mirrorModelToViewMatrix, mirrorProjMatrix, 0);
+                glCullFace(GL_BACK);
+
+                // if the sun is active
+                if (depthMapId != 0) {
+                    programSun.activate(mirrorCamPos, mirrorNormalMatrix, shadowMatrix, lightsRoomRight);
+                    sunInstances.get()->drawAll(programSun, mirrorModelToViewMatrix, mirrorProjMatrix, 0);
+                }
+
+                if(mirrorCamPos.x < -0.5) {
+                    boolRightRoom = false;
+                }
+                if(mirrorCamPos.x > 0.5) {
+                    boolRightRoom = true;
+                }
+                
+                if(boolRightRoom) {
+                    scene.drawScene(*currentProgram, mirrorModelToViewMatrix, mirrorProjMatrix, mirrorNormalMatrix, mirrorCamPos, shadowMatrix, lightsRoomRight, depthMapId);
+                    programLight.activate(mirrorCamPos, mirrorNormalMatrix, shadowMatrix, lightsRoomRight);
+                    lightInstances2.get()->drawAll(programLight, mirrorModelToViewMatrix, mirrorProjMatrix, depthMapId);
+                }
+                else {
+                    scene.drawScene(programRoom, mirrorModelToViewMatrix, mirrorProjMatrix, mirrorNormalMatrix, mirrorCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
+                    programLight.activate(mirrorCamPos, mirrorNormalMatrix, shadowMatrix, lightsRoomLeft);
+                    lightInstances.get()->drawAll(programLight, mirrorModelToViewMatrix, mirrorProjMatrix, depthMapId);
+                }
+
+
+                glReadBuffer(GL_NONE);
+
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, mirror.getMirrorFBO());
+
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, mirror.getMirrorMap());
+
+                glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, 1600, 900, 0);
+
+                glBlitFramebuffer(0, 0, 1600, 900, 0, 0, 1600, 900, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                glViewport(0, 0, 1600, 900);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                // mirror.stopRenderMirrorTexture();
+                // mirror.deactivate();
             }
 
-            if(currentCamPos.x < -0.5) {
-                boolRightRoom = false;
+
+
+
+            if (fromMirror) {
+                programSky.activate(mirrorCamPos, mirrorNormalMatrix, shadowMatrix, lightsRoomRight);
+                glCullFace(GL_FRONT);
+                skyboxInstances.get()->drawAll(programSky, mirrorModelToViewMatrix, mirrorProjMatrix, 0);
+                glCullFace(GL_BACK);
+
+                // if the sun is active
+                if (depthMapId != 0) {
+                    programSun.activate(mirrorCamPos, mirrorNormalMatrix, shadowMatrix, lightsRoomRight);
+                    sunInstances.get()->drawAll(programSun, mirrorModelToViewMatrix, mirrorProjMatrix, 0);
+                }
+
+                if(mirrorCamPos.x < -0.5) {
+                    boolRightRoom = false;
+                }
+                if(mirrorCamPos.x > 0.5) {
+                    boolRightRoom = true;
+                }
+                
+                if(boolRightRoom) {
+                    scene.drawScene(*currentProgram, mirrorModelToViewMatrix, mirrorProjMatrix, mirrorNormalMatrix, mirrorCamPos, shadowMatrix, lightsRoomRight, depthMapId);
+                    programLight.activate(mirrorCamPos, mirrorNormalMatrix, shadowMatrix, lightsRoomRight);
+                    lightInstances2.get()->drawAll(programLight, mirrorModelToViewMatrix, mirrorProjMatrix, depthMapId);
+                }
+                else {
+                    scene.drawScene(programRoom, mirrorModelToViewMatrix, mirrorProjMatrix, mirrorNormalMatrix, mirrorCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
+                    programLight.activate(mirrorCamPos, mirrorNormalMatrix, shadowMatrix, lightsRoomLeft);
+                    lightInstances.get()->drawAll(programLight, mirrorModelToViewMatrix, mirrorProjMatrix, depthMapId);
+                }
             }
-            if(currentCamPos.x > 0.5) {
-                boolRightRoom = true;
-            }
-            
-            if(boolRightRoom) {
-                scene.drawScene(*currentProgram, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomRight, depthMapId);
-                programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-                lightInstances2.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMapId);
-            }
+
             else {
-                scene.drawScene(programRoom, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
-                programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomLeft);
-                lightInstances.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMapId);
+                programSky.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
+                glCullFace(GL_FRONT);
+                skyboxInstances.get()->drawAll(programSky, ModelToViewVMatrix, projMatrix, 0);
+                glCullFace(GL_BACK);
+
+                // if the sun is active
+                if (depthMapId != 0) {
+                    programSun.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
+                    sunInstances.get()->drawAll(programSun, ModelToViewVMatrix, projMatrix, 0);
+                }
+
+                if(currentCamPos.x < -0.5) {
+                    boolRightRoom = false;
+                }
+                if(currentCamPos.x > 0.5) {
+                    boolRightRoom = true;
+                }
+                
+                if(boolRightRoom) {
+                    // scene.drawScene(*currentProgram, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomRight, depthMapId);
+                    scene.drawScene(*currentProgram, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomRight, mirrorMapId);
+                    programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
+                    lightInstances2.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMapId);
+                }
+                else {
+                    // scene.drawScene(programRoom, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
+                    scene.drawScene(programSimpleDepth, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
+                    programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomLeft);
+                    lightInstances.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMapId);
+                }
+                // auto tempProg = mirror.getProgram();
+                // tempProg->activateSimple(mirrorCamPos, mirrorNormalMatrix);
+                // programmMirror.activate(currentCamPos, NormalMatrix, mirrorModelToViewMatrix, lightsRoomRight);
+                programmMirror.activate(currentCamPos, NormalMatrix, mirrorTexjMatrix, lightsRoomRight);
+                // programmMirror.activate(currentCamPos, mirrorNormalMatrix, mirrorModelToViewMatrix, lightsRoomRight);
+                // auto mirrorCamPos = mirror.getMirrorCamPos();
+                // auto mirrorModelToViewMatrix = mirror.getViewMatrix();
+                // auto mirrorNormalMatrix = mirror.getNormalMatrix();
+                // auto mirrorProjMatrix = mirror.getMirrorProj();
+                mirrorInstances.get()->drawAll(programmMirror, ModelToViewVMatrix, projMatrix, mirrorMapId);
             }
+
         }
 
         /* Swap front and back buffers */
@@ -558,6 +691,10 @@ int main(int /*argc*/, char * argv[])
                 else {
                     depthMapId = shadowMap.getDepthMap();
                 }
+            }
+            
+            if (keys & keyDebug) {
+                fromMirror = !fromMirror;
             }
 
 

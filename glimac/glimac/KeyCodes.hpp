@@ -30,7 +30,8 @@ namespace glimac
         ctrlKey     = (1u << 13),
         leftClick   = (1u << 14),
         spacebar    = (1u << 15),
-        keySun      = (1u << 16)
+        keySun      = (1u << 16),
+        keyDebug    = (1u << 17)
     };
 
 }

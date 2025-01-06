@@ -143,6 +143,14 @@ namespace glimac {
                 return m_fFov;
             }
 
+            const vec3 getFrontVector() {
+                return m_FrontVector;
+            }
+
+            const vec3 getUpVector() {
+                return m_UpVector;
+            }
+
 
         private:
             mat4 m_projMatrix;

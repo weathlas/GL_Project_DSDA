@@ -134,10 +134,14 @@ namespace glimac
             glUniform3fv(uCameraPositionLoc, 1, glm::value_ptr(camPos));
         }
 
-        void activate(vec3 camPos, mat4 &matNormal, mat4 &shadowMatrix, Light &lights) {
+        void activateSimple(vec3 camPos, mat4 &matNormal) {
             m_Program.use();
             glUniformMatrix4fv(uNormalMatrixLoc, 1, GL_FALSE, glm::value_ptr((matNormal)));
             glUniform3fv(uCameraPositionLoc, 1, glm::value_ptr(camPos));
+        }
+
+        void activate(vec3 camPos, mat4 &matNormal, mat4 &shadowMatrix, Light &lights) {
+            activateSimple(camPos, matNormal);
 
             if (m_programType & TEXTURE)           glUniform1i(uBaseTextureLoc, Location::enumDiffuseTextureLoc);
             if (m_programType & ALTERNATE_TEXTURE) glUniform1i(uAlternateTextureLoc, Location::enumRoughnessTextureLoc);

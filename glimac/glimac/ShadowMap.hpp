@@ -152,11 +152,6 @@ namespace glimac {
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
-            void use() {
-                glActiveTexture(GL_TEXTURE2);
-                glBindTexture(GL_TEXTURE_2D, m_depthMap);
-            }
-
             GLuint getDepthMap() {
                 return m_depthMap;
             }
@@ -187,9 +182,7 @@ namespace glimac {
             GLuint m_height = 0;
             GLuint m_depthMapFBO;
             GLuint m_depthMap;
-            GLuint m_depthBuffer;
             BasicProgram m_program;
-            FilePath m_filepath;
             bool m_initialized;
 
             mat4 m_lightProjToTexture;

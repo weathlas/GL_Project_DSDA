@@ -19,6 +19,7 @@ out vec4 lightViewPosition;
 
 void main() {
 
+    // lightViewPosition = uShadowMatrix * uModelMatrix * vec4(aVertexPosition, 1);
     lightViewPosition = uShadowMatrix * uModelMatrix * vec4(aVertexPosition, 1);
     
     // vColor = (uNormalMatrix * vec4(aVertexNormal, 0)).rgb;

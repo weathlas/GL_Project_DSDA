@@ -107,6 +107,8 @@ namespace glimac {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
                 // // white outside of the shadow map (no shadows)
                 // float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -115,7 +117,7 @@ namespace glimac {
                 // Framebuffer setup for shadow mapping
                 glGenFramebuffers(1, &m_mirrorMapFBO);
                 glBindFramebuffer(GL_FRAMEBUFFER, m_mirrorMapFBO);
-                glFramebufferTexture2D(GL_FRAMEBUFFER,	GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_mirrorMap, 0);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_mirrorMap, 0);
                 glDrawBuffer(GL_COLOR_ATTACHMENT0);
                 glReadBuffer(GL_COLOR_ATTACHMENT0);
 
@@ -165,8 +167,8 @@ namespace glimac {
             }
 
             mat4 getMirrorMatrix() {
-                // return mat4(m_mirrorTexjMatrix);
-                return mat4(m_mirrorSpaceMatrix);
+                return mat4(m_mirrorTexjMatrix);
+                // return mat4(m_mirrorSpaceMatrix);
             }
 
             vec3 getMirrorCamPos() {
@@ -284,7 +286,7 @@ namespace glimac {
                 glStencilFunc(GL_ALWAYS, 1, 0xFF);
                 glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-                glDisable(GL_CULL_FACE);
+                // glDisable(GL_CULL_FACE);
 
 
                 auto ModelToViewVMatrix = camera.getViewMatrix();
@@ -292,12 +294,14 @@ namespace glimac {
                 auto currentCamPos = camera.getPos();
                 auto projMatrix = camera.getProjMatrix();
 
-                m_program.activateSimple(currentCamPos, NormalMatrix);
+                // m_program.activateSimple(currentCamPos, NormalMatrix);
+                // m_program.activateSimple(m_reflectedPos, m_reflectedNormalMatrix);
 
                 // // Render the mirror surface into the stencil buffer
-                m_mirrorInstances.get()->drawAll(m_program, ModelToViewVMatrix, projMatrix, 0);
+                // m_mirrorInstances.get()->drawAll(m_program, ModelToViewVMatrix, projMatrix, 0);
+                // m_mirrorInstances.get()->drawAll(m_program, m_mirrorSpaceMatrix, m_reflectedProjMatrix, 0);
 
-                glEnable(GL_CULL_FACE);
+                // glEnable(GL_CULL_FACE);
 
                 // // Step 2: Render the reflected scene
                 glStencilFunc(GL_EQUAL, 1, 0xFF); // Render only where stencil is 1

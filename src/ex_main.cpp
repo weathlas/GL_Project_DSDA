@@ -90,6 +90,8 @@ int main(int /*argc*/, char * argv[])
     BasicProgram programSun(applicationPath, "src/shaders/utils/white.vs.glsl", "src/shaders/utils/white.fs.glsl", ProgramType::NONE);
     std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
 
+    std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom, &programNormal, &programDepth};
+
     GLuint imageEarthInt = bind_texture(applicationPath.dirPath() + "/assets/textures/EarthMap.jpg");
     GLuint imageCloudInt = bind_texture(applicationPath.dirPath() + "/assets/textures/CloudMap.jpg");
     GLuint imageMoonInt = bind_texture(applicationPath.dirPath() + "/assets/textures/MoonMap.jpg");
@@ -530,8 +532,8 @@ int main(int /*argc*/, char * argv[])
 
             if (keys & scrollDown) {
                 // keys &= ~scrollDown;
-                currentRoom = (currentRoom+1) % allPrograms.size();
-                currentProgram = allPrograms.at(currentRoom);
+                currentRoom = (currentRoom+1) % allRoomTwoPrograms.size();
+                currentProgram = allRoomTwoPrograms.at(currentRoom);
                 // std::cout << "currentRoom " << currentRoom << std::endl;
             }
 

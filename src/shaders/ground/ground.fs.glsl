@@ -55,10 +55,13 @@ void main() {
     vec3 combinedTextureColor = texture(uBaseTexture, vec2(vUV.x, 1 - vUV.y)).xyz;
     
     vec3 p = lightViewPosition.xyz / lightViewPosition.w;
-    float inShadow = texture(uLightDepthMap, p.xy).r < p.z ? 0 : 1;
-    float alignedWithSun = dot(normalize(normal), normalize(vec3(1, 1, -1))) > 0 ? 1.0 : 0.0;
+    vec3 shadowColor = texture(uLightDepthMap, p.xy).r < p.z ? vec3(0.02, 0.02, 0.1) : vec3(1);
 
-    vec3 ambient = vec3(ambientStrength * alignedWithSun * inShadow);
+    float dotProduct = dot(normalize(normal), normalize(vec3(1, 1, -1)));
+    float alignedWithSun = dotProduct > 0 ? 1.0 : max(0.0, 1 + dotProduct*4);
+    // float alignedWithSun = min(1, dot(normalize(normal), normalize(vec3(1, 1, -1)))+0.25);
+
+    vec3 ambient = vec3(ambientStrength * alignedWithSun) * shadowColor;
 
 
     for (int i = 0; i < uLightsCount; i++) {

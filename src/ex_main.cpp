@@ -123,7 +123,6 @@ int main(int /*argc*/, char * argv[])
     auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube", imageGlassInt, 0);
     auto sunInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0);
 
-
     // auto debugCubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube", 0, 0);
     // auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cube", imageWhiteInt, 0);
 
@@ -298,6 +297,10 @@ int main(int /*argc*/, char * argv[])
         lightInstances.get()->add(Transform(vec3(0.5, 2, 1.85), vec3(0), vec3(lightSize)));
         lightInstances.get()->add(Transform(vec3(-0.5, 2, 1.85), vec3(0), vec3(lightSize)));
 
+        // on the one statue in room 1
+        lightsRoomLeft.add(LightStruct(vec3(-10.5, 2.5, -11.25), vec3(0.8, 0.9, 1), vec3(15, 1, LightType::pointLight)));
+        lightInstances.get()->add(Transform(vec3(-10.5, 2.5, -11.25), vec3(0), vec3(lightSize)));
+
         for (int y = 1; y < 3; y++) {
             for (int x = -20; x < -1; x++) {
                 lightsRoomLeft.add(LightStruct(vec3(x, y, 11.5), vec3(-x/20.0, y/2.0, 1), vec3(4, 0.4, lightSize)));
@@ -420,15 +423,16 @@ int main(int /*argc*/, char * argv[])
             }
             particulesInstances.get()->computeAll();
 
+            for (size_t i = 0; i < lightInstances2.get()->size(); i++) {
+                vec3 oldPos = lightInstances2.get()->get(i).m_Position;
+                float t = (int(oldPos.x*oldPos.z)%7);
+                vec3 newPos = vec3(oldPos.x, (2+cos(timer*(1+t))+cos(timer))*0.85, oldPos.z);
+                lightInstances2.get()->updatePosition(i, newPos);
+                lightInstances2.get()->compute(i);
+                lightsRoomRight.updatePosition(i, newPos);
+            }
+
             if (animateSwitch) {
-                for (size_t i = 0; i < lightInstances2.get()->size(); i++) {
-                    vec3 oldPos = lightInstances2.get()->get(i).m_Position;
-                    float t = (int(oldPos.x*oldPos.z)%7);
-                    vec3 newPos = vec3(oldPos.x, (2+cos(animateTimer*(1+t))+cos(animateTimer))*0.85, oldPos.z);
-                    lightInstances2.get()->updatePosition(i, newPos);
-                    lightInstances2.get()->compute(i);
-                    lightsRoomRight.updatePosition(i, newPos);
-                }
 
                 lightsRoomLeft.updatePosition(2, vec3(-10.5+5*cos(animateTimer/1.0), 1, 5*sin(animateTimer/1.0)));
                 lightInstances.get()->updatePosition(2, vec3(-10.5+5*cos(animateTimer/1.0), 1, 5*sin(animateTimer/1.0)));
@@ -468,8 +472,11 @@ int main(int /*argc*/, char * argv[])
             skyboxInstances.get()->drawAll(programSky, ModelToViewVMatrix, projMatrix, 0);
             glCullFace(GL_BACK);
 
-            programSun.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
-            sunInstances.get()->drawAll(programSun, ModelToViewVMatrix, projMatrix, 0);
+            // if the sun is active
+            if (depthMapId != 0) {
+                programSun.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
+                sunInstances.get()->drawAll(programSun, ModelToViewVMatrix, projMatrix, 0);
+            }
 
             if(currentCamPos.x < -0.5) {
                 boolRightRoom = false;
@@ -544,6 +551,15 @@ int main(int /*argc*/, char * argv[])
             }
 
             
+            if (keys & keySun) {
+                if (depthMapId != 0) {
+                    depthMapId = 0;
+                }
+                else {
+                    depthMapId = shadowMap.getDepthMap();
+                }
+            }
+
 
             if (keys & switchMode) {
                 GLint polygonMode[2];

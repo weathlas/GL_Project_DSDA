@@ -29,7 +29,8 @@ namespace glimac
         rightClick  = (1u << 12),
         ctrlKey     = (1u << 13),
         leftClick   = (1u << 14),
-        spacebar    = (1u << 15)
+        spacebar    = (1u << 15),
+        keySun      = (1u << 16)
     };
 
 }

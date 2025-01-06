@@ -47,6 +47,7 @@ namespace glimac {
 
             bool init(float win_width, float win_height);
 
+            bool isFocused();
 
             static void key_callback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/);
 

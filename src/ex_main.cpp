@@ -23,11 +23,6 @@ using namespace std;
 using namespace glimac;
 using namespace glm;
 
-float rotationSpeed = 90.f;
-float walkSpeed = 1.6f;
-float runMultiplier = 3.0f;
-float crouchSpeed = 0.63f;
-
 GLuint bind_texture(glimac::FilePath path) {
     std::unique_ptr<Image> image = loadImage(path);
 
@@ -143,7 +138,7 @@ int main(int /*argc*/, char * argv[])
     {
         scene.addInstance(roomInstances);
         scene.addInstance(earthInstances);
-        // scene.addInstance(particulesInstances);
+        scene.addInstance(particulesInstances);
         scene.addInstance(shelveInstances);
         scene.addInstance(collumnInstances);
         scene.addInstance(titleInstances);
@@ -159,6 +154,7 @@ int main(int /*argc*/, char * argv[])
         scene.addInstance(cubeInstances);
 
         cubeInstances.get()->setBlendToTransparent();
+        // houseInstances.get()->setBlendToTransparent();
     }
 
     // SHADERS INVARIANTS
@@ -346,6 +342,8 @@ int main(int /*argc*/, char * argv[])
     unsigned int currentRoom = 0;
     BasicProgram *currentProgram = allPrograms.at(currentRoom);
 
+    std::cout << "Starting main loop" << std::endl;
+
     float oldTime = -1.0f;
     float deltaT = 0;
     bool colliding = false;
@@ -371,10 +369,12 @@ int main(int /*argc*/, char * argv[])
     GLuint depthMapId;
     depthMapId = shadowMap.getDepthMap();
     shadowMatrix = shadowMap.getShadowMatrix();
+    shadowMap.renderTexture(scene);
 
     vec3 currentCamPos;
     vec2 oldMouse;
     FPSCamera fpsCam = FPSCamera(win.width(), win.height());
+    fpsCam.resetMouse(win.mouse());
 
     Mirror mirror(vec3(10.5, 1.5, 9), vec3(0, 0, -1), applicationPath);
     mirror.init(win.width(), win.height());
@@ -490,7 +490,7 @@ int main(int /*argc*/, char * argv[])
             auto mirrorNormalMatrix = mirror.getNormalMatrix();
             auto mirrorProjMatrix = mirror.getMirrorProj();
             mirror.computeCamera(fpsCam);
-            if (true) {
+            if (false) {
                 // mirror.drawStencil(fpsCam);
                 // mirror.startRenderMirrorTexture();
 
@@ -634,41 +634,11 @@ int main(int /*argc*/, char * argv[])
         win.display();
 
         /* Poll for and process events */
-        { // EVENTS
+        if (win.isFocused()) { // EVENTS
             auto keys = win.events();
-            auto diffMouse = oldMouse - win.mouse();
-            vec2 direction = vec2(((keys & keyLeft) > 0u) - ((keys & keyRight) > 0u), ((keys & keyUp) > 0u) - ((keys & keyDown) > 0u));
-            
 
-            fpsCam.crouch(keys & ctrlKey, deltaT);
-            fpsCam.zoom(keys & leftClick, deltaT);
+            fpsCam.updateKeys(keys, win.mouse(), deltaT);
 
-            float finalSpeed = ((keys & ctrlKey) ? crouchSpeed : walkSpeed) * ((keys & shiftKey) ? runMultiplier : 1.0);
-        
-            fpsCam.move(direction, finalSpeed, deltaT); 
-
-            fpsCam.jump((keys & spacebar), deltaT);
-
-            // fpsCam.moveFront(deltaT * direction.y * finalSpeed);
-            // fpsCam.moveLeft(deltaT * direction.x * finalSpeed);
-
-
-            if (keys & rotateLeft) {
-                fpsCam.rotateLeft(deltaT * rotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
-            }
-            if (keys & rotateRight) {
-                fpsCam.rotateLeft(deltaT * -rotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
-            }
-            if (keys & rotateUp) {
-                fpsCam.rotateUp(deltaT * rotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
-            }
-            if (keys & rotateDown) {
-                fpsCam.rotateUp(deltaT * -rotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
-            }
-            if (keys & rightClick) {
-                fpsCam.rotateLeft(diffMouse.x*0.2 * fpsCam.getFov()/playerMaxFov);
-                fpsCam.rotateUp(diffMouse.y*0.2 * fpsCam.getFov()/playerMaxFov);
-            }
 
             if (keys & scrollDown) {
                 // keys &= ~scrollDown;

@@ -155,6 +155,11 @@ namespace glimac {
                     glBlendFunc(m_sfactor, m_dfactor);
 
                     glDepthMask(m_depthFac);
+
+                    if(m_depthFac == GL_FALSE) {
+                        // glCullFace(GL_NONE);
+                        glDisable(GL_CULL_FACE);
+                    }
                 }
 
                 if(m_vertexData->type == VertexDataType::GEOMETRY) {
@@ -182,6 +187,11 @@ namespace glimac {
                         glUniformMatrix4fv(program.uModelMatrixLoc, 1, GL_FALSE, glm::value_ptr(m_matrices.at(i)));
                         glDrawArrays(GL_TRIANGLES, 0, m_vertexData->getVertexCount()-1);
                     }
+                }
+
+                if(m_depthFac == GL_FALSE) {
+                    // glCullFace(GL_BACK);
+                    glEnable(GL_CULL_FACE);
                 }
 
                 glDepthMask(GL_TRUE);

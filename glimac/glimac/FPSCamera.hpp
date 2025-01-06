@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <glimac/BBox.hpp>
+#include <glimac/KeyCodes.hpp>
 
 #include "common.hpp"
 #include "glm.hpp"
@@ -23,12 +24,49 @@ namespace glimac {
     const float playerMaxFov = 90.0f;
     const float playerDefaultFov = 90.0f;
 
-    const float playerGravity = 9.81f*0.666;
+    const float playerGravity = 9.81f*0.500;
 
     const float playerMaxFallSpeed = playerGravity*3.0;
     const float playerJumpSpeed = playerGravity*1.0;
 
+    const float walkSpeed = 1.6f;
+    const float runMultiplier = 3.0f;
+    const float crouchSpeed = 0.63f;
+
+    const float mouseRotationMultiplier = 1.0f;
+    const float keysRotationMultiplier = 1.0f;
+    const float keyRotationSpeed = 90.f;
+
+    // const float mouseSensitivity = 0.2f;
+    const float mouseSensitivity = 4.56f;
+
     class FPSCamera {
+
+        private:
+            mat4 m_projMatrix;
+            vec3 m_Position;
+            vec3 m_FootPosition;
+            vec3 m_HeadDisplacement;
+            vec3 m_ShakeDisplacement;
+            float m_fPhy;
+            float m_fTheta;
+            float m_fFov;
+
+            float m_verticalSpeed;
+            bool m_onGround;
+
+            float m_fWinWidth;
+            float m_fWinHeight;
+
+            vec3 m_FrontVector;
+            vec3 m_GroundFrontVector;
+            vec3 m_LeftVector;
+            vec3 m_UpVector;
+
+            BBox3f m_bbox;
+
+            vec2 m_oldMousePos;
+
         public:
             FPSCamera(float fov, float win_width, float win_height) : m_bbox(vec3(-radiusPlayer, 0.0f, -radiusPlayer), vec3(radiusPlayer, 1.78f, radiusPlayer)){
                 m_projMatrix = perspective(glm::radians(fov), 1.0f*win_width/win_height, 0.03f, 1000.f);
@@ -43,6 +81,7 @@ namespace glimac {
                 m_Position = m_FootPosition + m_HeadDisplacement = m_ShakeDisplacement;
                 m_verticalSpeed = 0.0f;
                 computeDirectionVectors();
+                m_oldMousePos = vec2(0);
             };
 
             FPSCamera(float win_width, float win_height) : FPSCamera(playerDefaultFov, win_width, win_height) {
@@ -58,12 +97,57 @@ namespace glimac {
                 computeBBox();
             }
 
+            bool resetMouse(vec2 mousePos) {
+                m_oldMousePos = mousePos;
+                return true;
+            }
+
+            void updateKeys(unsigned int keys, vec2 mousePos, float deltaT) {
+
+                auto diffMouse = m_oldMousePos - mousePos;
+                m_oldMousePos = mousePos;
+                vec2 direction = vec2(((keys & keyLeft) > 0u) - ((keys & keyRight) > 0u), ((keys & keyUp) > 0u) - ((keys & keyDown) > 0u));
+
+
+                crouch(keys & ctrlKey, deltaT);
+                zoom(keys & rightClick, deltaT);
+
+                float finalSpeed = ((keys & ctrlKey) ? crouchSpeed : walkSpeed) * ((keys & shiftKey) ? runMultiplier : 1.0);
+                move(direction, finalSpeed, deltaT); 
+
+                jump((keys & spacebar), deltaT);
+
+                auto horizontalRotation = keyRotationSpeed * (((keys & KeyCode::rotateLeft)?1.0f:0.0f+(keys & rotateRight)?-1.0f:0.0f)*((keys & shiftKey) ? keysRotationMultiplier : 1.0f));
+                auto verticalRotation = keyRotationSpeed * (((keys & KeyCode::rotateUp)?1.0f:0.0f+(keys & rotateDown )?-1.0f:0.0f)*((keys & shiftKey) ? keysRotationMultiplier : 1.0f));
+
+
+                rotate(diffMouse*mouseSensitivity * m_fFov/playerMaxFov, deltaT);
+                rotate(horizontalRotation, verticalRotation, deltaT);
+
+                // if (keys & rotateLeft) {
+                //     rotateLeft(keyRotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
+                // }
+                // if (keys & rotateRight) {
+                //     rotateLeft(-keyRotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
+                // }
+                // if (keys & rotateUp) {
+                //     rotateUp(keyRotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
+                // }
+                // if (keys & rotateDown) {
+                //     rotateUp(-keyRotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
+                // }
+                // if (keys & rightClick) {
+                //     rotateLeft(diffMouse.x*mouseSensitivity * m_fFov/playerMaxFov);
+                //     rotateUp(diffMouse.y*mouseSensitivity * m_fFov/playerMaxFov);
+                // }
+            }
+
             void move(vec2 direction, float speed, float deltaT) {
                 if(direction.x != 0 || direction.y != 0) {
                     direction = normalize(direction);
+                    m_FootPosition += (m_LeftVector * direction.x + m_GroundFrontVector * direction.y) * deltaT * speed;
+                    computeBBox();
                 }
-                m_FootPosition += (m_LeftVector * direction.x + m_GroundFrontVector * direction.y) * deltaT * speed;
-                computeBBox();
             }
 
             void rotateLeft(float degrees) {
@@ -76,6 +160,15 @@ namespace glimac {
                 m_fTheta = clamp<float>(m_fTheta, -glm::pi<float>()/2, glm::pi<float>()/2);
                 computeDirectionVectors();
             }
+
+            void rotate(float degreesLeft, float degreeUp, float deltaT) {
+                m_fPhy += degreesLeft*degToRad*deltaT;
+                m_fTheta += degreeUp*degToRad*deltaT;
+                m_fTheta = clamp<float>(m_fTheta, -glm::pi<float>()/2, glm::pi<float>()/2);
+                computeDirectionVectors();
+            }
+
+            void rotate(vec2 angles, float deltaT){rotate(angles.x, angles.y, deltaT);}
 
             void crouch(bool direction, float deltaT) {
                 float height = m_HeadDisplacement.y + (deltaT * playerCrouchSpeed * (1 - 2*direction));
@@ -94,7 +187,7 @@ namespace glimac {
             }
 
             void jump(bool state, float deltaT) {
-                if (!state) {
+                if (!state || m_verticalSpeed > 0) {
                     return;
                 }
                 // std::cout << m_FootPosition.y << std::endl;
@@ -151,29 +244,7 @@ namespace glimac {
                 return m_UpVector;
             }
 
-
         private:
-            mat4 m_projMatrix;
-            vec3 m_Position;
-            vec3 m_FootPosition;
-            vec3 m_HeadDisplacement;
-            vec3 m_ShakeDisplacement;
-            float m_fPhy;
-            float m_fTheta;
-            float m_fFov;
-
-            float m_verticalSpeed;
-            bool m_onGround;
-
-            float m_fWinWidth;
-            float m_fWinHeight;
-
-            vec3 m_FrontVector;
-            vec3 m_GroundFrontVector;
-            vec3 m_LeftVector;
-            vec3 m_UpVector;
-
-            BBox3f m_bbox;
 
             void computeBBox() {
                 m_bbox.lower = m_FootPosition + vec3(-radiusPlayer, 0.0f, -radiusPlayer);

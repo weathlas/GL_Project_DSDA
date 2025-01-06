@@ -77,6 +77,9 @@ namespace glimac {
         /* Make the window's context current */
         glfwMakeContextCurrent(m_Window);
 
+        // glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
         /* Intialize glad (loads the OpenGL functions) */
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
             return false;
@@ -102,6 +105,11 @@ namespace glimac {
         glfwSetWindowSizeCallback(m_Window, &size_callback);
         m_windowInitialized = true;
         return true;
+    }
+
+
+    bool WindowManager::isFocused() {
+        return glfwGetWindowAttrib(m_Window, GLFW_FOCUSED);
     }
 
 

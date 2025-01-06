@@ -12,7 +12,7 @@ using namespace glm;
 namespace glimac
 {
 
-    enum movKeys
+    enum KeyCode
     {
         keyUp       = (1u << 0),
         keyDown     = (1u << 1),

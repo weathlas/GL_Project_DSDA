@@ -93,8 +93,8 @@ int main(int /*argc*/, char * argv[])
     BasicProgram programmMirror(applicationPath, "src/shaders/utils/mirror.vs.glsl", "src/shaders/utils/mirror.fs.glsl");
     std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programMirrorTex, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
 
-    // std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom, &programNormal, &programDepth};
-    std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programMirrorTex, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
+    std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom, &programNormal, &programDepth};
+    // std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programMirrorTex, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
 
     GLuint imageEarthInt = bind_texture(applicationPath.dirPath() + "/assets/textures/EarthMap.jpg");
     GLuint imageCloudInt = bind_texture(applicationPath.dirPath() + "/assets/textures/CloudMap.jpg");
@@ -605,14 +605,14 @@ int main(int /*argc*/, char * argv[])
                 }
                 
                 if(boolRightRoom) {
-                    // scene.drawScene(*currentProgram, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomRight, depthMapId);
-                    scene.drawScene(*currentProgram, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomRight, mirrorMapId);
+                    scene.drawScene(*currentProgram, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomRight, depthMapId);
+                    // scene.drawScene(*currentProgram, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomRight, mirrorMapId);
                     programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomRight);
                     lightInstances2.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMapId);
                 }
                 else {
-                    // scene.drawScene(programRoom, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
-                    scene.drawScene(programSimpleDepth, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
+                    scene.drawScene(programRoom, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
+                    // scene.drawScene(programSimpleDepth, ModelToViewVMatrix, projMatrix, NormalMatrix, currentCamPos, shadowMatrix, lightsRoomLeft, depthMapId);
                     programLight.activate(currentCamPos, NormalMatrix, shadowMatrix, lightsRoomLeft);
                     lightInstances.get()->drawAll(programLight, ModelToViewVMatrix, projMatrix, depthMapId);
                 }

@@ -50,11 +50,11 @@ void main() {
     p = 0.5 * (p.xyz + vec3(1.0));
 
     // vec3 colorAtMirrorView = texture(uLightDepthMap,  vec2(p.x*3, 1-p.y*3)).rgb;
-    vec3 colorAtMirrorView = texture(uLightDepthMap,  vec2(-p.x, -p.y)).rgb;
+    // vec3 colorAtMirrorView = texture(uLightDepthMap,  vec2(-p.x, -p.y)).rgb;
     // vec3 colorAtMirrorView = texture(uLightDepthMap,  vec2(0)).rgb;
     // vec3 colorAtMirrorView = texture(uLightDepthMap,  vec2(p.x*1600, p.y*900)).rgb;
     // vec3 colorAtMirrorView = texture(uLightDepthMap, vec2(p.x*1600, p.y*900)).rgb;
-    // vec3 colorAtMirrorView = texture(uLightDepthMap, vUV).rgb;
+    vec3 colorAtMirrorView = texture(uLightDepthMap, vUV).rgb;
 
     // fFragColor.rgb = p.xyz;
 

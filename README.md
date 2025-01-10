@@ -31,11 +31,12 @@
 - The room geometry is respected
 - There is a skybox
 
-## Modelisation
+## Modelisation Specification
 
 - There is a collumn everywhere around the map at each 1 meter increment
 - Bellow each art exposed in the gallery is a marble footer that allow the art to be higher in the room
 - In the room 2, there are a few bench that allow visiors to rest
+- there is a plane that move above the room that you can time its stop with scroolwheel up
 
 ## Graphic Specifications
 

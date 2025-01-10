@@ -2,9 +2,9 @@
 
 in vec4 wPosition;
 
-uniform sampler2D uBaseTexture;
-uniform sampler2D uAlternateTexture;
-uniform vec3 uCameraPosition;
+// uniform sampler2D uBaseTexture;
+// uniform sampler2D uAlternateTexture;
+// uniform vec3 uCameraPosition;
 
 uniform float uClippingPlaneActive;
 uniform vec4 uClippingPlane;

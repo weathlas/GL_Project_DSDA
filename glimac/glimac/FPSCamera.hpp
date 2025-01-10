@@ -63,6 +63,8 @@ namespace glimac {
     class FPSCamera {
 
         private:
+
+            BBox3f m_bbox;
             mat4 m_projMatrix;
             mat4 m_normalMatrix;
             mat4 m_viewMatrix;
@@ -89,8 +91,6 @@ namespace glimac {
             vec3 m_LeftVector;
             vec3 m_UpVector;
 
-            BBox3f m_bbox;
-
             vec2 m_oldMousePos;
 
             float m_buttonReach;
@@ -112,7 +112,7 @@ namespace glimac {
 
         public:
             FPSCamera(float fov, float win_width, float win_height, float playerHeight, bool isOrtho, float nearPlane, float farPlane) : m_bbox(vec3(-radiusPlayer, 0.0f, -radiusPlayer), vec3(radiusPlayer, 1.78f, radiusPlayer)){
-                m_HeadDisplacement = vec3(0, playerMaxHeadPos, 0);
+                m_HeadDisplacement = vec3(0, playerHeight, 0);
                 m_ShakeDisplacement = vec3(0);
                 m_FootPosition = vec3(.0f, 0.05f, .0f);
                 m_fPhy     = glm::pi<float>();
@@ -221,7 +221,7 @@ namespace glimac {
                 }
 
                 // will just adjust the vertical speed if the player is falling
-                jump((keys & spacebar), deltaT);
+                jump((keys & spacebar));
 
                 m_canFly = m_verticalSpeed > 0.0 && (!(keys & spacebar));
                 crouch(!m_isFlying && (keys & ctrlKey), deltaT);
@@ -327,7 +327,7 @@ namespace glimac {
                 return m_normalMatrix;
             }
 
-            const float getFov() {
+            float getFov() {
                 return m_fFov;
             }
 
@@ -339,7 +339,7 @@ namespace glimac {
                 return m_UpVector;
             }
 
-            const float getReach() {
+            float getReach() {
                 return m_buttonReach;
             }
 
@@ -494,8 +494,8 @@ namespace glimac {
                 // m_fFov = clamp(m_fFov + deltaT * playerZoomSpeed * (1 - 2*direction), playerMinFov, playerMaxFov)
             }
 
-            void jump(bool state, float deltaT) {
-                if (!state || m_verticalSpeed > 0 && !m_isFlying) {
+            void jump(bool state) {
+                if ((!state || m_verticalSpeed > 0) && !m_isFlying) {
                     return;
                 }
                 // std::cout << m_FootPosition.y << std::endl;

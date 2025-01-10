@@ -96,7 +96,7 @@ namespace glimac {
                 return init(widthShadowMap, heightShadowMap);
             }
 
-            void computeTransforms(LightStruct light, FPSCamera &camera) {
+            void computeTransforms(LightStruct light) {
                 m_lights.updateAt(0, light);
 
                 auto pos = m_lights.getPositionAt(0);
@@ -228,13 +228,13 @@ namespace glimac {
             
         private:
 
+            BasicProgram m_program;
             FPSCamera m_camera;
 
             GLuint m_width = 0;
             GLuint m_height = 0;
             GLuint m_depthMapFBO;
             GLuint m_depthMap;
-            BasicProgram m_program;
             bool m_initialized;
 
             mat4 m_lightProjToTexture;

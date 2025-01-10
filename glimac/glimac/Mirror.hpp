@@ -45,6 +45,9 @@ namespace glimac {
 
 
         private:
+            BasicProgram m_program;
+            FPSCamera m_camera;
+
             vec3 m_position;
             vec3 m_normal;
 
@@ -233,7 +236,7 @@ namespace glimac {
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             }
 
-            void drawStencil(WindowManager& window, FPSCamera& camera) {
+            void drawStencil(WindowManager& window) {
                 // stencil buffer activation
                 glClearColor(0, 0, 0, 1);
                 glClearStencil(0);
@@ -324,8 +327,6 @@ namespace glimac {
             }
 
         private:
-            FPSCamera m_camera;
-            BasicProgram m_program;
 
             vec4 computePlaneEquation(const vec3& normal, const vec3& point) {
                 float A = normal.x;

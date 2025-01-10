@@ -497,7 +497,7 @@ int main(int /*argc*/, char * argv[])
     ShadowMap shadowMap(applicationPath);
     shadowMap.init();
 
-    shadowMap.computeTransforms(LightStruct(vec3(40, 40, -40), vec3(1), vec3(100, 0.85, LightType::directionalLight)), fpsCam);
+    shadowMap.computeTransforms(LightStruct(vec3(40, 40, -40), vec3(1), vec3(100, 0.85, LightType::directionalLight)));
 
     GLuint depthMapId;
     depthMapId = shadowMap.getDepthMap();

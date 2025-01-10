@@ -124,9 +124,11 @@ int main(int /*argc*/, char * argv[])
     GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/alpha-mayoris.jpg");
     // GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/scr00005.jpg");
     GLuint imageBrickInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_internet.jpg");
-    GLuint imageBrickRoughInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_roughness2.jpg");
+    GLuint imageBrickRoughInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_roughness.jpg");
+    GLuint imageBrickNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_normal.jpg");
     GLuint imageHouseDiffuseInt = bind_texture(applicationPath.dirPath() + "/assets/textures/cottage_diffuse.png");
     GLuint imageHouseRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/cottage_roughness.jpg");
+    GLuint imageHouseNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/cottage_normal.jpg");
     GLuint imageStatueInt = bind_texture(applicationPath.dirPath() + "/assets/textures/statue.jpg");
     GLuint imageMarbleInt = bind_texture(applicationPath.dirPath() + "/assets/textures/marble.jpg");
     GLuint imageMarbleFootDiffuseInt = bind_texture(applicationPath.dirPath() + "/assets/textures/MarbleFoot.jpg");
@@ -134,37 +136,38 @@ int main(int /*argc*/, char * argv[])
     // GLuint imageGlassInt = bind_texture(applicationPath.dirPath() + "/assets/textures/GlassFinalAlpha.png");
     GLuint imageGlassInt = bind_texture(applicationPath.dirPath() + "/assets/textures/frosted.png");
     GLuint imageBenchInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bench.jpg");
+    GLuint imageDefaultNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/normal.png");
 
     glimac::Sphere sphere = glimac::Sphere(1, 32, 16);
     glimac::Sphere sphereInverted = glimac::Sphere(-1, 32, 16);
     glimac::Sphere sphereLowPoly = glimac::Sphere(1, 8, 4);
     glimac::Sphere sphereLowPolyParticule = glimac::Sphere(1, 4, 2);
-    auto earthInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageEarthInt, imageCloudInt);
-    auto particulesInstances = std::make_shared<Instance>(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageMoonInt, 0);
-    auto lightInstances = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0);
-    auto lightInstances2 = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0);
-    auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0);
-    auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda", imageBrickInt, imageBrickRoughInt);
-    auto collumnInstances = std::make_shared<Instance>(applicationPath.dirPath(), "collumn3", imageMarbleInt, 0);
-    auto houseInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cottage", imageHouseDiffuseInt, imageHouseRoughnessInt);
-    auto statueInstances = std::make_shared<Instance>(applicationPath.dirPath(), "statue", imageStatueInt, 0);
-    auto footInstances = std::make_shared<Instance>(applicationPath.dirPath(), "foot", imageMarbleFootDiffuseInt, 0);
-    auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassInt, 0);
-    auto sunInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0);
-    auto buttonInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0);
-    auto benchInstances = std::make_shared<Instance>(applicationPath.dirPath(), "bench", imageBenchInt, 0);
+    auto earthInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageEarthInt, imageCloudInt, imageDefaultNormalInt);
+    auto particulesInstances = std::make_shared<Instance>(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageMoonInt, 0, imageDefaultNormalInt);
+    auto lightInstances = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
+    auto lightInstances2 = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
+    auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
+    auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda", imageBrickInt, imageBrickRoughInt, imageBrickNormalInt);
+    auto collumnInstances = std::make_shared<Instance>(applicationPath.dirPath(), "collumn3", imageMarbleInt, 0, imageDefaultNormalInt);
+    auto houseInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cottage", imageHouseDiffuseInt, imageHouseRoughnessInt, imageHouseNormalInt);
+    auto statueInstances = std::make_shared<Instance>(applicationPath.dirPath(), "statue", imageStatueInt, 0, imageDefaultNormalInt);
+    auto footInstances = std::make_shared<Instance>(applicationPath.dirPath(), "foot", imageMarbleFootDiffuseInt, 0, imageDefaultNormalInt);
+    auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassInt, 0, imageDefaultNormalInt);
+    auto sunInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
+    auto buttonInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
+    auto benchInstances = std::make_shared<Instance>(applicationPath.dirPath(), "bench", imageBenchInt, 0, imageDefaultNormalInt);
 
-    auto domeGlassInstances = std::make_shared<Instance>(applicationPath.dirPath(), "domeGlass", imageGlassInt, 0);
-    auto domeWireInstances = std::make_shared<Instance>(applicationPath.dirPath(), "domeWire", imageWhiteInt, 0);
+    auto domeGlassInstances = std::make_shared<Instance>(applicationPath.dirPath(), "domeGlass", imageGlassInt, 0, imageDefaultNormalInt);
+    auto domeWireInstances = std::make_shared<Instance>(applicationPath.dirPath(), "domeWire", imageWhiteInt, 0, imageDefaultNormalInt);
     // auto debugCubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube", 0, 0);
     // auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cube", imageWhiteInt, 0);
 
-    auto shelveInstances = std::make_shared<Instance>(applicationPath.dirPath(), "shelve", imageMoonInt, 0);
-    auto titleInstances = std::make_shared<Instance>(applicationPath.dirPath(), "title", imageBrickInt, 0);
-    auto spaceShipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "Farragut", imageBrickInt, 0);
-    auto planeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "plane", imageWhiteInt, 0);
-    auto citadelInstances = std::make_shared<Instance>(applicationPath.dirPath(), "citadel", imageStatueInt, 0);
-    auto mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", imageWhiteInt, 0);
+    auto shelveInstances = std::make_shared<Instance>(applicationPath.dirPath(), "shelve", imageMoonInt, 0, imageDefaultNormalInt);
+    auto titleInstances = std::make_shared<Instance>(applicationPath.dirPath(), "title", imageBrickInt, 0, imageDefaultNormalInt);
+    auto spaceShipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "Farragut", imageBrickInt, 0, imageDefaultNormalInt);
+    auto planeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "plane", imageWhiteInt, 0, imageDefaultNormalInt);
+    auto citadelInstances = std::make_shared<Instance>(applicationPath.dirPath(), "citadel", imageStatueInt, 0, imageDefaultNormalInt);
+    auto mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", imageWhiteInt, 0, imageDefaultNormalInt);
 
     Scene scene;
 
@@ -549,7 +552,7 @@ int main(int /*argc*/, char * argv[])
 
             // std::cout << vec3(40*cos(timer*0.2), 40, -40*sin(timer*0.2)) << std::endl;
 
-            // shadowMap.computeTransforms(LightStruct(vec3(40*cos(timer*0.2), 40, -40*sin(timer*0.2)), vec3(1), vec3(100, 0.85, LightType::directionalLight)), fpsCam);
+            // shadowMap.computeTransforms(LightStruct(vec3(40*cos(timer*0.2), 40*cos(timer*1.2), -40*sin(timer*0.2)), vec3(1), vec3(100, 0.85, LightType::directionalLight)), fpsCam);
             // shadowMatrix = shadowMap.getShadowMatrix();
             // sunPos = shadowMap.getLightPos();
 
@@ -582,6 +585,12 @@ int main(int /*argc*/, char * argv[])
             lightsRoomLeft.updatePosition(2, vec3(-10.5+5*cos(timer/1.0), 1, 5*sin(timer/1.0)));
             lightInstances.get()->updatePosition(2, vec3(-10.5+5*cos(timer/1.0), 1, 5*sin(timer/1.0)));
             lightInstances.get()->compute(2);
+
+            if (fromMirror) {
+                lightsRoomLeft.updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
+                lightInstances.get()->updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
+                lightInstances.get()->compute(1);
+            }
 
             fpsCam.shake(0.0f);
             if (animateSwitch) {
@@ -709,7 +718,7 @@ int main(int /*argc*/, char * argv[])
 
 
 
-            if (fromMirror) {
+            if (fromMirror && false) {
                 auto mirrorCam = mirror.getCamera();
                 auto mirrorTexjMatrix = mirror.getMirrorProj();
 

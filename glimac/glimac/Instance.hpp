@@ -29,6 +29,7 @@ namespace glimac {
 
             GLuint m_baseTex;
             GLuint m_alternateTex;
+            GLuint m_normalTex;
 
             std::vector<vec3> getCornersOfBBox(BBox3f &box) {
                 return {
@@ -49,26 +50,28 @@ namespace glimac {
                 m_vertexData.get()->~VertexData();
             }
 
-            Instance(glimac::FilePath root, std::string name, GLuint baseTex, GLuint alternateTex) {
+            Instance(glimac::FilePath root, std::string name, GLuint baseTex, GLuint alternateTex, GLuint normalTex) {
                 m_geometry.loadOBJ(root + ("assets/models/" + name + ".obj"), root + ("assets/models/" + name + ".mtl"), false);
                 m_vertexData = std::make_shared<VertexData>(m_geometry);
                 m_baseTex = baseTex;
                 m_alternateTex = alternateTex;
+                m_normalTex = normalTex;
             }
             
-            Instance(size_t vertexCount, const glimac::ShapeVertex * dataPointer, GLuint baseTex, GLuint alternateTex) {
+            Instance(size_t vertexCount, const glimac::ShapeVertex * dataPointer, GLuint baseTex, GLuint alternateTex, GLuint normalTex) {
                 m_vertexData = std::make_shared<VertexData>(vertexCount, dataPointer);
                 m_baseTex = baseTex;
                 m_alternateTex = alternateTex;
+                m_normalTex = normalTex;
             }
 
-            Instance(glimac::FilePath root, std::string name, GLuint baseTex, GLuint alternateTex, Transform t) : Instance(root, name, baseTex, alternateTex) {
-                add(t);
-            };
+            // Instance(glimac::FilePath root, std::string name, GLuint baseTex, GLuint alternateTex, GLuint normalTex, Transform t) : Instance(root, name, baseTex, alternateTex, normalTex) {
+            //     add(t);
+            // };
 
-            Instance(size_t vertexCount, const glimac::ShapeVertex * dataPointer, GLuint baseTex, GLuint alternateTex, Transform t) : Instance(vertexCount, dataPointer, baseTex, alternateTex) {
-                add(t);
-            };
+            // Instance(size_t vertexCount, const glimac::ShapeVertex * dataPointer, GLuint baseTex, GLuint alternateTex, GLuint normalTex, Transform t) : Instance(vertexCount, dataPointer, baseTex, alternateTex, normalTex) {
+            //     add(t);
+            // };
 
             size_t size() {
                 return m_transforms.size();
@@ -173,7 +176,7 @@ namespace glimac {
 
                 glBindVertexArray(m_vertexData->getVao());
 
-                program.bindTextures(m_baseTex, m_alternateTex, shadowTex);
+                program.bindTextures(m_baseTex, m_alternateTex, shadowTex, m_normalTex);
 
                 if (true) {
                     glEnable(GL_BLEND);

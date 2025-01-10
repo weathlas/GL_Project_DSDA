@@ -22,9 +22,9 @@ On a AZERTY keyboard:
 
 [R] switch view to the mirror view
 
-[X] toggle the wire mode
+[X] toggle wireframe mode
 
-[Arrows] rotate the camera
+<!-- [Arrows] rotate the camera -->
 
 [RMB] zoom in
 

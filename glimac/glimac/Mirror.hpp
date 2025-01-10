@@ -78,7 +78,7 @@ namespace glimac {
                 m_position = position;
                 m_normal = direction;
                 m_imageWhiteInt = my_bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
-                m_mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", m_imageWhiteInt, 0);
+                m_mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", m_imageWhiteInt, 0, 0);
                 m_mirrorInstances.get()->add(Transform(vec3(11, 1.51, 11.99), vec3(-degToRad*90, 0, 0), vec3(3.0f, 1.0f, 6.0f)));
                 m_mirrorInstances.get()->add(Transform(vec3(11, 1.51, 11.99), vec3(+degToRad*90, 0, 0), vec3(3.0f, 1.0f, 6.0f)));
 

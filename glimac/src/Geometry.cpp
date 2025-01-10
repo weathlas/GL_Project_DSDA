@@ -21,6 +21,28 @@ void Geometry::generateNormals(unsigned int meshIndex) {
     }
 }
 
+void Geometry::generateTangeants(unsigned int meshIndex) {
+    auto indexOffset = m_MeshBuffer[meshIndex].m_nIndexOffset;
+    for (auto j = 0u; j < m_MeshBuffer[meshIndex].m_nIndexCount; j += 3) {
+        auto i1 = m_IndexBuffer[indexOffset + j];
+        auto i2 = m_IndexBuffer[indexOffset + j + 1];
+        auto i3 = m_IndexBuffer[indexOffset + j + 2];
+
+        auto edge1 = m_VertexBuffer[i2].m_Position - m_VertexBuffer[i1].m_Position;
+        auto edge2 = m_VertexBuffer[i3].m_Position - m_VertexBuffer[i1].m_Position;
+        auto deltaUV1 = m_VertexBuffer[i2].m_TexCoords - m_VertexBuffer[i1].m_TexCoords;
+        auto deltaUV2 = m_VertexBuffer[i3].m_TexCoords - m_VertexBuffer[i1].m_TexCoords;
+
+        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+
+        glm::vec3 tangent = f * (deltaUV2.y * edge1 - deltaUV1.y * edge2);
+
+        m_VertexBuffer[i1].m_Tangeant += tangent;
+        m_VertexBuffer[i2].m_Tangeant += tangent;
+        m_VertexBuffer[i3].m_Tangeant += tangent;
+    }
+}
+
 bool Geometry::loadOBJ(const FilePath& filepath, const FilePath& mtlBasePath, bool loadTextures) {
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -160,6 +182,8 @@ bool Geometry::loadOBJ(const FilePath& filepath, const FilePath& mtlBasePath, bo
         if(shapes[i].mesh.normals.size() == 0u) {
             generateNormals(m_MeshBuffer.size() - 1);
         }
+        
+        generateTangeants(m_MeshBuffer.size() - 1);
 
         pVertex += shapes[i].mesh.positions.size();
         vertexOffset += shapes[i].mesh.positions.size();

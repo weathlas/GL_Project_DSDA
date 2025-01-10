@@ -15,6 +15,7 @@ public:
         glm::vec3 m_Position;
         glm::vec3 m_Normal;
         glm::vec2 m_TexCoords;
+        glm::vec3 m_Tangeant;
     };
 
     struct Mesh {
@@ -51,6 +52,7 @@ private:
     BBox3f m_BBox;
 
     void generateNormals(unsigned int meshIndex);
+    void generateTangeants(unsigned int meshIndex);
 
 public:
     const Vertex* getVertexBuffer() const {

@@ -13,8 +13,9 @@ using namespace glm;
 namespace glimac {
 
     const GLuint VERTEX_ATTR_POSITION = 0;
-    const GLuint VERTEX_ATTR_NORMAL = 1;
-    const GLuint VERTEX_ATTR_COORDS = 2;
+    const GLuint VERTEX_ATTR_NORMAL   = 1;
+    const GLuint VERTEX_ATTR_COORDS   = 2;
+    const GLuint VERTEX_ATTR_TANGEANT = 3;
 
     enum VertexDataType {CANONICAL, GEOMETRY};
 
@@ -98,11 +99,13 @@ namespace glimac {
                 glEnableVertexAttribArray(VERTEX_ATTR_POSITION);
                 glEnableVertexAttribArray(VERTEX_ATTR_NORMAL);
                 glEnableVertexAttribArray(VERTEX_ATTR_COORDS);
+                glEnableVertexAttribArray(VERTEX_ATTR_TANGEANT);
 
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glVertexAttribPointer(VERTEX_ATTR_POSITION, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GL_FLOAT), 0);
-                glVertexAttribPointer(VERTEX_ATTR_NORMAL, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GL_FLOAT), (const GLvoid*)(3 * sizeof(GL_FLOAT)));
-                glVertexAttribPointer(VERTEX_ATTR_COORDS, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GL_FLOAT), (const GLvoid*)(6 * sizeof(GL_FLOAT)));
+                glVertexAttribPointer(VERTEX_ATTR_POSITION, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GL_FLOAT), 0);
+                glVertexAttribPointer(VERTEX_ATTR_NORMAL  , 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GL_FLOAT), (const GLvoid*)(3 * sizeof(GL_FLOAT)));
+                glVertexAttribPointer(VERTEX_ATTR_COORDS  , 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GL_FLOAT), (const GLvoid*)(6 * sizeof(GL_FLOAT)));
+                glVertexAttribPointer(VERTEX_ATTR_TANGEANT, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GL_FLOAT), (const GLvoid*)(8 * sizeof(GL_FLOAT)));
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
 
                 glBindVertexArray(0);

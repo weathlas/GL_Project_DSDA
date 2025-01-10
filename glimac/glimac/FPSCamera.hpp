@@ -249,7 +249,6 @@ namespace glimac {
                 m_isGrounded = false;
                 m_verticalSpeed = clamp(m_verticalSpeed - (playerGravity*playerGravity * deltaT), -playerMaxFallSpeed, playerJumpSpeed);
                 m_FootPosition.y += m_isFlying?0.0:m_verticalSpeed * deltaT;
-                m_Position = m_FootPosition + m_HeadDisplacement + m_ShakeDisplacement;
                 computeBBox();
                 bool collide = updateCollision(walls);
                 // bool collide = false;
@@ -260,6 +259,7 @@ namespace glimac {
                 if(m_verticalSpeed <= 0) {
                     m_inJump = false;
                 }
+                m_Position = m_FootPosition + m_HeadDisplacement + m_ShakeDisplacement;
                 updateMatrix();
                 return collide;
             }

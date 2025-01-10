@@ -20,7 +20,8 @@ namespace glimac
     enum Location {
         enumDiffuseTextureLoc = 0u,
         enumRoughnessTextureLoc = 1u,
-        enumShadowTextureLoc = 2u
+        enumShadowTextureLoc = 2u,
+        enumNormalMapLoc = 3u
     };
 
     const GLchar *uMVPMatrixName = "uMVPMatrix";
@@ -39,6 +40,7 @@ namespace glimac
     const GLchar *uWindowDimensionsName = "uWindowDimensions";
     const GLchar *uClippingPlaneName = "uClippingPlane";
     const GLchar *uClippingPlaneActiveName = "uClippingPlaneActive";
+    const GLchar *uNormalMapName = "uNormalMap";
 
     enum ProgramType {
         NONE              = 0u,
@@ -47,8 +49,9 @@ namespace glimac
         TEXTURE           = (1u << 2),
         ALTERNATE_TEXTURE = (1u << 2),
         DEPTH_COMPUTE     = (1u << 3),
+        NORMAL            = (1u << 4),
         // CLIPPING_PLANE    = (1u << 4),
-        DEFAULT           = (LIGHTS | SHADOWS | TEXTURE | ALTERNATE_TEXTURE)
+        DEFAULT           = (LIGHTS | SHADOWS | TEXTURE | ALTERNATE_TEXTURE | NORMAL)
     };
 
     struct BasicProgram
@@ -76,6 +79,8 @@ namespace glimac
 
         GLint uClippingPlaneLoc = 0;
         GLint uClippingPlaneActiveLoc = 0;
+
+        GLint uNormalMapLoc = 0;
         // GLint baseTextureid;
         // GLint alternateTextureid;
 
@@ -94,6 +99,8 @@ namespace glimac
             uWindowDimensionsLoc    = glGetUniformLocation(m_Program.getGLId(), uWindowDimensionsName);
             uClippingPlaneActiveLoc = glGetUniformLocation(m_Program.getGLId(), uClippingPlaneActiveName);
             uClippingPlaneLoc       = glGetUniformLocation(m_Program.getGLId(), uClippingPlaneName);
+
+            uNormalMapLoc           = glGetUniformLocation(m_Program.getGLId(), uNormalMapName);
 
             m_programType = programType;
 
@@ -131,13 +138,15 @@ namespace glimac
             m_depthMapInt = depthMapInt;
         }
 
-        void bindTextures(GLuint tex, GLuint alternateTex, GLuint shadowTex) {
+        void bindTextures(GLuint tex, GLuint alternateTex, GLuint shadowTex, GLuint normalTex) {
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, tex);
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, alternateTex);
             glActiveTexture(GL_TEXTURE2);
             glBindTexture(GL_TEXTURE_2D, shadowTex);
+            glActiveTexture(GL_TEXTURE3);
+            glBindTexture(GL_TEXTURE_2D, normalTex);
         }
 
         void unbindTextures() {
@@ -146,6 +155,8 @@ namespace glimac
             glActiveTexture(GL_TEXTURE1);
             glBindTexture(GL_TEXTURE_2D, 0);
             glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glActiveTexture(GL_TEXTURE3);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
@@ -174,6 +185,7 @@ namespace glimac
 
             if (m_programType & TEXTURE)           glUniform1i(uBaseTextureLoc, Location::enumDiffuseTextureLoc);
             if (m_programType & ALTERNATE_TEXTURE) glUniform1i(uAlternateTextureLoc, Location::enumRoughnessTextureLoc);
+            if (m_programType & NORMAL)            glUniform1i(uNormalMapLoc, Location::enumNormalMapLoc);
             if (m_programType & LIGHTS)            glUniformMatrix3fv(uLightsArrayLoc, lights.size(), GL_FALSE, lights.data());
             if (m_programType & LIGHTS)            glUniform1i(uLightsCountLoc, lights.size());
             if (m_programType & SHADOWS) {

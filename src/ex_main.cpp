@@ -491,6 +491,11 @@ int main(int /*argc*/, char * argv[])
     vec3 currentCamPos;
     vec2 oldMouse;
     FPSCamera fpsCam = FPSCamera(win.width(), win.height());
+
+    auto startPoint = vec3(-19, 0.25, 6);
+    auto startLookPoint = vec3(-13, 2.3, 12);
+    fpsCam.makeLookAt(startPoint, startLookPoint);
+    fpsCam.update(win, walls, deltaT);
     fpsCam.resetMouse(win.mouse());
 
     

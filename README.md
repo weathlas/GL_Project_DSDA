@@ -14,29 +14,28 @@
 
 On a AZERTY keyboard:
 
+[A] quit the program
 
-A: quit the program
+[ZSQD] move the player
 
-ZSQD: move the player
+[E] toggle the sun light
 
-E toggle the sun light
+[R] switch view to the mirror view
 
-R switch view to the mirror view
+[X] toggle the wire mode
 
-X toggle the wire mode
+[Arrows] rotate the camera
 
-arroxs rotate the camera
+[RMB] zoom in
 
-right mouse clic rotate the view
+[LMB] interact
 
-left mouse clic zoom the camera
+[LShift] walk faster
 
-shift walk faster
+[LCtrl] crouch
 
-ctrl crouch
+[Space] jump
 
-space jump
+[ScrollDown] switch the shader used for the right room
 
-scrollwheel down switch the shader used for the right room
-
-scrollwheel up stop the plane
+[ScrollUp] stop the plane

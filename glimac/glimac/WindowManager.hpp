@@ -20,10 +20,12 @@ namespace glimac {
 
         private:
             GLFWwindow* m_Window;
-
+            char m_title[256];
 
         public:
             WindowManager(){};
+            
+            bool init(int win_width, int win_height);
 
             unsigned int events();
 
@@ -33,7 +35,9 @@ namespace glimac {
 
             int height();
 
-            vec2 mouse();
+            const vec2 getDimensions();
+
+            const vec2 mouse();
 
             bool isInitialized();
 
@@ -43,11 +47,17 @@ namespace glimac {
 
             void display();
 
-            void setTitle(char* title);
-
-            bool init(float win_width, float win_height);
+            void updateTitle(vec3 pos, float deltaT, bool colliding);
 
             bool isFocused();
+
+            void showCursor();
+
+            void hideCursor();
+
+            void flushKeys();
+
+            void quit();
 
             static void key_callback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/);
 

@@ -17,6 +17,32 @@ using namespace glm;
 namespace glimac {
 
     class Instance {
+        private:
+            Geometry m_geometry;
+            std::shared_ptr<VertexData> m_vertexData;
+            std::vector<Transform> m_transforms;
+            std::vector<glm::mat4> m_matrices;
+
+            GLenum m_sfactor = GL_ONE;
+            GLenum m_dfactor = GL_ZERO;
+            GLenum m_depthFac = GL_TRUE;
+
+            GLuint m_baseTex;
+            GLuint m_alternateTex;
+
+            std::vector<vec3> getCornersOfBBox(BBox3f &box) {
+                return {
+                    vec3(box.lower.x, box.lower.y, box.lower.z), // lll
+                    vec3(box.lower.x, box.lower.y, box.upper.z), // llu
+                    vec3(box.lower.x, box.upper.y, box.lower.z), // lul
+                    vec3(box.lower.x, box.upper.y, box.upper.z), // luu
+                    vec3(box.upper.x, box.lower.y, box.lower.z), // ull
+                    vec3(box.upper.x, box.lower.y, box.upper.z), // ulu
+                    vec3(box.upper.x, box.upper.y, box.lower.z), // uul
+                    vec3(box.upper.x, box.upper.y, box.upper.z)  // uuu
+                };
+            }
+
         public:
 
             ~Instance() {
@@ -143,7 +169,7 @@ namespace glimac {
                 return allBBox;
             }
 
-            void drawAll(BasicProgram &program, mat4 &matMV, mat4 &matProj, GLuint shadowTex) {
+            void drawAll(BasicProgram &program, const mat4 &matMV, const mat4 &matProj, GLuint shadowTex) {
 
                 glBindVertexArray(m_vertexData->getVao());
 
@@ -201,6 +227,10 @@ namespace glimac {
                 glBindVertexArray(0);
             }
 
+            void drawAll(BasicProgram &program, const FPSCamera &camera, GLuint shadowTex) {
+                drawAll(program, camera.getViewMatrix(), camera.getProjMatrix(), shadowTex);
+            }
+
             void setBlendToOpaque() {
                 setBlendFlags(GL_ONE, GL_ZERO, GL_TRUE);
             }
@@ -213,32 +243,6 @@ namespace glimac {
                 m_sfactor = sfactor;
                 m_dfactor = dfactor;
                 m_depthFac = depthFac;
-            }
-
-        private:
-            Geometry m_geometry;
-            std::shared_ptr<VertexData> m_vertexData;
-            std::vector<Transform> m_transforms;
-            std::vector<glm::mat4> m_matrices;
-
-            GLenum m_sfactor = GL_ONE;
-            GLenum m_dfactor = GL_ZERO;
-            GLenum m_depthFac = GL_TRUE;
-
-            GLuint m_baseTex;
-            GLuint m_alternateTex;
-
-            std::vector<vec3> getCornersOfBBox(BBox3f &box) {
-                return {
-                    vec3(box.lower.x, box.lower.y, box.lower.z), // lll
-                    vec3(box.lower.x, box.lower.y, box.upper.z), // llu
-                    vec3(box.lower.x, box.upper.y, box.lower.z), // lul
-                    vec3(box.lower.x, box.upper.y, box.upper.z), // luu
-                    vec3(box.upper.x, box.lower.y, box.lower.z), // ull
-                    vec3(box.upper.x, box.lower.y, box.upper.z), // ulu
-                    vec3(box.upper.x, box.upper.y, box.lower.z), // uul
-                    vec3(box.upper.x, box.upper.y, box.upper.z)  // uuu
-                };
             }
     };
 

@@ -7,68 +7,22 @@
 
 namespace glimac {
 
-    static int m_Width;
-    static int m_Height;
+    static vec2 m_dimensions;
     static unsigned int m_keys;
     static vec3 m_MousePos;
 
     static bool m_windowInitialized;
 
-    unsigned int WindowManager::events() {
-        glfwPollEvents();
-
-        auto out = m_keys;
-        // prevent the scrollwheel event to be duplicated
-        m_keys &= ~(scrollDown | scrollUp | switchMode | keySun | keyDebug);
-        return out;
-    }
-
-    unsigned int WindowManager::keys() {
-        return m_keys;
-    }
-
-    int WindowManager::width() {
-        return m_Width;
-    }
-
-    int WindowManager::height() {
-        return m_Height;
-    }
-
-    vec2 WindowManager::mouse() {
-        return vec2(m_MousePos);
-    }
-
-    bool WindowManager::isInitialized() {
-        return m_windowInitialized;
-    }
-
-    bool WindowManager::close() {
-        glfwTerminate();
-        m_windowInitialized = false;
-        return false;
-    }
-
-    bool WindowManager::running() {
-        return !glfwWindowShouldClose(m_Window);
-    }
-
-    void WindowManager::display() {
-        glfwSwapBuffers(m_Window);
-    }
-
-    void WindowManager::setTitle(char* title) {
-        glfwSetWindowTitle (m_Window, title);
-    }
-
-    bool WindowManager::init(float win_width, float win_height) {
-        m_Width  = win_width;
-        m_Height = win_height;
+    
+    bool WindowManager::init(int win_width, int win_height) {
+        m_dimensions = vec2(win_width, win_height);
         m_keys = 0u;
+        m_title[255] = '\0';
         if(m_windowInitialized) {
             return false;
         }
-        m_Window = glfwCreateWindow(m_Width, m_Height, "Deux Salles, Deux Ambiances", nullptr, nullptr);
+        // glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
+        m_Window = glfwCreateWindow(m_dimensions.x, m_dimensions.y, "Deux Salles, Deux Ambiances", nullptr, nullptr);
         if (!m_Window) {
             glfwTerminate();
             return false;
@@ -78,12 +32,15 @@ namespace glimac {
         glfwMakeContextCurrent(m_Window);
 
         // glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // hideCursor();
 
         /* Intialize glad (loads the OpenGL functions) */
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
             return false;
         }
+
+        glScissor(0, 0, win_width, win_height);
 
         glEnable(GL_DEPTH_TEST);
         // glPolygonMode(GL_BACK, GL_FILL);
@@ -107,11 +64,81 @@ namespace glimac {
         return true;
     }
 
+    unsigned int WindowManager::events() {
+        glfwPollEvents();
+
+        auto out = m_keys;
+        // prevent the scrollwheel event to be duplicated
+        m_keys &= ~(scrollDown | scrollUp | switchMode | keySun | keyDebug);
+        return out;
+    }
+
+    unsigned int WindowManager::keys() {
+        return m_keys;
+    }
+
+    int WindowManager::width() {
+        return m_dimensions.x;
+    }
+
+    int WindowManager::height() {
+        return m_dimensions.y;
+    }
+
+    const vec2 WindowManager::getDimensions() {
+        return m_dimensions;
+    }
+
+    const vec2 WindowManager::mouse() {
+        return vec2(m_MousePos);
+    }
+
+    bool WindowManager::isInitialized() {
+        return m_windowInitialized;
+    }
+
+    bool WindowManager::close() {
+        glfwTerminate();
+        m_windowInitialized = false;
+        return false;
+    }
+
+    bool WindowManager::running() {
+        return !glfwWindowShouldClose(m_Window);
+    }
+
+    void WindowManager::display() {
+        glfwSwapBuffers(m_Window);
+        // glFlush();
+    }
+
+    void WindowManager::updateTitle(vec3 pos, float deltaT, bool colliding) {
+        snprintf ( m_title, 255,
+                    "%s %s - [FPS: %3.2f] - x:%3.0f y:%3.0f z:%3.0f, collision: %d",
+                    "Deux Salles, Deux Ambiances", "v0.3", 1.0f / (float)deltaT , pos.x, pos.y, pos.z, colliding);
+
+        glfwSetWindowTitle (m_Window, m_title);
+
+    }
 
     bool WindowManager::isFocused() {
         return glfwGetWindowAttrib(m_Window, GLFW_FOCUSED);
     }
 
+    void WindowManager::hideCursor() {
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+    void WindowManager::showCursor() {
+        glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+    void WindowManager::flushKeys() {
+        m_keys = 0u;
+    }
+
+    void WindowManager::quit() {
+        glfwSetWindowShouldClose(m_Window, true);
+    }
 
     void WindowManager::key_callback(GLFWwindow* window, int key, int /*scancode*/, int action, int /*mods*/) {
         if (action == GLFW_PRESS) {
@@ -273,8 +300,11 @@ namespace glimac {
     }
 
     void WindowManager::size_callback(GLFWwindow* /*window*/, int width, int height) {
-        m_Width  = width;
-        m_Height = height;
+        m_dimensions.x = width;
+        m_dimensions.y = height;
+        glScissor(0, 0, width, height);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        glViewport(0,0,width,height);
     }
 
 }

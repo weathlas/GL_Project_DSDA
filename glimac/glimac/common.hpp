@@ -22,6 +22,7 @@ namespace glimac {
     };
 
     const float degToRad = glm::pi<float>()/180;
+    const float radToDeg = 180/glm::pi<float>();
 
     const float kmToMs = 1/3.6;
 

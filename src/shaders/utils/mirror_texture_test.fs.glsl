@@ -24,6 +24,8 @@ void main() {
 
     color = vec4(texture(uLightDepthMap, vUV).rgb, 1);
 
+    color.rgb = vec3(1) - color.rgb;
+
     // color.rgb *= texture(uBaseTexture, p.xy).r;
     // color.rgb *= texture(uAlternateTexture, p.xy).r;
     // color.rgb *= texture(uLightDepthMap, p.xy).r+0.1;

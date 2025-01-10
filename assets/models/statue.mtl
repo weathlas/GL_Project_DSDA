@@ -1,16 +1,12 @@
-# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
-# File Created: 07.12.2011 13:29:46
+# Blender 4.1.1 MTL File: 'dsda.blend'
+# www.blender.org
 
-newmtl 12328_Statue
-	Ns 10.0000
-	Ni 1.5000
-	d 1.0000
-	Tr 0.0000
-	Tf 1.0000 1.0000 1.0000 
-	illum 2
-	Ka 1.0000 1.0000 1.0000
-	Kd 1.0000 1.0000 1.0000
-	Ks 0.1350 0.1350 0.1350
-	Ke 0.0000 0.0000 0.0000
-	map_Ka statue.jpg
-	map_Kd statue.jpg
+newmtl 12328_Statue.001
+Ns 10.000005
+Ka 1.000000 1.000000 1.000000
+Ks 0.135000 0.135000 0.135000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd C:/Users/theo/Downloads/Statue_v1_L2.123ce0579293-53f0-494d-aebb-8a216896421b/statue.jpg

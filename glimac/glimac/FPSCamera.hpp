@@ -4,6 +4,7 @@
 
 #include <glimac/BBox.hpp>
 #include <glimac/KeyCodes.hpp>
+#include <glimac/WindowManager.hpp>
 
 #include "common.hpp"
 #include "glm.hpp"
@@ -12,7 +13,7 @@ using namespace glm;
 
 namespace glimac {
 
-    const float radiusPlayer = 0.5f;
+    const float radiusPlayer = 0.45f;
 
     const float playerMaxHeadPos = 1.78f;
     const float playerMinHeadPos = 0.85f;
@@ -21,17 +22,28 @@ namespace glimac {
     const float playerZoomSpeed = 360.0f;
 
     const float playerMinFov = 30.0f;
-    const float playerMaxFov = 90.0f;
-    const float playerDefaultFov = 90.0f;
+    const float playerMaxFov = 75.0f;
+    const float playerDefaultFov = 75.0f;
+
+    const float defaultNearPlane = 0.08f;
+    const float defaultFarPlane = 10000.0f;
+    
+    const float playerRunningFovOffset = 5.0f;
+    const float playerRunningZoomSpeedUp = 45.0f;
+    const float playerRunningZoomSpeedDown = 60.0f;
+
+    const float playerFlyingFovOffset = 10.0f;
+    const float playerFlyingZoomSpeedUp = 90.0f;
+    const float playerFlyingZoomSpeedDown = 120.0f;
 
     const float playerGravity = 9.81f*0.500;
 
-    const float playerMaxFallSpeed = playerGravity*3.0;
+    const float playerMaxFallSpeed = playerGravity*9.0;
     const float playerJumpSpeed = playerGravity*1.0;
 
-    const float walkSpeed = 1.6f;
-    const float runMultiplier = 3.0f;
-    const float crouchSpeed = 0.63f;
+    const float walkSpeed = 2.54f;
+    const float runMultiplier = 2.0f;
+    const float crouchSpeed = 1.28f;
 
     const float mouseRotationMultiplier = 1.0f;
     const float keysRotationMultiplier = 1.0f;
@@ -40,10 +52,20 @@ namespace glimac {
     // const float mouseSensitivity = 0.2f;
     const float mouseSensitivity = 4.56f;
 
+    const float cameraDefaultReach = 1.5f;
+
+    const float playerSmoothAccel = 0.05f;
+
+    vec3 reflectVector(const vec3& v, const vec3& normal) {
+        return v - 2.0f * dot(v, normal) * normal;
+    }
+
     class FPSCamera {
 
         private:
             mat4 m_projMatrix;
+            mat4 m_normalMatrix;
+            mat4 m_viewMatrix;
             vec3 m_Position;
             vec3 m_FootPosition;
             vec3 m_HeadDisplacement;
@@ -51,9 +73,13 @@ namespace glimac {
             float m_fPhy;
             float m_fTheta;
             float m_fFov;
+            float m_fFovRunOffset;
+            float m_fFovFlyOffset;
+
+            float m_nearPlane;
+            float m_farPlane;
 
             float m_verticalSpeed;
-            bool m_onGround;
 
             float m_fWinWidth;
             float m_fWinHeight;
@@ -67,34 +93,68 @@ namespace glimac {
 
             vec2 m_oldMousePos;
 
+            float m_buttonReach;
+
+            bool m_isCrouched;
+            bool m_isGrounded;
+            bool m_isRunning;
+            bool m_isFlying;
+            bool m_inJump;
+            bool m_jumped;
+
+            bool m_canFly;
+
+            vec3 m_speed;
+
+            bool m_cheats;
+
+            bool m_ortho;
+
         public:
-            FPSCamera(float fov, float win_width, float win_height) : m_bbox(vec3(-radiusPlayer, 0.0f, -radiusPlayer), vec3(radiusPlayer, 1.78f, radiusPlayer)){
-                m_projMatrix = perspective(glm::radians(fov), 1.0f*win_width/win_height, 0.03f, 1000.f);
+            FPSCamera(float fov, float win_width, float win_height, float playerHeight, bool isOrtho, float nearPlane, float farPlane) : m_bbox(vec3(-radiusPlayer, 0.0f, -radiusPlayer), vec3(radiusPlayer, 1.78f, radiusPlayer)){
+                m_HeadDisplacement = vec3(0, playerMaxHeadPos, 0);
+                m_ShakeDisplacement = vec3(0);
                 m_FootPosition = vec3(.0f, 0.05f, .0f);
                 m_fPhy     = glm::pi<float>();
                 m_fTheta   = 0;
                 m_fFov = fov;
+                m_fFovRunOffset = 0.0f;
                 m_fWinWidth = win_width;
                 m_fWinHeight = win_height;
-                m_HeadDisplacement = vec3(0, playerMaxHeadPos, 0);
-                m_ShakeDisplacement = vec3(0);
                 m_Position = m_FootPosition + m_HeadDisplacement = m_ShakeDisplacement;
                 m_verticalSpeed = 0.0f;
                 computeDirectionVectors();
                 m_oldMousePos = vec2(0);
+                m_buttonReach = cameraDefaultReach;
+
+                m_nearPlane = nearPlane;
+                m_farPlane = farPlane;
+
+                m_ortho = isOrtho;
+
+                if(m_ortho) {
+                    m_projMatrix = glm::ortho(-25.0f, 25.0f, -25.0f, 25.0f, m_nearPlane, m_farPlane);
+                }
+                else {
+                    m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, 0.08f, 10000.f);
+                }
+
+                m_viewMatrix = glm::lookAt(m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement, m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement + m_FrontVector, m_UpVector);
+                m_normalMatrix = glm::transpose(glm::inverse(m_viewMatrix));
+
+                m_isCrouched = false;
+                m_isGrounded = false;
+                m_isRunning = false;
+                m_isFlying = false;
+                m_inJump = false;
+                m_jumped = false;
+
+                m_canFly = false;
+                m_speed = vec3(0);
+
             };
 
-            FPSCamera(float win_width, float win_height) : FPSCamera(playerDefaultFov, win_width, win_height) {
-            }
-
-            void moveLeft(float t) {
-                m_FootPosition += m_LeftVector * t;
-                computeBBox();
-            }
-
-            void moveFront(float t) {
-                m_FootPosition += m_GroundFrontVector * t;
-                computeBBox();
+            FPSCamera(float win_width, float win_height) : FPSCamera(playerDefaultFov, win_width, win_height, playerMaxHeadPos, false, defaultNearPlane, defaultFarPlane) {
             }
 
             bool resetMouse(vec2 mousePos) {
@@ -108,92 +168,67 @@ namespace glimac {
                 m_oldMousePos = mousePos;
                 vec2 direction = vec2(((keys & keyLeft) > 0u) - ((keys & keyRight) > 0u), ((keys & keyUp) > 0u) - ((keys & keyDown) > 0u));
 
+                m_isCrouched = keys & ctrlKey;
+                // m_isRunning = (keys & shiftKey) && (keys & (keyLeft | keyRight | keyUp | keyDown));
+                m_isRunning = (keys & shiftKey) && (keys & (keyUp));
 
-                crouch(keys & ctrlKey, deltaT);
-                zoom(keys & rightClick, deltaT);
+                if(m_isFlying) {
+                    //  * m_isFlying?playerJumpSpeed:1.0f
+                    float finalSpeed = (((keys & shiftKey) ? runMultiplier : 1.0) * walkSpeed * playerJumpSpeed);
+                    move(direction, vec2(finalSpeed, finalSpeed), deltaT);
+                }
+                else {
+                    float finalSpeed = ((keys & ctrlKey) ? crouchSpeed : walkSpeed);
+                    // direction.y > 0 ? moveFront(direction.y * finalSpeed * ((keys & shiftKey) ? runMultiplier : 1.0) * deltaT) : moveFront(direction.y * finalSpeed * deltaT);
+                    
+                    move(direction, vec2(finalSpeed, finalSpeed * ((keys & shiftKey) ? runMultiplier : 1.0)), deltaT);
+                }
 
-                float finalSpeed = ((keys & ctrlKey) ? crouchSpeed : walkSpeed) * ((keys & shiftKey) ? runMultiplier : 1.0);
-                move(direction, finalSpeed, deltaT); 
 
+                // std::cout << m_canFly << " " << m_isFlying << " " << m_isGrounded << " " <<  m_isFlying << " " << m_verticalSpeed <<" " << ((keys & spacebar) > 0u) << " " << m_FootPosition.y << std::endl;
+                if((m_canFly || m_isFlying) && (m_verticalSpeed >= -playerGravity && (keys & spacebar))) {
+
+                    // if the player jumped in the air and falling while pressing the spacebar
+                    if (!m_isFlying && !m_isGrounded) {
+                        m_isFlying = true;
+                        m_verticalSpeed = 0.0f;
+                        // m_inJump = false;
+                        m_canFly = false;
+                    }
+                    else {
+
+                        // // the player is flying and 
+                        if((m_canFly && m_isFlying && m_verticalSpeed > -playerGravity) || (m_isGrounded && (!(keys & spacebar)))) {
+                            std::cout <<"normal"<<std::endl;
+                            m_isFlying = false;
+                            m_verticalSpeed = 0.0f;
+                            m_canFly = false;
+                        }
+                    }
+
+                }
+
+                if (m_isFlying) {
+                    if(m_isGrounded && (keys & ctrlKey)) {
+                        std::cout <<"gfdgdfgfgdf"<<std::endl;
+                        m_verticalSpeed = 0.0f;
+                        m_isFlying = false;
+                        m_canFly = false;
+                    }
+                    else {
+                        fly((((keys & spacebar) > 0u) - ((keys & ctrlKey) > 0u)) * playerJumpSpeed * ((keys & shiftKey) ? runMultiplier : 1.0), deltaT);
+                    }
+                }
+
+                // will just adjust the vertical speed if the player is falling
                 jump((keys & spacebar), deltaT);
 
-                auto horizontalRotation = keyRotationSpeed * (((keys & KeyCode::rotateLeft)?1.0f:0.0f+(keys & rotateRight)?-1.0f:0.0f)*((keys & shiftKey) ? keysRotationMultiplier : 1.0f));
-                auto verticalRotation = keyRotationSpeed * (((keys & KeyCode::rotateUp)?1.0f:0.0f+(keys & rotateDown )?-1.0f:0.0f)*((keys & shiftKey) ? keysRotationMultiplier : 1.0f));
-
+                m_canFly = m_verticalSpeed > 0.0 && (!(keys & spacebar));
+                crouch(!m_isFlying && (keys & ctrlKey), deltaT);
+                zoom(keys & rightClick, deltaT);
 
                 rotate(diffMouse*mouseSensitivity * m_fFov/playerMaxFov, deltaT);
-                rotate(horizontalRotation, verticalRotation, deltaT);
-
-                // if (keys & rotateLeft) {
-                //     rotateLeft(keyRotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
-                // }
-                // if (keys & rotateRight) {
-                //     rotateLeft(-keyRotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
-                // }
-                // if (keys & rotateUp) {
-                //     rotateUp(keyRotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
-                // }
-                // if (keys & rotateDown) {
-                //     rotateUp(-keyRotationSpeed*(1+1.0f*((keys & shiftKey) > 0u)));
-                // }
-                // if (keys & rightClick) {
-                //     rotateLeft(diffMouse.x*mouseSensitivity * m_fFov/playerMaxFov);
-                //     rotateUp(diffMouse.y*mouseSensitivity * m_fFov/playerMaxFov);
-                // }
-            }
-
-            void move(vec2 direction, float speed, float deltaT) {
-                if(direction.x != 0 || direction.y != 0) {
-                    direction = normalize(direction);
-                    m_FootPosition += (m_LeftVector * direction.x + m_GroundFrontVector * direction.y) * deltaT * speed;
-                    computeBBox();
-                }
-            }
-
-            void rotateLeft(float degrees) {
-                m_fPhy += degrees*degToRad;
-                computeDirectionVectors();
-            }
-
-            void rotateUp(float degrees) {
-                m_fTheta += degrees*degToRad;
-                m_fTheta = clamp<float>(m_fTheta, -glm::pi<float>()/2, glm::pi<float>()/2);
-                computeDirectionVectors();
-            }
-
-            void rotate(float degreesLeft, float degreeUp, float deltaT) {
-                m_fPhy += degreesLeft*degToRad*deltaT;
-                m_fTheta += degreeUp*degToRad*deltaT;
-                m_fTheta = clamp<float>(m_fTheta, -glm::pi<float>()/2, glm::pi<float>()/2);
-                computeDirectionVectors();
-            }
-
-            void rotate(vec2 angles, float deltaT){rotate(angles.x, angles.y, deltaT);}
-
-            void crouch(bool direction, float deltaT) {
-                float height = m_HeadDisplacement.y + (deltaT * playerCrouchSpeed * (1 - 2*direction));
-                height = clamp(height, playerMinHeadPos, playerMaxHeadPos);
-                m_HeadDisplacement.y = height;
-            }
-
-            void zoom(bool direction, float deltaT) {
-                float fov = m_fFov + deltaT * playerZoomSpeed * (1 - 2*direction);
-                fov = clamp(fov, playerMinFov, playerMaxFov);
-                if (fov != m_fFov) {
-                    m_fFov = fov;
-                    m_projMatrix = perspective(glm::radians(m_fFov), 1.0f*m_fWinWidth/m_fWinHeight, 0.08f, 1000.f);
-                }
-                // m_fFov = clamp(m_fFov + deltaT * playerZoomSpeed * (1 - 2*direction), playerMinFov, playerMaxFov)
-            }
-
-            void jump(bool state, float deltaT) {
-                if (!state || m_verticalSpeed > 0) {
-                    return;
-                }
-                // std::cout << m_FootPosition.y << std::endl;
-                if(m_FootPosition.y <= 0.05 || m_onGround) {
-                    m_verticalSpeed = playerJumpSpeed*playerJumpSpeed;
-                }
+                // rotate(horizontalRotation, verticalRotation, deltaT);
             }
 
             void shake(float amount) {
@@ -204,10 +239,16 @@ namespace glimac {
                 m_ShakeDisplacement = sphericalRand(linearRand(0.0f, amount));
             }
 
-            bool updatePhysic(std::vector<BBox3f> walls, float deltaT) {
-                m_onGround = false;
+            bool update(WindowManager& window, std::vector<BBox3f> walls, float deltaT) {
+                if(m_fWinWidth != window.width() || m_fWinHeight != window.height()) {
+                    std::cout << "From" << m_fWinWidth<< " & " << m_fWinHeight << " to " << window.getDimensions() << std::endl;
+                    m_fWinWidth = window.width();
+                    m_fWinHeight = window.height();
+                    m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, 0.08f, 10000.f);
+                }
+                m_isGrounded = false;
                 m_verticalSpeed = clamp(m_verticalSpeed - (playerGravity*playerGravity * deltaT), -playerMaxFallSpeed, playerJumpSpeed);
-                m_FootPosition.y += m_verticalSpeed * deltaT;
+                m_FootPosition.y += m_isFlying?0.0:m_verticalSpeed * deltaT;
                 m_Position = m_FootPosition + m_HeadDisplacement + m_ShakeDisplacement;
                 computeBBox();
                 bool collide = updateCollision(walls);
@@ -216,20 +257,74 @@ namespace glimac {
                     m_FootPosition.y = 0;
                     m_verticalSpeed = 0;
                 }
+                if(m_verticalSpeed <= 0) {
+                    m_inJump = false;
+                }
+                updateMatrix();
                 return collide;
             }
 
-            mat4 getViewMatrix() const {
-                return glm::lookAt(m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement, m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement + m_FrontVector, m_UpVector);
+            void makeLookAt(vec3& newPos, vec3& point) {
+
+                m_FootPosition = newPos;
+
+                // trouver le vecteur direction entre cam et point
+                auto dir = normalize(m_FootPosition - point);
+
+                // trouver l'angle phy sur l'axe y
+                float phy = atan2(dot(glm::cross(vec3(0, 0, -1), dir), vec3(0, 1, 0)), glm::dot(vec3(0, 0, -1), dir));
+                
+                auto otherNorm = glm::cross(dir, vec3(0, -1, 0));
+                
+                // trouver l'angle theta sur l'axe x
+                float theta = atan2(dot(glm::cross(normalize(vec3(dir.x, 0, dir.z)), dir), otherNorm), glm::dot(normalize(vec3(dir.x, 0, dir.z)), dir));
+                
+                m_fTheta = theta;// * radToDeg;
+                m_fPhy = phy;// * radToDeg;
+
+                rotate(vec2(0.0f), 0);
+
+                updateMatrix();
+
+                std::cout << phy << " / " << theta << " : " << m_FootPosition << std::endl;
+
+                // cos-1 [ (a * b) / (|a| * |b|) ]
+
+                // atan2((Va x Vb) . Vn, Va . Vb)
+            } 
+
+            void setMirrorCamera(FPSCamera *other, const vec3 &mirrorPos, vec3 &mirrorNormal) {
+                // Compute reflected position
+                // auto camPos = vec3(getPos());
+                float dist = dot(m_Position - mirrorPos, mirrorNormal);
+                other->m_Position = m_Position - 2.0f * dist * mirrorNormal;
+
+                // Reflect Forward and Up vectors
+                other->m_FrontVector = reflectVector(-getFrontVector(), mirrorNormal);
+                other->m_UpVector = reflectVector(getUpVector(), mirrorNormal);
+
+
+                other->m_viewMatrix =glm::lookAt(other->m_Position, other->m_Position-other->m_FrontVector, other->m_UpVector);
+                other->m_normalMatrix = glm::transpose(glm::inverse(other->m_viewMatrix));
+                other->m_projMatrix = getProjMatrix();
+
+            }
+
+            const mat4 getViewMatrix() const {
+                return m_viewMatrix;
             }
 
             const vec3 getPos() {
                 return m_Position;
             }
 
-            const mat4 getProjMatrix() {
+            const mat4 getProjMatrix() const {
                 // return glm::ortho(-10, 10, -10, 10, 1, 75);
                 return m_projMatrix;
+            }
+
+            const mat4 getNormalMatrix() {
+                return m_normalMatrix;
             }
 
             const float getFov() {
@@ -242,6 +337,10 @@ namespace glimac {
 
             const vec3 getUpVector() {
                 return m_UpVector;
+            }
+
+            const float getReach() {
+                return m_buttonReach;
             }
 
         private:
@@ -302,7 +401,7 @@ namespace glimac {
                         m_verticalSpeed = 0.0f;
                     }
                     if(yOffset > 0 || m_verticalSpeed < 0) {
-                        m_onGround = true;
+                        m_isGrounded = true;
                         return vec3(0.0f, yOffset, 0.0f);
                     }
                 }
@@ -311,7 +410,7 @@ namespace glimac {
                         m_verticalSpeed = 0.0f;
                     }
                     if(yOffset > 0 || m_verticalSpeed < 0) {
-                        m_onGround = true;
+                        m_isGrounded = true;
                         return vec3(0.0f, yOffset, 0.0f);
                     }
                 }
@@ -325,6 +424,99 @@ namespace glimac {
                 m_LeftVector = vec3(sin(m_fPhy+ glm::pi<float>()/2), 0, cos(m_fPhy+ glm::pi<float>()/2));
                 m_UpVector = glm::cross(m_FrontVector, m_LeftVector);
             }
+    
+            void fly(float value, float deltaT) {
+                m_FootPosition.y += value * deltaT;
+            }
+
+            // void moveLeft(float t) {
+            //     m_FootPosition += m_LeftVector * t;
+            //     computeBBox();
+            // }
+
+            // void moveFront(float t) {
+            //     m_FootPosition += m_GroundFrontVector * t;
+            //     computeBBox();
+            // }
+
+            void move(vec2 direction, vec2 speed, float deltaT) {
+                if(direction.x != 0 || direction.y != 0) {
+                    direction = normalize(direction);
+                }
+                auto newSpeed = m_speed + playerSmoothAccel * (m_LeftVector * direction.x * speed.x + m_GroundFrontVector * direction.y * speed.y) * deltaT;
+                auto speedLength = length(newSpeed);
+                // if(speedLength > walkSpeed) {
+                //     m_speed -= (speedLength - walkSpeed) * playerSmoothAccel;
+                // }
+                // else {
+                // }
+
+                if(direction.x != 0 || direction.y != 0) {
+                    newSpeed *= (1-playerSmoothAccel);
+                }
+                m_speed = newSpeed;
+
+                // m_FootPosition += vec3(m_speed.x, 0, m_speed.z) * deltaT;
+                m_FootPosition += (m_LeftVector * direction.x * speed.x + m_GroundFrontVector * direction.y * speed.y) * deltaT;
+                computeBBox();
+            }
+
+            void rotate(float degreesLeft, float degreeUp, float deltaT) {
+                m_fPhy += degreesLeft*degToRad*deltaT;
+                m_fTheta += degreeUp*degToRad*deltaT;
+                m_fTheta = clamp<float>(m_fTheta, -glm::pi<float>()/2, glm::pi<float>()/2);
+                computeDirectionVectors();
+            }
+
+            void rotate(vec2 angles, float deltaT){rotate(angles.x, angles.y, deltaT);}
+
+            void crouch(bool direction, float deltaT) {
+                float height = m_HeadDisplacement.y + (deltaT * playerCrouchSpeed * (1 - 2*direction));
+                height = clamp(height, playerMinHeadPos, playerMaxHeadPos);
+                m_HeadDisplacement.y = height;
+            }
+
+            void zoom(bool direction, float deltaT) {
+                float fov = m_fFov + deltaT * playerZoomSpeed * (1 - 2*direction);
+                fov = clamp(fov, playerMinFov, playerMaxFov);
+
+                float fovRunOffset = m_fFovRunOffset + deltaT * (playerRunningZoomSpeedUp * m_isRunning - playerRunningZoomSpeedDown * !m_isRunning);
+                fovRunOffset = clamp(fovRunOffset, 0.0f, playerRunningFovOffset);
+
+                float fovFlyOffset = m_fFovFlyOffset + deltaT * (playerFlyingZoomSpeedUp * m_isFlying - playerFlyingZoomSpeedDown * !m_isFlying);
+                fovFlyOffset = clamp(fovFlyOffset, 0.0f, playerFlyingFovOffset);
+                if (fov != m_fFov || fovRunOffset != m_fFovRunOffset || fovFlyOffset != m_fFovFlyOffset) {
+                    m_fFovRunOffset = fovRunOffset;
+                    m_fFovFlyOffset = fovFlyOffset;
+                    m_fFov = fov;
+                    // m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, 0.08f, 10000.f);
+                }
+                // m_fFov = clamp(m_fFov + deltaT * playerZoomSpeed * (1 - 2*direction), playerMinFov, playerMaxFov)
+            }
+
+            void jump(bool state, float deltaT) {
+                if (!state || m_verticalSpeed > 0 && !m_isFlying) {
+                    return;
+                }
+                // std::cout << m_FootPosition.y << std::endl;
+                if(m_FootPosition.y <= 0.05 || m_isGrounded || m_isFlying) {
+                    m_verticalSpeed = playerJumpSpeed*playerJumpSpeed;
+                }
+            }
+            
+            void updateMatrix() {
+
+                if(m_ortho) {
+                    m_projMatrix = glm::ortho(-25.0f, 25.0f, -25.0f, 25.0f, m_nearPlane, m_farPlane);
+                }
+                else {
+                    m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, 0.08f, 10000.f);
+                }
+
+                m_viewMatrix = glm::lookAt(m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement, m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement + m_FrontVector, m_UpVector);
+                m_normalMatrix = glm::transpose(glm::inverse(m_viewMatrix));
+            }
+
     };
 
 }

@@ -43,20 +43,13 @@ namespace glimac {
 
         const float sizeSideShadowMap = 25.0f;
 
-                    
+
         private:
             vec3 m_position;
             vec3 m_normal;
 
-            vec3 m_reflectedPos;
-            vec3 m_reflectedUp;
-            vec3 m_reflectedForward;
+            vec4 m_clipPlane;
 
-            mat4 m_reflectedViewMatrix;
-            mat4 m_reflectedNormalMatrix;
-            mat4 m_reflectedProjMatrix;
-
-            BasicProgram m_program;
 
             GLuint m_imageWhiteInt;
 
@@ -67,8 +60,9 @@ namespace glimac {
 
             GLuint m_mirrorMapFBO;
             GLuint m_mirrorMap;
+            GLuint m_renderBuffer;
+            GLuint m_depthMap;
 
-            // Light m_lights;
             bool m_initialized;
 
             GLint m_viewport[4];
@@ -80,31 +74,40 @@ namespace glimac {
             mat4 m_mirrorSpaceMatrix;
 
         public:
-            Mirror(const vec3& position, const vec3& direction, const FilePath &applicationPath) : m_program(applicationPath, pathVSMirrorName, pathFSMirrorName, ProgramType::NONE){
+            Mirror(const vec3& position, const vec3& direction, const FilePath &applicationPath) : m_program(applicationPath, pathVSMirrorName, pathFSMirrorName, ProgramType::NONE), m_camera(1.0, 1.0){
                 m_position = position;
                 m_normal = direction;
                 m_imageWhiteInt = my_bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
                 m_mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", m_imageWhiteInt, 0);
-                m_mirrorInstances.get()->add(Transform(vec3(10.5, 1.5, 9), vec3(-degToRad*90, 0, 0), vec3(6)));
-                m_mirrorInstances.get()->add(Transform(vec3(10.5, 1.5, 9), vec3(degToRad*90, 0, 0), vec3(6)));
+                m_mirrorInstances.get()->add(Transform(vec3(11, 1.51, 11.99), vec3(-degToRad*90, 0, 0), vec3(3.0f, 1.0f, 6.0f)));
+                m_mirrorInstances.get()->add(Transform(vec3(11, 1.51, 11.99), vec3(+degToRad*90, 0, 0), vec3(3.0f, 1.0f, 6.0f)));
 
                 m_mirrorProjToTexture = translate(mat4(1), vec3(0.5, 0.5, 0.5)) * scale(mat4(1), vec3(0.5));
+
+                m_clipPlane = computePlaneEquation(m_normal, m_position);
             }
 
             ~Mirror(){
                 m_mirrorInstances.get()->~Instance();
                 glDeleteTextures(1, &m_imageWhiteInt);
+                glDeleteTextures(1, &m_mirrorMap);
+                glDeleteFramebuffers(1, &m_mirrorMapFBO);
+                glDeleteRenderbuffers(1, &m_renderBuffer);
+                glDeleteRenderbuffers(1, &m_depthMap);
             }
 
             bool init(unsigned int width, unsigned int height) {
                 m_width = width;
                 m_height = height;
 
+                glEnable(GL_DEPTH_TEST);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
                 glGenTextures(1, &m_mirrorMap);
                 glBindTexture(GL_TEXTURE_2D, m_mirrorMap);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                 // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -112,18 +115,54 @@ namespace glimac {
 
                 // // white outside of the shadow map (no shadows)
                 // float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+
+                glGenTextures(1, &m_depthMap);
+                glBindTexture(GL_TEXTURE_2D, m_depthMap);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                
                 // glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
                 // Framebuffer setup for shadow mapping
                 glGenFramebuffers(1, &m_mirrorMapFBO);
                 glBindFramebuffer(GL_FRAMEBUFFER, m_mirrorMapFBO);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_mirrorMap, 0);
-                glDrawBuffer(GL_COLOR_ATTACHMENT0);
-                glReadBuffer(GL_COLOR_ATTACHMENT0);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthMap, 0);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BITS);
+                // glDrawBuffer(GL_COLOR_ATTACHMENT0);
+                // glReadBuffer(GL_COLOR_ATTACHMENT0);
+
+                // glClear(GL_DEPTH_BUFFER_BIT);
 
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
                     std::cout << "Framebuffer is not complete!" << std::endl;
                 }
+
+                // glGenFramebuffers(1, &m_renderBuffer);
+                // glBindFramebuffer(GL_FRAMEBUFFER, m_renderBuffer);
+                // glDrawBuffer(GL_NONE);
+                // glReadBuffer(GL_NONE);
+
+                // // Generate an id for the buffer object
+                glGenRenderbuffers(1, &m_renderBuffer);
+                // // Bind the object to the OpenGL context
+                glBindRenderbuffer(GL_RENDERBUFFER, m_renderBuffer);
+                // // Allocate storage
+                glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, m_width, m_height);
+                glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL, GL_RENDERBUFFER, m_renderBuffer);
+
+
+
+                // // glClear(GL_DEPTH_BUFFER_BIT);
+                // // glBindRenderbuffer(GL_RENDERBUFFER, 0);
+                // // Attach the depth buffer to the frame buffer
+                // glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, m_renderBuffer);
+                // // Enable OpenGL depth test
+                // glEnable(GL_DEPTH_TEST);
+                // // glClear(GL_DEPTH_BUFFER_BIT);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
                 glBindTexture(GL_TEXTURE_2D, 0);
@@ -133,50 +172,38 @@ namespace glimac {
                 return true;
             }
 
-            vec3 reflectVector(const vec3& v) {
-                return v - 2.0f * dot(v, m_normal) * m_normal;
-            }
-
             void computeCamera(FPSCamera& camera) {
-
-                // Compute reflected position
-                auto camPos = vec3(camera.getPos());
-                float dist = dot(camPos - m_position, m_normal);
-                m_reflectedPos = camPos - 2.0f * dist * m_normal;
-
-                // Reflect Forward and Up vectors
-                m_reflectedForward = reflectVector(-camera.getFrontVector());
-                m_reflectedUp = reflectVector(camera.getUpVector());
-
-                // m_reflectedViewMatrix = glm::lookAt(m_reflectedPos, m_reflectedForward, m_reflectedUp);
-                m_reflectedViewMatrix = glm::lookAt(m_reflectedPos, m_reflectedPos-m_reflectedForward, m_reflectedUp);
-                m_reflectedNormalMatrix = glm::transpose(glm::inverse(m_reflectedViewMatrix));
-                m_reflectedProjMatrix = camera.getProjMatrix();
-
-
-                m_mirrorSpaceMatrix = m_reflectedProjMatrix * m_reflectedViewMatrix;
+                camera.setMirrorCamera(&m_camera, m_position, m_normal);
+                m_mirrorSpaceMatrix = m_camera.getProjMatrix() * m_camera.getViewMatrix();
                 m_mirrorTexjMatrix = m_mirrorProjToTexture * m_mirrorSpaceMatrix;
             }
 
-            mat4 getViewMatrix() {
-                return glm::lookAt(m_reflectedPos, m_reflectedPos-m_reflectedForward, m_reflectedUp);
+            const FPSCamera getCamera() {
+                return m_camera;
+            }
+
+            const mat4 getViewMatrix() {
+                return m_camera.getViewMatrix();
             }
 
             mat4 getNormalMatrix() {
-                return glm::transpose(glm::inverse(m_reflectedViewMatrix));
+                return m_camera.getNormalMatrix();
             }
 
             mat4 getMirrorMatrix() {
                 return mat4(m_mirrorTexjMatrix);
-                // return mat4(m_mirrorSpaceMatrix);
             }
 
-            vec3 getMirrorCamPos() {
-                return m_reflectedPos;
+            const vec3 getMirrorCamPos() {
+                return m_camera.getPos();
+            }
+
+            const vec4 getPlaneEquation() {
+                return m_clipPlane;
             }
 
             mat4 getMirrorProj() {
-                return m_reflectedProjMatrix;
+                return m_camera.getProjMatrix();
             }
 
             GLuint getMirrorMap() {
@@ -187,125 +214,76 @@ namespace glimac {
                 return m_mirrorMapFBO;
             }
 
+            GLuint getMirrorDepthFBO() {
+                return m_renderBuffer;
+            }
+
             void startRenderMirrorTexture() {
                 if (!m_initialized) {
                     std::cout << "uninitialized shadow map" << std::endl;
                     return;
                 }
-
-                GLint m_viewport[4];
-                GLint origFB;
-
                 // /// slow !!!!!!
                 glGetIntegerv( GL_VIEWPORT, m_viewport);
-                glGetIntegerv( GL_DRAW_FRAMEBUFFER_BINDING, &origFB);
+                glGetIntegerv( GL_DRAW_FRAMEBUFFER_BINDING, &m_origFB);
 
                 // 1. Render scene to mirror map
                 glViewport(0, 0, m_width, m_height);
                 glBindFramebuffer(GL_FRAMEBUFFER, m_mirrorMapFBO);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             }
 
-            void stopRenderMirrorTexture() {
-                glReadBuffer(GL_NONE);
-
-                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, m_mirrorMapFBO);
-
-                glActiveTexture(GL_TEXTURE2);
-                glBindTexture(GL_TEXTURE_2D, m_mirrorMap);
-
-                glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, m_width, m_height, 0);
-
-                glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_viewport[2] - m_viewport[0], m_viewport[3] - m_viewport[1], GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-                glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-
-                glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-                glViewport(m_viewport[0], m_viewport[1], m_viewport[2], m_viewport[3]);
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            }
-
-            // void renderTexture(Scene &scene) {
-            //     if (!m_initialized) {
-            //         std::cout << "uninitialized shadow map" << std::endl;
-            //         return;
-            //     }
-
-            //     // /// slow !!!!!!
-            //     glGetIntegerv( GL_VIEWPORT, m_viewport);
-            //     glGetIntegerv( GL_DRAW_FRAMEBUFFER_BINDING, &m_origFB);
-
-            //     m_mirrorMapFBO;
-            //     m_mirrorMap;
-
-            //     // 1. Render scene to mirror map
-            //     glViewport(0, 0, m_width, m_height);
-            //     glBindFramebuffer(GL_FRAMEBUFFER, m_mirrorMapFBO);
-            //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            //     // programm.activate(camPos, m_normalMatrix, m_shadowMatrix, m_lights);
-            //     m_program.activate(lightPos, m_normalMatrix, m_shadowMatrix, m_lights);
-            //     // Set uniforms and render scene from light's perspective
-
-            //     scene.drawScene(m_program, m_lightModelToView, m_lightProjection, m_normalMatrix, lightPos, m_shadowMatrix, m_lights, 0);
-            //     // scene.drawScene(programm, m_lightSpaceMatrix, m_lightProjection, m_normalMatrix, camPos, m_shadowMatrix, m_lights, m_mirrorMap);
-
-            //     glReadBuffer(GL_NONE);
-
-            //     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-            //     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_mirrorMapFBO);
-
-            //     glActiveTexture(GL_TEXTURE2);
-            //     glBindTexture(GL_TEXTURE_2D, m_mirrorMap);
-
-            //     glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, m_width, m_height, 0);
-
-            //     glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_viewport[2] - m_viewport[0], m_viewport[3] - m_viewport[1], GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-
-            //     glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-
-            //     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-            //     // 2. Render scene with shadows
-            //     glViewport(m_viewport[0], m_viewport[1], m_viewport[2], m_viewport[3]);
-            //     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            // }
-
-            void drawMirrorGeometry(Instance &Instance) {
-
-                // internal program as simple as possible
-                // Instance.drawAll(programSky, ModelToViewVMatrix, projMatrix, 0);
-            }
-
-            void drawStencil(FPSCamera& camera) {
+            void drawStencil(WindowManager& window, FPSCamera& camera) {
                 // stencil buffer activation
+                glClearColor(0, 0, 0, 1);
+                glClearStencil(0);
+                glStencilMask(0xFF);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+                glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
                 glEnable(GL_STENCIL_TEST);
-                glClear(GL_STENCIL_BUFFER_BIT);
+                // glDepthMask(GL_FALSE);
+                // glClear(GL_STENCIL_BUFFER_BIT);
+                // glStencilFunc(GL_ALWAYS, 1, 0xFF);
                 glStencilFunc(GL_ALWAYS, 1, 0xFF);
-                glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+                glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+                glStencilMask(0xFF);
+                // glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+
+
+                // glClear(GL_STENCIL_BITS | GL_DEPTH_BUFFER_BIT);
 
                 // glDisable(GL_CULL_FACE);
 
+                // auto ModelToViewVMatrix = camera.getViewMatrix();
+                // auto NormalMatrix = glm::transpose(glm::inverse(ModelToViewVMatrix));
+                // auto currentCamPos = camera.getPos();
+                // auto projMatrix = camera.getProjMatrix();
 
-                auto ModelToViewVMatrix = camera.getViewMatrix();
-                auto NormalMatrix = glm::transpose(glm::inverse(ModelToViewVMatrix));
-                auto currentCamPos = camera.getPos();
-                auto projMatrix = camera.getProjMatrix();
+                // vec4 values(0.0f, 0.0f, 0.0f, 0.0f);
+
+                // glClipPlane(GL_CLIP_PLANE0, &values);
 
                 // m_program.activateSimple(currentCamPos, NormalMatrix);
-                // m_program.activateSimple(m_reflectedPos, m_reflectedNormalMatrix);
+                m_program.activateSimple(window, m_camera);
 
                 // // Render the mirror surface into the stencil buffer
-                // m_mirrorInstances.get()->drawAll(m_program, ModelToViewVMatrix, projMatrix, 0);
+                m_mirrorInstances.get()->drawAll(m_program, m_camera.getViewMatrix(), m_camera.getProjMatrix(), 0);
                 // m_mirrorInstances.get()->drawAll(m_program, m_mirrorSpaceMatrix, m_reflectedProjMatrix, 0);
 
                 // glEnable(GL_CULL_FACE);
 
+                glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+                glDepthMask(GL_TRUE); 
+
                 // // Step 2: Render the reflected scene
-                glStencilFunc(GL_EQUAL, 1, 0xFF); // Render only where stencil is 1
+                // glStencilFunc(GL_EQUAL, 1, 0xFF); // Render only where stencil is 1
+                glStencilFunc(GL_EQUAL, 1, 0x01); // Render only where stencil is 1
                 glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+
+                glClear(GL_DEPTH_BUFFER_BIT);
+                glEnable(GL_STENCIL_TEST);
 
                 // // Reflect the camera
                 // reflectCamera(mirrorPlane);
@@ -318,14 +296,43 @@ namespace glimac {
                 // glDisable(GL_STENCIL_TEST);
             }
 
+            void stopRenderMirrorTexture() {
+                glReadBuffer(GL_NONE);
+
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, m_mirrorMapFBO);
+
+                // glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, m_mirrorMap);
+
+                glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 0, 0, m_width, m_height, 0);
+                // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_mirrorMap, 0);
+
+                // glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_viewport[2] - m_viewport[0], m_viewport[3] - m_viewport[1], GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+                glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+
+                glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+                glViewport(m_viewport[0], m_viewport[1], m_viewport[2], m_viewport[3]);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            }
+
+            
             void deactivate() {
                 glDisable(GL_STENCIL_TEST);
             }
 
+        private:
+            FPSCamera m_camera;
+            BasicProgram m_program;
 
-
-            void renderTexture(Scene &scene) {
-                
+            vec4 computePlaneEquation(const vec3& normal, const vec3& point) {
+                float A = normal.x;
+                float B = normal.y;
+                float C = normal.z;
+                float D = -(A * point.x + B * point.y + C * point.z);
+                return vec4(A, B, C, D);
             }
 
     };

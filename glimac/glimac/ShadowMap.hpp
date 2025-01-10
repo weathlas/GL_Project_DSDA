@@ -19,6 +19,7 @@ namespace glimac {
 
     class ShadowMap {
 
+        // const float widthShadowMap = 16384, heightShadowMap = 16384;
         const float widthShadowMap = 4096, heightShadowMap = 4096;
 
         const GLchar *pathVSDepthName = "src/shaders/utils/shadow.vs.glsl";
@@ -30,13 +31,17 @@ namespace glimac {
 
         public:
             ShadowMap(const FilePath &applicationPath, const glimac::FilePath &vsFile, const glimac::FilePath &fsFile)
-                        : m_program(applicationPath, vsFile, fsFile, ProgramType::DEPTH_COMPUTE) {
+                        : m_program(applicationPath, vsFile, fsFile, ProgramType::DEPTH_COMPUTE), m_camera(0.0f, 0.0f, 0.0f, 0.0f, true, near_plane, far_plane){
+                // float bias = 0.0005;
+                // float bias = 0.0005;
                 float bias = 0.0005;
+                // bias = 0;
                 // // float bias = 0.005;
                 // // float bias = 0.05;
                 // float bias = -0.5;
                 m_lightProjToTexture = translate(mat4(1), vec3(0.5, 0.5, 0.5 - bias)) * scale(mat4(1), vec3(0.5));
-                m_lightProjection = glm::ortho(-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
+                // m_lightProjection = glm::ortho(-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
+                // m_lightProjection = glm::perspective(120.0*degToRad, 1.0, 15.0, 1000000.0);// (-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
             }
             
             ShadowMap(const FilePath &applicationPath) : ShadowMap(applicationPath, "src/shaders/utils/shadow.vs.glsl", "src/shaders/utils/shadow.fs.glsl") {}
@@ -53,12 +58,14 @@ namespace glimac {
                 glGenTextures(1, &m_depthMap);
                 glBindTexture(GL_TEXTURE_2D, m_depthMap);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
                 // white outside of the shadow map (no shadows)
                 float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
@@ -89,27 +96,56 @@ namespace glimac {
                 return init(widthShadowMap, heightShadowMap);
             }
 
-            void computeTransforms(LightStruct light) {
+            void computeTransforms(LightStruct light, FPSCamera &camera) {
                 m_lights.updateAt(0, light);
 
-                // set static for now for now
-                // m_lights.updatePosition(0, vec3(40, 40, -40));
+                auto pos = m_lights.getPositionAt(0);
+                auto center = vec3(0);
+
+                m_camera.makeLookAt(pos, center);
 
                 // light.pos is considered to be the direction of the light
-                // m_lightModelToView = glm::lookAt(m_lights.getPositionAt(0), vec3(0, 0, 0), vec3( 0.0f, 1.0f,  0.0f));
-                m_lightModelToView = glm::lookAt(m_lights.getPositionAt(0), vec3(0, 0, 0), vec3( 0.0f, 1.0f,  0.0f));
-                float bias = 0.005;
-                m_lightProjToTexture = translate(mat4(1), vec3(0.5, 0.5, 0.5 - bias)) * scale(mat4(1), vec3(0.5));
-                m_lightProjection = glm::ortho(-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
+                // m_lightModelToView = glm::lookAt(m_lights.getPositionAt(0), vec3(0), vec3( 0.0f, 1.0f,  0.0f));
 
-                m_lightSpaceMatrix = m_lightProjection * m_lightModelToView;
-                m_normalMatrix = glm::transpose(glm::inverse(m_lightModelToView));
+                // active this one to have a local lightmap
+                // m_lightModelToView = glm::lookAt(m_lights.getPositionAt(0)+camera.getPos(), camera.getPos(), vec3( 0.0f, 1.0f,  0.0f));
+
+                // auto camPos = vec4(camera.getPos(), 1);
+                // auto camPosRot = rotate(mat4(1), 225*degToRad, vec3(0, 1, 0)) * vec4(camPos.x, camPos.y, camPos.z, 1);
+                // + camPos.x - camPos.z;
+                // - camPos.x + camPos.z;
+
+                // sqrt()
+
+                // +x & -z == ok
+
+                // m_lightProjection = glm::ortho(-sizeSideShadowMap + camPos.z,
+                //                                +sizeSideShadowMap + camPos.x,
+                //                                -sizeSideShadowMap + camPos.z,
+                //                                +sizeSideShadowMap + camPos.x,
+                //                                near_plane, far_plane);
+                // m_lightProjection = glm::ortho(-camPos.x+camPos.z -sizeSideShadowMap,
+                //                                -camPos.x+camPos.z +sizeSideShadowMap,
+                //                                +camPos.x-camPos.z -sizeSideShadowMap,
+                //                                +camPos.x-camPos.z +sizeSideShadowMap,
+                //                                near_plane, far_plane);
+                // m_lightProjection = glm::ortho(+camPosRot.x*1.0f -sizeSideShadowMap,
+                //                                +camPosRot.x*1.0f +sizeSideShadowMap,
+                //                                -camPosRot.z*1.0f -sizeSideShadowMap,
+                //                                -camPosRot.z*1.0f +sizeSideShadowMap,
+                //                                near_plane, far_plane);
+
+                // m_lightSpaceMatrix = m_lightProjection * m_lightModelToView;
+                // m_normalMatrix = glm::transpose(glm::inverse(m_lightModelToView));
+                // m_shadowMatrix = m_lightProjToTexture * m_lightSpaceMatrix;
+                m_lightSpaceMatrix = m_camera.getProjMatrix() * m_camera.getViewMatrix();
+                // m_normalMatrix = glm::transpose(glm::inverse(m_lightModelToView));
                 m_shadowMatrix = m_lightProjToTexture * m_lightSpaceMatrix;
             }
 
 
 
-            void renderTexture(Scene &scene) {
+            void renderTexture(WindowManager& window, Scene &scene) {
                 if (!m_initialized) {
                     std::cout << "uninitialized shadow map" << std::endl;
                     return;
@@ -130,11 +166,15 @@ namespace glimac {
                 glClear(GL_DEPTH_BUFFER_BIT);
 
                 // programm.activate(camPos, m_normalMatrix, m_shadowMatrix, m_lights);
-                m_program.activate(lightPos, m_normalMatrix, m_shadowMatrix, m_lights);
+                m_program.activate(window, m_camera, m_shadowMatrix, m_lights, lightPos);
                 // Set uniforms and render scene from light's perspective
 
-                scene.drawScene(m_program, m_lightModelToView, m_lightProjection, m_normalMatrix, lightPos, m_shadowMatrix, m_lights, 0);
+                // glCullFace(GL_FRONT);
+
+                scene.drawScene(window, m_program, m_camera, m_shadowMatrix, m_lights, 0, lightPos);
                 // scene.drawScene(programm, m_lightSpaceMatrix, m_lightProjection, m_normalMatrix, camPos, m_shadowMatrix, m_lights, m_depthMap);
+
+                // glCullFace(GL_BACK);
 
                 glReadBuffer(GL_NONE);
 
@@ -157,6 +197,10 @@ namespace glimac {
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             }
 
+            vec3 getLightPos() {
+                return m_lights.getPositionAt(0);
+            }
+
             GLuint getDepthMap() {
                 return m_depthMap;
             }
@@ -170,19 +214,22 @@ namespace glimac {
             }
 
             mat4 getModelToLight() {
-                return mat4(m_lightModelToView);
+                return mat4(m_camera.getViewMatrix());
             }
 
             mat4 getLightProj() {
-                return mat4(m_lightProjection);
+                return mat4(m_camera.getProjMatrix());
             }
 
             mat4 getLightNormal() {
-                return mat4(m_normalMatrix);
+                return mat4(m_camera.getNormalMatrix());
             }
 
             
         private:
+
+            FPSCamera m_camera;
+
             GLuint m_width = 0;
             GLuint m_height = 0;
             GLuint m_depthMapFBO;
@@ -194,9 +241,9 @@ namespace glimac {
             mat4 m_shadowMatrix;
 
             mat4 m_lightSpaceMatrix;
-            mat4 m_lightModelToView;
-            mat4 m_lightProjection;
-            mat4 m_normalMatrix;
+            // mat4 m_lightModelToView;
+            // mat4 m_lightProjection;
+            // mat4 m_normalMatrix;
             Light m_lights;
     };
 

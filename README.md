@@ -1,5 +1,22 @@
 # OpenGL Project: Deux Salles, Deux Ambiances
 
+# compilation
+
+you should use VS with a cmake extension
+use gcc and choose the build type: Debug
+run *Cmake: Build*
+you can now run
+
+
+# if no VSC, this should work
+mkdir build
+cd build
+cmake ../
+cd ..
+mkdir bin
+make -j4
+
+
 # Shader:
 
 ## Room 1:

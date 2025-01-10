@@ -119,7 +119,7 @@ int main(int /*argc*/, char * argv[])
     GLuint imageFootNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/foot_normal.jpg");
 
     GLuint imageGlassDiffuseInt = bind_texture(applicationPath.dirPath() + "/assets/textures/frosted.png");
-    GLuint imageGlassNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/glass.jpg");
+    GLuint imageGlassNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/glass_normal.jpg");
 
     GLuint imageWhiteInt = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
     GLuint imageBenchInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bench.jpg");

@@ -95,7 +95,7 @@ int main(int /*argc*/, char * argv[])
 
     GLuint imageEarthInt = bind_texture(applicationPath.dirPath() + "/assets/textures/EarthMap.jpg");
     GLuint imageCloudInt = bind_texture(applicationPath.dirPath() + "/assets/textures/CloudMap.jpg");
-    GLuint imageMoonInt = bind_texture(applicationPath.dirPath() + "/assets/textures/MoonMap.jpg");
+    GLuint imageMoonInt  = bind_texture(applicationPath.dirPath() + "/assets/textures/MoonMap.jpg");
 
     GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/alpha-mayoris.jpg");
 
@@ -118,11 +118,38 @@ int main(int /*argc*/, char * argv[])
     GLuint imageFootRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/foot_rougness.jpg");
     GLuint imageFootNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/foot_normal.jpg");
 
+    GLuint imageGlassDiffuseInt = bind_texture(applicationPath.dirPath() + "/assets/textures/frosted.png");
+    GLuint imageGlassNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/glass.jpg");
+
     GLuint imageWhiteInt = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
-    // GLuint imageGlassInt = bind_texture(applicationPath.dirPath() + "/assets/textures/GlassFinalAlpha.png");
-    GLuint imageGlassInt = bind_texture(applicationPath.dirPath() + "/assets/textures/frosted.png");
     GLuint imageBenchInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bench.jpg");
     GLuint imageDefaultNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/normal.png");
+
+    std::vector<GLuint*> allTextures = {
+        &imageEarthInt,
+        &imageCloudInt,
+        &imageMoonInt,
+        &imageSkyboxInt,
+        &imageBrickDiffuseInt,
+        &imageBrickRoughnessInt,
+        &imageBrickNormalInt,
+        &imageHouseDiffuseInt,
+        &imageHouseRoughnessInt,
+        &imageHouseNormalInt,
+        &imageStatueInt,
+        &imageCollumnDiffuseInt,
+        &imageCollumnRoughnessInt,
+        &imageCollumnNormalInt,
+        &imageFootDiffuseInt,
+        &imageFootRoughnessInt,
+        &imageFootNormalInt,
+        &imageGlassDiffuseInt,
+        &imageGlassNormalInt,
+        &imageWhiteInt,
+        &imageBenchInt,
+        &imageDefaultNormalInt
+    };
+
 
     glimac::Sphere sphere = glimac::Sphere(1, 32, 16);
     glimac::Sphere sphereInverted = glimac::Sphere(-1, 32, 16);
@@ -142,11 +169,11 @@ int main(int /*argc*/, char * argv[])
     auto houseInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cottage", imageHouseDiffuseInt, imageHouseRoughnessInt, imageHouseNormalInt);
     auto statueInstances = std::make_shared<Instance>(applicationPath.dirPath(), "statue", imageStatueInt, 0, imageDefaultNormalInt);
     auto footInstances = std::make_shared<Instance>(applicationPath.dirPath(), "foot", imageFootDiffuseInt, imageFootRoughnessInt, imageFootNormalInt);
-    auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassInt, 0, imageDefaultNormalInt);
-    auto buttonInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
+    auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassDiffuseInt, 0, imageGlassNormalInt);
+    auto buttonInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, imageWhiteInt, imageDefaultNormalInt);
     auto benchInstances = std::make_shared<Instance>(applicationPath.dirPath(), "bench", imageBenchInt, 0, imageDefaultNormalInt);
 
-    auto domeGlassInstances = std::make_shared<Instance>(applicationPath.dirPath(), "domeGlass", imageGlassInt, 0, imageDefaultNormalInt);
+    auto domeGlassInstances = std::make_shared<Instance>(applicationPath.dirPath(), "domeGlass", imageGlassDiffuseInt, 0, imageGlassNormalInt);
     auto domeWireInstances = std::make_shared<Instance>(applicationPath.dirPath(), "domeWire", imageWhiteInt, 0, imageDefaultNormalInt);
     // auto debugCubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube", 0, 0);
     // auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cube", imageWhiteInt, 0);
@@ -911,19 +938,23 @@ int main(int /*argc*/, char * argv[])
 
     shadowMap.~ShadowMap();
 
-    glDeleteTextures(1, &imageEarthInt);
-    glDeleteTextures(1, &imageCloudInt);
-    glDeleteTextures(1, &imageMoonInt);
-    glDeleteTextures(1, &imageSkyboxInt);
-    glDeleteTextures(1, &imageBrickDiffuseInt);
-    glDeleteTextures(1, &imageBrickRoughnessInt);
-    glDeleteTextures(1, &imageHouseDiffuseInt);
-    glDeleteTextures(1, &imageHouseRoughnessInt);
-    glDeleteTextures(1, &imageStatueInt);
-    glDeleteTextures(1, &imageCollumnDiffuseInt);
-    glDeleteTextures(1, &imageFootDiffuseInt);
-    glDeleteTextures(1, &imageWhiteInt);
-    glDeleteTextures(1, &imageGlassInt);
+    for(auto texture : allTextures) {
+        glDeleteTextures(1, texture);
+    }
+
+    // glDeleteTextures(1, &imageEarthInt);
+    // glDeleteTextures(1, &imageCloudInt);
+    // glDeleteTextures(1, &imageMoonInt);
+    // glDeleteTextures(1, &imageSkyboxInt);
+    // glDeleteTextures(1, &imageBrickDiffuseInt);
+    // glDeleteTextures(1, &imageBrickRoughnessInt);
+    // glDeleteTextures(1, &imageHouseDiffuseInt);
+    // glDeleteTextures(1, &imageHouseRoughnessInt);
+    // glDeleteTextures(1, &imageStatueInt);
+    // glDeleteTextures(1, &imageCollumnDiffuseInt);
+    // glDeleteTextures(1, &imageFootDiffuseInt);
+    // glDeleteTextures(1, &imageWhiteInt);
+    // glDeleteTextures(1, &imageGlassDiffuseInt);
 
     win.close();
     return 0;

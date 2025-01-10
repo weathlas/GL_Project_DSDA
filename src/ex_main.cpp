@@ -47,28 +47,6 @@ void clear_screen() {
 int main(int /*argc*/, char * argv[])
 {
 
-
-    // vec3 point = vec3(1, 1, -1);
-
-    // vec3 pos = vec3(0, 0, 0);
-
-    // // trouver le vecteur direction entre cam et point
-    // auto dir = normalize(pos - point);
-
-    // // trouver l'angle phy sur l'axe y
-    // float phy = atan2(dot(glm::cross(vec3(0, 0, -1), dir), vec3(0, 1, 0)), glm::dot(vec3(0, 0, -1), dir));
-    
-    // auto otherNorm = glm::cross(dir, vec3(0, -1, 0));
-    
-    // // trouver l'angle theta sur l'axe x
-    // float theta = atan2(dot(glm::cross(normalize(vec3(dir.x, 0, dir.z)), dir), otherNorm), glm::dot(normalize(vec3(dir.x, 0, dir.z)), dir));
-
-
-    // std::cout << phy * radToDeg << " / " << theta * radToDeg << std::endl;
-
-
-    // return 0;
-
     /* Initialize the library */
     if (!glfwInit()) {
         return -1;
@@ -118,20 +96,28 @@ int main(int /*argc*/, char * argv[])
     GLuint imageEarthInt = bind_texture(applicationPath.dirPath() + "/assets/textures/EarthMap.jpg");
     GLuint imageCloudInt = bind_texture(applicationPath.dirPath() + "/assets/textures/CloudMap.jpg");
     GLuint imageMoonInt = bind_texture(applicationPath.dirPath() + "/assets/textures/MoonMap.jpg");
-    // GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/hl2.png");
-    // GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/sky.jpg");
-    // GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/Omega-Canis.png");
+
     GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/alpha-mayoris.jpg");
-    // GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/scr00005.jpg");
-    GLuint imageBrickInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_internet.jpg");
-    GLuint imageBrickRoughInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_roughness.jpg");
-    GLuint imageBrickNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_normal.jpg");
-    GLuint imageHouseDiffuseInt = bind_texture(applicationPath.dirPath() + "/assets/textures/cottage_diffuse.png");
+
+    GLuint imageBrickDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_internet.jpg");
+    GLuint imageBrickRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_roughness.jpg");
+    GLuint imageBrickNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_normal.jpg");
+
+    GLuint imageHouseDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/cottage_diffuse.png");
     GLuint imageHouseRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/cottage_roughness.jpg");
-    GLuint imageHouseNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/cottage_normal.jpg");
+    GLuint imageHouseNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/cottage_normal.jpg");
+
     GLuint imageStatueInt = bind_texture(applicationPath.dirPath() + "/assets/textures/statue.jpg");
-    GLuint imageMarbleInt = bind_texture(applicationPath.dirPath() + "/assets/textures/marble.jpg");
-    GLuint imageMarbleFootDiffuseInt = bind_texture(applicationPath.dirPath() + "/assets/textures/MarbleFoot.jpg");
+
+    GLuint imageCollumnDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/marble.jpg");
+    GLuint imageCollumnRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/collumn_roughness.jpg");
+    GLuint imageCollumnNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/collumn_normal.jpg");
+
+
+    GLuint imageFootDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/MarbleFoot.jpg");
+    GLuint imageFootRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/foot_rougness.jpg");
+    GLuint imageFootNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/foot_normal.jpg");
+
     GLuint imageWhiteInt = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
     // GLuint imageGlassInt = bind_texture(applicationPath.dirPath() + "/assets/textures/GlassFinalAlpha.png");
     GLuint imageGlassInt = bind_texture(applicationPath.dirPath() + "/assets/textures/frosted.png");
@@ -142,18 +128,21 @@ int main(int /*argc*/, char * argv[])
     glimac::Sphere sphereInverted = glimac::Sphere(-1, 32, 16);
     glimac::Sphere sphereLowPoly = glimac::Sphere(1, 8, 4);
     glimac::Sphere sphereLowPolyParticule = glimac::Sphere(1, 4, 2);
+
+    auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
     auto earthInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageEarthInt, imageCloudInt, imageDefaultNormalInt);
+    auto sunInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
+
     auto particulesInstances = std::make_shared<Instance>(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageMoonInt, 0, imageDefaultNormalInt);
     auto lightInstances = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
     auto lightInstances2 = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
-    auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
-    auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda", imageBrickInt, imageBrickRoughInt, imageBrickNormalInt);
-    auto collumnInstances = std::make_shared<Instance>(applicationPath.dirPath(), "collumn3", imageMarbleInt, 0, imageDefaultNormalInt);
+
+    auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda", imageBrickDiffuseInt, imageBrickRoughnessInt, imageBrickNormalInt);
+    auto collumnInstances = std::make_shared<Instance>(applicationPath.dirPath(), "collumn3", imageCollumnDiffuseInt, imageCollumnRoughnessInt, imageCollumnNormalInt);
     auto houseInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cottage", imageHouseDiffuseInt, imageHouseRoughnessInt, imageHouseNormalInt);
     auto statueInstances = std::make_shared<Instance>(applicationPath.dirPath(), "statue", imageStatueInt, 0, imageDefaultNormalInt);
-    auto footInstances = std::make_shared<Instance>(applicationPath.dirPath(), "foot", imageMarbleFootDiffuseInt, 0, imageDefaultNormalInt);
+    auto footInstances = std::make_shared<Instance>(applicationPath.dirPath(), "foot", imageFootDiffuseInt, imageFootRoughnessInt, imageFootNormalInt);
     auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassInt, 0, imageDefaultNormalInt);
-    auto sunInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     auto buttonInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     auto benchInstances = std::make_shared<Instance>(applicationPath.dirPath(), "bench", imageBenchInt, 0, imageDefaultNormalInt);
 
@@ -163,11 +152,13 @@ int main(int /*argc*/, char * argv[])
     // auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "cube", imageWhiteInt, 0);
 
     auto shelveInstances = std::make_shared<Instance>(applicationPath.dirPath(), "shelve", imageMoonInt, 0, imageDefaultNormalInt);
-    auto titleInstances = std::make_shared<Instance>(applicationPath.dirPath(), "title", imageBrickInt, 0, imageDefaultNormalInt);
-    auto spaceShipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "Farragut", imageBrickInt, 0, imageDefaultNormalInt);
+    auto titleInstances = std::make_shared<Instance>(applicationPath.dirPath(), "title", imageBrickDiffuseInt, 0, imageDefaultNormalInt);
+    auto spaceShipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "Farragut", imageBrickDiffuseInt, 0, imageDefaultNormalInt);
     auto planeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "plane", imageWhiteInt, 0, imageDefaultNormalInt);
     auto citadelInstances = std::make_shared<Instance>(applicationPath.dirPath(), "citadel", imageStatueInt, 0, imageDefaultNormalInt);
     auto mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", imageWhiteInt, 0, imageDefaultNormalInt);
+
+    auto shipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "ship", imageWhiteInt, 0, imageDefaultNormalInt);
 
     Scene scene;
 
@@ -188,6 +179,7 @@ int main(int /*argc*/, char * argv[])
         // scene.addInstance(buttonInstances);
         scene.addInstance(domeWireInstances);
         scene.addInstance(benchInstances);
+        scene.addInstance(shipInstances);
         // scene.addInstance(mirrorInstances);
 
         // transparents objects
@@ -245,6 +237,8 @@ int main(int /*argc*/, char * argv[])
         spaceShipInstances.get()->add(Transform(vec3(10.5, 5, 0), vec3(75*degToRad, 0, 15*degToRad), vec3(0.1f)));
         // spaceShipInstances.get()->add(Transform(vec3(-80, 30, 128), vec3(0, 60*degToRad, 15*degToRad), vec3(3.0f)));
         spaceShipInstances.get()->add(Transform(vec3(0, 100, 1030), vec3(0, 30*degToRad, 0), vec3(20.0f)));
+
+        shipInstances.get()->add(Transform(vec3(0, 3.5, 0), vec3(-60*degToRad, 215*degToRad, 0), vec3(0.3f)));
 
         domeGlassInstances.get()->add(Transform());
         domeWireInstances.get()->add(Transform());
@@ -586,11 +580,11 @@ int main(int /*argc*/, char * argv[])
             lightInstances.get()->updatePosition(2, vec3(-10.5+5*cos(timer/1.0), 1, 5*sin(timer/1.0)));
             lightInstances.get()->compute(2);
 
-            if (fromMirror) {
-                lightsRoomLeft.updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
-                lightInstances.get()->updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
-                lightInstances.get()->compute(1);
-            }
+            // if (fromMirror) {
+            //     lightsRoomLeft.updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
+            //     lightInstances.get()->updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
+            //     lightInstances.get()->compute(1);
+            // }
 
             fpsCam.shake(0.0f);
             if (animateSwitch) {
@@ -718,7 +712,7 @@ int main(int /*argc*/, char * argv[])
 
 
 
-            if (fromMirror && false) {
+            if (fromMirror) {
                 auto mirrorCam = mirror.getCamera();
                 auto mirrorTexjMatrix = mirror.getMirrorProj();
 
@@ -921,13 +915,13 @@ int main(int /*argc*/, char * argv[])
     glDeleteTextures(1, &imageCloudInt);
     glDeleteTextures(1, &imageMoonInt);
     glDeleteTextures(1, &imageSkyboxInt);
-    glDeleteTextures(1, &imageBrickInt);
-    glDeleteTextures(1, &imageBrickRoughInt);
+    glDeleteTextures(1, &imageBrickDiffuseInt);
+    glDeleteTextures(1, &imageBrickRoughnessInt);
     glDeleteTextures(1, &imageHouseDiffuseInt);
     glDeleteTextures(1, &imageHouseRoughnessInt);
     glDeleteTextures(1, &imageStatueInt);
-    glDeleteTextures(1, &imageMarbleInt);
-    glDeleteTextures(1, &imageMarbleFootDiffuseInt);
+    glDeleteTextures(1, &imageCollumnDiffuseInt);
+    glDeleteTextures(1, &imageFootDiffuseInt);
     glDeleteTextures(1, &imageWhiteInt);
     glDeleteTextures(1, &imageGlassInt);
 

@@ -9,12 +9,12 @@ uniform mat4 uMVMatrix;
 uniform mat4 uNormalMatrix;
 uniform mat4 uModelMatrix;
 
-out vec3 wPosition;
+out vec4 wPosition;
 
 void main() {
 
     vec4 output = uMVPMatrix * vec4(aVertexPosition, 1);
     gl_Position = output;
 
-    wPosition = (uModelMatrix * vec4(aVertexPosition, 1)).xyz;
+    wPosition = (uModelMatrix * vec4(aVertexPosition, 1));
 }

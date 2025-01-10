@@ -102,6 +102,8 @@ namespace glimac {
             bool m_inJump;
             bool m_jumped;
 
+            bool m_allowFlyMode;
+
             bool m_canFly;
 
             vec3 m_speed;
@@ -186,37 +188,39 @@ namespace glimac {
 
 
                 // std::cout << m_canFly << " " << m_isFlying << " " << m_isGrounded << " " <<  m_isFlying << " " << m_verticalSpeed <<" " << ((keys & spacebar) > 0u) << " " << m_FootPosition.y << std::endl;
-                if((m_canFly || m_isFlying) && (m_verticalSpeed >= -playerGravity && (keys & spacebar))) {
+                if(m_allowFlyMode) {
+                    if((m_canFly || m_isFlying) && (m_verticalSpeed >= -playerGravity && (keys & spacebar))) {
 
-                    // if the player jumped in the air and falling while pressing the spacebar
-                    if (!m_isFlying && !m_isGrounded) {
-                        m_isFlying = true;
-                        m_verticalSpeed = 0.0f;
-                        // m_inJump = false;
-                        m_canFly = false;
-                    }
-                    else {
-
-                        // // the player is flying and 
-                        if((m_canFly && m_isFlying && m_verticalSpeed > -playerGravity) || (m_isGrounded && (!(keys & spacebar)))) {
-                            std::cout <<"normal"<<std::endl;
-                            m_isFlying = false;
+                        // if the player jumped in the air and falling while pressing the spacebar
+                        if (!m_isFlying && !m_isGrounded) {
+                            m_isFlying = true;
                             m_verticalSpeed = 0.0f;
+                            // m_inJump = false;
                             m_canFly = false;
                         }
+                        else {
+
+                            // // the player is flying and 
+                            if((m_canFly && m_isFlying && m_verticalSpeed > -playerGravity) || (m_isGrounded && (!(keys & spacebar)))) {
+                                std::cout <<"normal"<<std::endl;
+                                m_isFlying = false;
+                                m_verticalSpeed = 0.0f;
+                                m_canFly = false;
+                            }
+                        }
+
                     }
 
-                }
-
-                if (m_isFlying) {
-                    if(m_isGrounded && (keys & ctrlKey)) {
-                        std::cout <<"gfdgdfgfgdf"<<std::endl;
-                        m_verticalSpeed = 0.0f;
-                        m_isFlying = false;
-                        m_canFly = false;
-                    }
-                    else {
-                        fly((((keys & spacebar) > 0u) - ((keys & ctrlKey) > 0u)) * playerJumpSpeed * ((keys & shiftKey) ? runMultiplier : 1.0), deltaT);
+                    if (m_isFlying) {
+                        if(m_isGrounded && (keys & ctrlKey)) {
+                            std::cout <<"gfdgdfgfgdf"<<std::endl;
+                            m_verticalSpeed = 0.0f;
+                            m_isFlying = false;
+                            m_canFly = false;
+                        }
+                        else {
+                            fly((((keys & spacebar) > 0u) - ((keys & ctrlKey) > 0u)) * playerJumpSpeed * ((keys & shiftKey) ? runMultiplier : 1.0), deltaT);
+                        }
                     }
                 }
 
@@ -444,7 +448,7 @@ namespace glimac {
                     direction = normalize(direction);
                 }
                 auto newSpeed = m_speed + playerSmoothAccel * (m_LeftVector * direction.x * speed.x + m_GroundFrontVector * direction.y * speed.y) * deltaT;
-                auto speedLength = length(newSpeed);
+                // auto speedLength = length(newSpeed);
                 // if(speedLength > walkSpeed) {
                 //     m_speed -= (speedLength - walkSpeed) * playerSmoothAccel;
                 // }

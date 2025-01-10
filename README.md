@@ -1,5 +1,32 @@
 # OpenGL Project: Deux Salles, Deux Ambiances
 
+# Shader:
+
+## Room 1:
+
+- Diffuse maps
+- Roughness maps
+- Normal maps
+
+- Diffuse lighting
+- Specular lighting
+
+- small RGB corner effect
+
+## Room 2:
+
+- voronoi shader based on the distance of 200 lights
+
+- transparance
+- mirroir
+
+
+
+# Bonus
+
+
+
+
 # Used 3D models
 
 [boeing 787-8 3D model](https://free3d.com/3d-model/boeing-787-8-thomson-54662.html)

@@ -73,7 +73,7 @@ int main(int /*argc*/, char * argv[])
     
     glimac::FilePath applicationPath(argv[0]);
 
-    BasicProgram programRoom(applicationPath, "src/shaders/ground/ground.vs.glsl", "src/shaders/ground/ground.fs.glsl");
+    BasicProgram programRoom(applicationPath, "src/shaders/roomOne/ground.vs.glsl", "src/shaders/roomOne/ground.fs.glsl");
     // BasicProgram programRoom(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
     BasicProgram programSimpleDepth(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
     BasicProgram programMirrorTex(applicationPath, "src/shaders/utils/mirror_texture_test.vs.glsl", "src/shaders/utils/mirror_texture_test.fs.glsl");
@@ -84,7 +84,7 @@ int main(int /*argc*/, char * argv[])
     BasicProgram programNormal(applicationPath, "src/shaders/utils/normal.vs.glsl", "src/shaders/utils/normal.fs.glsl", ProgramType::NONE);
     BasicProgram programDepth(applicationPath, "src/shaders/utils/depth.vs.glsl", "src/shaders/utils/depth.fs.glsl", ProgramType::NONE);
     BasicProgram programLight(applicationPath, "src/shaders/light/light.vs.glsl", "src/shaders/light/light.fs.glsl", ProgramType::LIGHTS);
-    BasicProgram programVoronoi(applicationPath, "src/shaders/utils/voronoi.vs.glsl", "src/shaders/utils/voronoi.fs.glsl", ProgramType::LIGHTS);
+    BasicProgram programVoronoi(applicationPath, "src/shaders/roomTwo/voronoi.vs.glsl", "src/shaders/roomTwo/voronoi.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programSun(applicationPath, "src/shaders/utils/white.vs.glsl", "src/shaders/utils/white.fs.glsl", ProgramType::NONE);
     BasicProgram programMirror(applicationPath, "src/shaders/utils/mirror.vs.glsl", "src/shaders/utils/mirror.fs.glsl");
     BasicProgram programButtons(applicationPath, "src/shaders/utils/buttons.vs.glsl", "src/shaders/utils/buttons.fs.glsl");
@@ -185,7 +185,7 @@ int main(int /*argc*/, char * argv[])
     auto citadelInstances = std::make_shared<Instance>(applicationPath.dirPath(), "citadel", imageStatueInt, 0, imageDefaultNormalInt);
     auto mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", imageWhiteInt, 0, imageDefaultNormalInt);
 
-    auto shipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "ship", imageWhiteInt, 0, imageDefaultNormalInt);
+    // auto shipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "ship", imageWhiteInt, 0, imageDefaultNormalInt);
 
     Scene scene;
 
@@ -206,7 +206,7 @@ int main(int /*argc*/, char * argv[])
         // scene.addInstance(buttonInstances);
         scene.addInstance(domeWireInstances);
         scene.addInstance(benchInstances);
-        scene.addInstance(shipInstances);
+        // scene.addInstance(shipInstances);
         // scene.addInstance(mirrorInstances);
 
         // transparents objects
@@ -265,7 +265,7 @@ int main(int /*argc*/, char * argv[])
         // spaceShipInstances.get()->add(Transform(vec3(-80, 30, 128), vec3(0, 60*degToRad, 15*degToRad), vec3(3.0f)));
         spaceShipInstances.get()->add(Transform(vec3(0, 100, 1030), vec3(0, 30*degToRad, 0), vec3(20.0f)));
 
-        shipInstances.get()->add(Transform(vec3(0, 3.5, 0), vec3(-60*degToRad, 215*degToRad, 0), vec3(0.3f)));
+        // shipInstances.get()->add(Transform(vec3(0, 3.5, 0), vec3(-60*degToRad, 215*degToRad, 0), vec3(0.3f)));
 
         domeGlassInstances.get()->add(Transform());
         domeWireInstances.get()->add(Transform());

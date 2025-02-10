@@ -75,22 +75,22 @@ int main(int /*argc*/, char * argv[])
 
     BasicProgram programRoom(applicationPath, "src/shaders/roomOne/ground.vs.glsl", "src/shaders/roomOne/ground.fs.glsl");
     // BasicProgram programRoom(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
-    BasicProgram programSimpleDepth(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
-    BasicProgram programMirrorTex(applicationPath, "src/shaders/utils/mirror_texture_test.vs.glsl", "src/shaders/utils/mirror_texture_test.fs.glsl");
+    // BasicProgram programSimpleDepth(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
+    // BasicProgram programMirrorTex(applicationPath, "src/shaders/utils/mirror_texture_test.vs.glsl", "src/shaders/utils/mirror_texture_test.fs.glsl");
     // BasicProgram programRoom(applicationPath, "src/shaders/utils/pattern.vs.glsl", "src/shaders/utils/pattern.fs.glsl");
     BasicProgram programShadow(applicationPath, "src/shaders/utils/shadow.vs.glsl", "src/shaders/utils/shadow.fs.glsl", ProgramType::DEPTH_COMPUTE);
-    BasicProgram programShadowTest(applicationPath, "src/shaders/utils/check_shadow.vs.glsl", "src/shaders/utils/check_shadow.fs.glsl");
+    // BasicProgram programShadowTest(applicationPath, "src/shaders/utils/check_shadow.vs.glsl", "src/shaders/utils/check_shadow.fs.glsl");
     BasicProgram programSky(applicationPath, "src/shaders/skybox/skybox_shader.vs.glsl", "src/shaders/skybox/skybox_shader.fs.glsl", ProgramType::TEXTURE);
-    BasicProgram programNormal(applicationPath, "src/shaders/utils/normal.vs.glsl", "src/shaders/utils/normal.fs.glsl", ProgramType::NONE);
-    BasicProgram programDepth(applicationPath, "src/shaders/utils/depth.vs.glsl", "src/shaders/utils/depth.fs.glsl", ProgramType::NONE);
+    // BasicProgram programNormal(applicationPath, "src/shaders/utils/normal.vs.glsl", "src/shaders/utils/normal.fs.glsl", ProgramType::NONE);
+    // BasicProgram programDepth(applicationPath, "src/shaders/utils/depth.vs.glsl", "src/shaders/utils/depth.fs.glsl", ProgramType::NONE);
     BasicProgram programLight(applicationPath, "src/shaders/light/light.vs.glsl", "src/shaders/light/light.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programVoronoi(applicationPath, "src/shaders/roomTwo/voronoi.vs.glsl", "src/shaders/roomTwo/voronoi.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programSun(applicationPath, "src/shaders/utils/white.vs.glsl", "src/shaders/utils/white.fs.glsl", ProgramType::NONE);
-    BasicProgram programMirror(applicationPath, "src/shaders/utils/mirror.vs.glsl", "src/shaders/utils/mirror.fs.glsl");
+    BasicProgram programMirror(applicationPath, "src/shaders/mirror/mirror.vs.glsl", "src/shaders/mirror/mirror.fs.glsl");
     BasicProgram programButtons(applicationPath, "src/shaders/utils/buttons.vs.glsl", "src/shaders/utils/buttons.fs.glsl");
-    std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programMirrorTex, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
+    std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programRoom, &programSky, &programLight, &programButtons};
 
-    std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom, &programNormal, &programDepth, &programShadow};
+    std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom, &programShadow};
     // std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programMirrorTex, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
 
     GLuint imageEarthInt = bind_texture(applicationPath.dirPath() + "/assets/textures/EarthMap.jpg");
@@ -99,7 +99,7 @@ int main(int /*argc*/, char * argv[])
 
     GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/alpha-mayoris.jpg");
 
-    GLuint imageBrickDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_internet.jpg");
+    GLuint imageBrickDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_diffuse.jpg");
     GLuint imageBrickRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_roughness.jpg");
     GLuint imageBrickNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_normal.jpg");
 
@@ -109,20 +109,23 @@ int main(int /*argc*/, char * argv[])
 
     GLuint imageStatueInt = bind_texture(applicationPath.dirPath() + "/assets/textures/statue.jpg");
 
-    GLuint imageCollumnDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/marble.jpg");
+    GLuint imageCollumnDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/collumn_diffuse.jpg");
     GLuint imageCollumnRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/collumn_roughness.jpg");
     GLuint imageCollumnNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/collumn_normal.jpg");
 
-
-    GLuint imageFootDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/MarbleFoot.jpg");
+    GLuint imageFootDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/foot_diffuse.jpg");
     GLuint imageFootRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/foot_rougness.jpg");
     GLuint imageFootNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/foot_normal.jpg");
 
-    GLuint imageGlassDiffuseInt = bind_texture(applicationPath.dirPath() + "/assets/textures/frosted.png");
-    GLuint imageGlassNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/glass_normal.jpg");
+    GLuint imageGlassDiffuseInt = bind_texture(applicationPath.dirPath() + "/assets/textures/glass_diffuse.png");
+    GLuint imageGlassNormalInt  = bind_texture(applicationPath.dirPath() + "/assets/textures/glass_normal.jpg");
+
+    GLuint imageBenchDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/bench_diffuse.jpg");
+    GLuint imageBenchRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bench_roughness.jpg");
+    GLuint imageBenchNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/bench_normal.jpg");
+
 
     GLuint imageWhiteInt = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
-    GLuint imageBenchInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bench.jpg");
     GLuint imageDefaultNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/normal.png");
 
     std::vector<GLuint*> allTextures = {
@@ -130,23 +133,33 @@ int main(int /*argc*/, char * argv[])
         &imageCloudInt,
         &imageMoonInt,
         &imageSkyboxInt,
+
         &imageBrickDiffuseInt,
         &imageBrickRoughnessInt,
         &imageBrickNormalInt,
+
         &imageHouseDiffuseInt,
         &imageHouseRoughnessInt,
         &imageHouseNormalInt,
+
         &imageStatueInt,
+
         &imageCollumnDiffuseInt,
         &imageCollumnRoughnessInt,
         &imageCollumnNormalInt,
+
         &imageFootDiffuseInt,
         &imageFootRoughnessInt,
         &imageFootNormalInt,
+
         &imageGlassDiffuseInt,
         &imageGlassNormalInt,
+
+        &imageBenchDiffuseInt,
+        &imageBenchRoughnessInt,
+        &imageBenchNormalInt,
+
         &imageWhiteInt,
-        &imageBenchInt,
         &imageDefaultNormalInt
     };
 
@@ -171,7 +184,7 @@ int main(int /*argc*/, char * argv[])
     auto footInstances = std::make_shared<Instance>(applicationPath.dirPath(), "foot", imageFootDiffuseInt, imageFootRoughnessInt, imageFootNormalInt);
     auto cubeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassDiffuseInt, 0, imageGlassNormalInt);
     auto buttonInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, imageWhiteInt, imageDefaultNormalInt);
-    auto benchInstances = std::make_shared<Instance>(applicationPath.dirPath(), "bench", imageBenchInt, 0, imageDefaultNormalInt);
+    auto benchInstances = std::make_shared<Instance>(applicationPath.dirPath(), "bench", imageBenchDiffuseInt, imageBenchRoughnessInt, imageBenchNormalInt);
 
     auto domeGlassInstances = std::make_shared<Instance>(applicationPath.dirPath(), "domeGlass", imageGlassDiffuseInt, 0, imageGlassNormalInt);
     auto domeWireInstances = std::make_shared<Instance>(applicationPath.dirPath(), "domeWire", imageWhiteInt, 0, imageDefaultNormalInt);
@@ -183,7 +196,8 @@ int main(int /*argc*/, char * argv[])
     auto spaceShipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "Farragut", imageBrickDiffuseInt, 0, imageDefaultNormalInt);
     auto planeInstances = std::make_shared<Instance>(applicationPath.dirPath(), "plane", imageWhiteInt, 0, imageDefaultNormalInt);
     auto citadelInstances = std::make_shared<Instance>(applicationPath.dirPath(), "citadel", imageStatueInt, 0, imageDefaultNormalInt);
-    auto mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", imageWhiteInt, 0, imageDefaultNormalInt);
+    // auto mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "mirrorGeometry", imageGlassDiffuseInt, imageWhiteInt, imageGlassNormalInt);
+    auto mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "circle", imageGlassDiffuseInt, imageWhiteInt, imageGlassNormalInt);
 
     // auto shipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "ship", imageWhiteInt, 0, imageDefaultNormalInt);
 
@@ -411,10 +425,10 @@ int main(int /*argc*/, char * argv[])
     {
         const float lightSize = 0.05f;
 
-        lightsRoomLeft.add(LightStruct(vec3(-1.25, 1.25, -3.65), vec3(1, 0.6, 0.2), vec3(15, 1, LightType::pointLight)));
+        lightsRoomLeft.add(LightStruct(vec3(-1.25, 1.25, -3.65), vec3(1, 0.6, 0.2), vec3(7, 1, LightType::pointLight)));
         lightInstances.get()->add(Transform(vec3(-1.25, 1.25, -3.65), vec3(0), vec3(lightSize)));
 
-        lightsRoomLeft.add(LightStruct(vec3(-13, 0.25, 3.4), vec3(1, 0.1, 0.1), vec3(15, 1, LightType::pointLight)));
+        lightsRoomLeft.add(LightStruct(vec3(-13, 0.25, 3.4), vec3(1, 0.1, 0.1), vec3(7, 1, LightType::pointLight)));
         lightInstances.get()->add(Transform(vec3(-13, 0.25, 3.4), vec3(0), vec3(lightSize)));
 
         lightsRoomLeft.add( LightStruct(vec3(-10, 1, 0), vec3(0.2, 1, 0.5), vec3(5, 1, LightType::pointLight)));
@@ -428,6 +442,18 @@ int main(int /*argc*/, char * argv[])
         lightInstances.get()->add(Transform(vec3(-0.5, 2, -1.85), vec3(0), vec3(lightSize)));
         lightInstances.get()->add(Transform(vec3(0.5, 2, 1.85), vec3(0), vec3(lightSize)));
         lightInstances.get()->add(Transform(vec3(-0.5, 2, 1.85), vec3(0), vec3(lightSize)));
+
+        lightsRoomLeft.add( LightStruct(vec3(-16.4192, 10.25, 3.26514), vec3(1.0, 0.3, 0.2), vec3(10, 1, LightType::pointLight)));
+        lightInstances.get()->add(Transform(vec3(-16.4192, 10.25, 3.26514), vec3(0), vec3(lightSize)));
+
+        lightsRoomLeft.add( LightStruct(vec3(-16.4192, 10.25, -3.26514), vec3(0.3, 1.0, 0.2), vec3(10, 1, LightType::pointLight)));
+        lightInstances.get()->add(Transform(vec3(-16.4192, 10.25, -3.26514), vec3(0), vec3(lightSize)));
+
+        lightsRoomLeft.add( LightStruct(vec3(-9.85781, 10.25, -3.26514), vec3(0.2, 0.3, 1.0), vec3(10, 1, LightType::pointLight)));
+        lightInstances.get()->add(Transform(vec3(-9.85781, 10.25, -3.26514), vec3(0), vec3(lightSize)));
+
+        lightsRoomLeft.add( LightStruct(vec3(-9.85781, 10.25, 3.26514), vec3(0.8, 0.8, 1.0), vec3(10, 1, LightType::pointLight)));
+        lightInstances.get()->add(Transform(vec3(-9.85781, 10.25, 3.26514), vec3(0), vec3(lightSize)));
 
         // on the one statue in room 1
         lightsRoomLeft.add(LightStruct(vec3(-10.5, 2.5, -11.25), vec3(0.8, 0.9, 1), vec3(15, 1, LightType::pointLight)));
@@ -451,7 +477,7 @@ int main(int /*argc*/, char * argv[])
         // int numberBeforeRandLights = lightInstances.get()->size();
 
         // int nbRandLight = 1;
-        int nbRandLight = 200;
+        int nbRandLight = 150;
 
         for (int i = 0; i < nbRandLight; i++) {
             vec3 pos = vec3(linearRand(1.0f, 20.0f), linearRand(.1f, 1.0f), linearRand(-11.0f, 11.0f));
@@ -522,7 +548,7 @@ int main(int /*argc*/, char * argv[])
 
     std::vector<Button> buttons;
 
-    for (int i = 0; i < 5; i++) {
+    for (size_t i = 0; i < allRoomTwoPrograms.size(); i++) {
         // -1.25, 1.25, -3.65
         buttons.push_back(Button(vec3(-1.14, 0.24+0.372*i, -3.78), 0.05));
         buttonInstances.get()->add(Transform(buttons.at(i).pos(), vec3(), vec3(0.05)));
@@ -563,16 +589,16 @@ int main(int /*argc*/, char * argv[])
 
             // Skyboc objects update
             {
-                earthInstances.get()->updatePosition(0, vec3(1500, 1500, 1500) + currentCamPos);
+                earthInstances.get()->updatePosition(0, vec3(1500, 1500, 1500) + fpsCam.getPos());
                 earthInstances.get()->computeLast();
 
-                sunInstances.get()->updatePosition(0, vec3(1500, 1500, -1500) + currentCamPos);
+                sunInstances.get()->updatePosition(0, vec3(1500, 1500, -1500) + fpsCam.getPos());
                 sunInstances.get()->computeLast();
 
-                skyboxInstances.get()->updatePosition(0, currentCamPos);
+                skyboxInstances.get()->updatePosition(0, fpsCam.getPos());
                 skyboxInstances.get()->computeAll();
                 
-                citadelInstances.get()->updatePosition(0, currentCamPos + vec3(0, 1440, -1200));
+                citadelInstances.get()->updatePosition(0, fpsCam.getPos() + vec3(0, 1440, -1200));
                 citadelInstances.get()->computeAll();
             }
 
@@ -625,7 +651,7 @@ int main(int /*argc*/, char * argv[])
                 planePos += 931 * kmToMs * vec3(-1, 0, 0) * deltaT;
 
                 if (planePos.x < -2000) {
-                    planePos = vec3(1000, linearRand(9.0f, 20.0f), linearRand(-30.0f, 30.0f));
+                    planePos = vec3(1000, linearRand(9.0f, 15.0f), linearRand(-30.0f, 30.0f));
                 }
 
                 planeInstances.get()->updatePosition(0, planePos);

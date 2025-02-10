@@ -54,7 +54,7 @@ namespace glimac {
 
     const float cameraDefaultReach = 1.5f;
 
-    const float playerSmoothAccel = 0.05f;
+    const float playerSmoothAccel = 5.0f;
 
     vec3 reflectVector(const vec3& v, const vec3& normal) {
         return v - 2.0f * dot(v, normal) * normal;
@@ -100,6 +100,7 @@ namespace glimac {
             bool m_isRunning;
             bool m_isFlying;
             bool m_inJump;
+            bool m_canJump;
             bool m_jumped;
 
             bool m_allowFlyMode;
@@ -151,6 +152,8 @@ namespace glimac {
                 m_inJump = false;
                 m_jumped = false;
 
+                m_canJump = false;
+
                 m_canFly = false;
                 m_speed = vec3(0);
 
@@ -185,8 +188,8 @@ namespace glimac {
                     
                     move(direction, vec2(finalSpeed, finalSpeed * ((keys & shiftKey) ? runMultiplier : 1.0)), deltaT);
                 }
-
-
+                
+                
                 // std::cout << m_canFly << " " << m_isFlying << " " << m_isGrounded << " " <<  m_isFlying << " " << m_verticalSpeed <<" " << ((keys & spacebar) > 0u) << " " << m_FootPosition.y << std::endl;
                 if(m_allowFlyMode) {
                     if((m_canFly || m_isFlying) && (m_verticalSpeed >= -playerGravity && (keys & spacebar))) {
@@ -226,6 +229,7 @@ namespace glimac {
 
                 // will just adjust the vertical speed if the player is falling
                 jump((keys & spacebar));
+                m_canJump = m_isGrounded && !(keys & spacebar);
 
                 m_canFly = m_verticalSpeed > 0.0 && (!(keys & spacebar));
                 crouch(!m_isFlying && (keys & ctrlKey), deltaT);
@@ -365,6 +369,15 @@ namespace glimac {
                 }
                 if(collide) {
                     m_FootPosition += finalOffset;
+                    if(finalOffset.x != 0.0) {
+                        m_speed.x = 0.0;
+                    }
+                    if(finalOffset.y != 0.0) {
+                        m_speed.y = 0.0;
+                    }
+                    if(finalOffset.z != 0.0) {
+                        m_speed.z = 0.0;
+                    }
                 }
                 return collide;
             }
@@ -447,21 +460,62 @@ namespace glimac {
                 if(direction.x != 0 || direction.y != 0) {
                     direction = normalize(direction);
                 }
-                auto newSpeed = m_speed + playerSmoothAccel * (m_LeftVector * direction.x * speed.x + m_GroundFrontVector * direction.y * speed.y) * deltaT;
-                // auto speedLength = length(newSpeed);
-                // if(speedLength > walkSpeed) {
-                //     m_speed -= (speedLength - walkSpeed) * playerSmoothAccel;
-                // }
-                // else {
-                // }
 
-                if(direction.x != 0 || direction.y != 0) {
-                    newSpeed *= (1-playerSmoothAccel);
+                auto localAccel = playerSmoothAccel;
+
+                if(!m_isGrounded) {
+                    localAccel /= 3.0;
+                    // m_FootPosition += m_speed * deltaT;
+                    // std::cout << length(m_speed) << std::endl;
+                    // return;
                 }
-                m_speed = newSpeed;
 
-                // m_FootPosition += vec3(m_speed.x, 0, m_speed.z) * deltaT;
-                m_FootPosition += (m_LeftVector * direction.x * speed.x + m_GroundFrontVector * direction.y * speed.y) * deltaT;
+                if(direction.x == 0 && direction.y == 0 && m_isGrounded) {
+                    auto lengthSpeed = length(m_speed);
+                    if(lengthSpeed <= 0.0){
+                        computeBBox();
+                        return;
+                    } 
+
+                    auto speedNormal = m_speed / lengthSpeed;
+
+                    auto combined = m_speed - speedNormal*(walkSpeed*localAccel) * deltaT;
+
+                    if (dot(m_speed, combined) <= 0.0) {
+                        m_speed = vec3(0.0);
+                        computeBBox();
+                        return;
+                    }
+
+                    m_speed = combined;
+                    m_FootPosition += m_speed * deltaT;
+                    computeBBox();
+                    return;
+                }
+
+
+                auto speedAdded = (m_LeftVector * direction.x * speed.x + m_GroundFrontVector * direction.y * speed.y) * playerSmoothAccel * deltaT;
+
+                auto combined = m_speed + speedAdded;
+
+                auto distCombined = length(combined);
+
+                auto localMaxSpeed = std::max(abs(speed.x), abs(speed.y));
+
+                if(distCombined > localMaxSpeed) {
+                    auto transitionSpeed = m_speed - localAccel * (combined / distCombined) * deltaT;
+                    if(dot(m_speed, transitionSpeed) <= 0.0) {
+                        m_speed = vec3(0);
+                    }
+                    else {
+                        m_speed = transitionSpeed;
+                    }
+                }
+                else {
+                    m_speed = combined;
+                }
+
+                m_FootPosition += m_speed * deltaT;
                 computeBBox();
             }
 
@@ -503,7 +557,8 @@ namespace glimac {
                     return;
                 }
                 // std::cout << m_FootPosition.y << std::endl;
-                if(m_FootPosition.y <= 0.05 || m_isGrounded || m_isFlying) {
+                if((m_FootPosition.y <= 0.05 && m_canJump) || m_isGrounded || m_isFlying) {
+                    m_canJump = false;
                     m_verticalSpeed = playerJumpSpeed*playerJumpSpeed;
                 }
             }

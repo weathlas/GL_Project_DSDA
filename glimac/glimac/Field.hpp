@@ -50,9 +50,9 @@ namespace glimac {
                 m_k = k;
             }
 
-            void make_point(vec3 direction, float k) {
+            void make_point(vec3 position, float k) {
                 m_type = FieldType::field_point;
-                m_world_pos = direction;
+                m_world_pos = position;
                 m_k = k;
             }
 
@@ -85,12 +85,21 @@ namespace glimac {
                 for (uint i = 0; i < m_particules.size(); i++) {
                     vec3 v_diff = m_particules.at(i)->m_pos - m_world_pos;
                     float d = length(v_diff);
-                    float epsilon = 0.1;
-                    if (d < epsilon)  {
-                        return;
+                    if(d < 0.1f) {
+                        continue;
                     }
+                    // if(v_diff.x == 0.0f && v_diff.y == 0.0f && v_diff.z == 0.0f) {
+                    //     continue;
+                    // }
+                    // float epsilon = 0.005;
+                    // if (d < epsilon)  {
+                    //     return;
+                    // }
                     vec3 u = normalize(v_diff);
                     m_particules.at(i)->m_forces_acc += m_k * u * (1/d);
+                    // m_particules.at(i)->m_forces_acc -= 0.0001f * vec3(m_k/v_diff.x, m_k/v_diff.y, m_k/v_diff.z);
+                    // m_particules.at(i)->m_forces_acc += v_diff;
+                    // m_particules.at(i)->m_forces_acc += vec3(0, -0.1, 0);
                 }
 
             }

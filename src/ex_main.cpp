@@ -208,12 +208,18 @@ int main(int /*argc*/, char * argv[])
     auto firstRope = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     firstRope.make_rope(vec3(-2, 3, 0), vec3(2, 3, 0), 15, 0.0025, 64.0, 0.88);
     firstRope.addField(FieldType::field_directional, vec3(0, -1, 0), 0.25);
-    uint animIterPerFrame = 20;
+    uint animIterPerFrame = 5;
 
     auto firstGrid = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
-    firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 19, 0.005, 48.0, 0.65);
+    firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 7, 0.005, 48.0, 0.65);
     firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 0.25);
     // firstGrid.addField(FieldType::field_point, vec3(0, 6, 0), -8.5);
+
+    auto firstCube = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
+    // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 13, 5.5, 1000.0, 100);
+    firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 7, 5.5, 10000, 300);
+    firstCube.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+    // firstCube.addField(FieldType::field_point, vec3(0, 10, 0), -9.81);
 
     Scene scene;
 
@@ -247,8 +253,9 @@ int main(int /*argc*/, char * argv[])
 
 
         // Animation objects
-        scene.addInstance(firstRope.getInstance());
-        scene.addInstance(firstGrid.getInstance());
+        // scene.addInstance(firstRope.getInstance());
+        // scene.addInstance(firstGrid.getInstance());
+        scene.addInstance(firstCube.getInstance());
     }
 
     buttonInstances.get()->setBlendToTransparent();
@@ -698,9 +705,12 @@ int main(int /*argc*/, char * argv[])
 
             if(ropeFollowPlayer) {
                 // firstRope.setPos(fpsCam.getPos());
-                firstGrid.setPosFirst(fpsCam.getPos());
+                // firstGrid.setPosFirst(fpsCam.getPos());
+                firstCube.setPosFirst(fpsCam.getPos());
             }
             firstGrid.setPos(vec3(2, updateGridCorner, 2));
+
+            auto animTimerDebug = glfwGetTime();
             for (uint i = 0; i < animIterPerFrame; i++)
             {
 
@@ -708,13 +718,17 @@ int main(int /*argc*/, char * argv[])
                 // Za = h * z/m
 
 
-                firstRope.update(deltaT/animIterPerFrame);
+                // firstRope.update(deltaT/animIterPerFrame);
 
-                firstGrid.update(deltaT/animIterPerFrame);
+                // firstGrid.update(deltaT/animIterPerFrame);
+                auto timeStartOneIteration = glfwGetTime();
+                firstCube.update(deltaT/animIterPerFrame);
+                // std::cout << glfwGetTime() - timeStartOneIteration << std::endl;
+                // break;
 
             }
             // firstRope.update(deltaT);
-
+            // std::cout << "all iterations: " << glfwGetTime() - animTimerDebug << std::endl;
             
         }
 

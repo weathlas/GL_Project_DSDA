@@ -130,12 +130,49 @@ namespace glimac {
                 }
                 m_type = AnimType::cube;
 
-                vec3 offsets = dimensions * (1.0f*count);
+                vec3 offsets = dimensions * (1.0f/(count-1));
+                vec3 origin = center - dimensions * 0.5f;
 
                 for (float Z = 0; Z < count; Z++) {
                     for (float Y = 0; Y < count; Y++) {
                         for (float X = 0; X < count; X++) {
+                            auto pos = origin + vec3(X*offsets.x, Y*offsets.y, Z*offsets.z);
 
+                            auto type = ParticuleComputeType::leapfrog;
+                            if(X == 0 || X == count-1) {
+                                if(Y == 0 || Y == count-1) {
+                                    if(Z == 0 || Z == count-1) {
+                                        type = ParticuleComputeType::fixed;
+                                    }
+                                }
+                            }
+                            // if((X == 0 && Y == 0 && Z == 0) || (X == count-1 && Y == 0 && Z == 0) || (X == 0 && Y == count-1 && Z == 0) || (X == count-1 && Y == count-1 && Z == 0) || (X == 0 && Y == 0 && Z == count-1) || (X == count-1 && Y == 0 && Z == count-1) || (X == 0 && Y == count-1 && Z == count-1) || (X == count-1 && Y == count-1 && Z == count-1)) {
+                            //     type = ParticuleComputeType::fixed;
+                            // }
+
+                            std::cout << "Pos " << pos << " type " << type << std::endl;
+
+                            m_instance.get()->add(Transform(pos, vec3(), vec3(particuleSize)));
+                            m_particules.push_back(Particule(mass, pos, type));
+                        }
+                    }
+                }
+
+                for (uint Z = 0; Z < count; Z++) {
+                    for (uint Y = 0; Y < count; Y++) {
+                        for (uint X = 0; X < count; X++) {
+                            if(X > 0) {
+                                auto length_segmentX = length(m_particules.at(X-1 + count*Y + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at(X-1 + count*Y + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentX, k, z, 0));
+                            }
+                            if(Y > 0) {
+                                auto length_segmentY = length(m_particules.at(X+count*(Y - 1) + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at(X+count*(Y - 1) + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentY, k, z, 0));
+                            }
+                            if(Z > 0) {
+                                auto length_segmentZ = length(m_particules.at(X+count*Y + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at(X+count*Y + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentZ, k, z, 0));
+                            }
                         }
                     }
                 }
@@ -172,6 +209,9 @@ namespace glimac {
                     m_instance.get()->updatePosition(index, m_particules.at(index).m_pos);
                     m_instance.get()->compute(index);
                 }
+                // if(m_type == AnimType::cube) {
+                //     std::cout << "CUBE Pos " << m_particules.at(1).m_pos << std::endl;
+                // }
             }
 
             void setPos(vec3 pos) {

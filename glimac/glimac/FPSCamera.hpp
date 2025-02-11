@@ -271,7 +271,7 @@ namespace glimac {
                 }
                 m_Position = m_FootPosition + m_HeadDisplacement + m_ShakeDisplacement;
                 updateMatrix();
-                std::cout << before << " | " << m_verticalSpeed << std::endl;
+                // std::cout << before << " | " << m_verticalSpeed << std::endl;
                 return collide;
             }
 
@@ -566,7 +566,7 @@ namespace glimac {
                 if((m_FootPosition.y <= 0.05 && m_canJump) || m_isGrounded || (m_isFlying && state)) {//
                     m_canJump = false;
                     m_verticalSpeed = playerJumpSpeed*playerJumpSpeed;
-                    std::cout << "Jumped" << std::endl;
+                    // std::cout << "Jumped" << std::endl;
                 }
             }
             

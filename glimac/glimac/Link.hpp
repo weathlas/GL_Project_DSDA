@@ -45,6 +45,8 @@ namespace glimac {
                 m_s = s;
             }
 
+            ~Link(){}
+
             void connect(Particule *M1, Particule *M2) {
                 m_M1 = M1;
                 m_M2 = M2;
@@ -126,7 +128,7 @@ namespace glimac {
             }
 
             void update_damper() {
-                vec3 F = - m_z * (m_M2->m_speed - m_M2->m_speed);
+                vec3 F = + m_z * (m_M2->m_speed - m_M1->m_speed);
                 m_M1->m_forces_acc += F;
                 m_M2->m_forces_acc -= F;
             }
@@ -138,7 +140,7 @@ namespace glimac {
                     return;
                 }
                 vec3 u = normalize(v_diff);
-                vec3 F = m_k * (d - m_length) * u - m_z * (m_M2->m_speed - m_M2->m_speed);
+                vec3 F = - m_k * (d - m_length) * u + m_z * (m_M2->m_speed - m_M1->m_speed);
                 m_M1->m_forces_acc += F;
                 m_M2->m_forces_acc -= F;
             }
@@ -153,7 +155,7 @@ namespace glimac {
                     return;
                 }
                 vec3 u = normalize(v_diff);
-                vec3 F = m_k * (d - m_length) * u - m_z * (m_M2->m_speed - m_M2->m_speed);
+                vec3 F = - m_k * (d - m_length) * u + m_z * (m_M2->m_speed - m_M1->m_speed);
                 m_M1->m_forces_acc += F;
                 m_M2->m_forces_acc -= F;
             }

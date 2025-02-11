@@ -17,6 +17,9 @@
 #include <glimac/ShadowMap.hpp>
 #include <glimac/Mirror.hpp>
 #include <glimac/Button.hpp>
+#include <glimac/Particule.hpp>
+#include <glimac/Link.hpp>
+#include <glimac/Animation.hpp>
 #include <glimac/common.hpp>
 
 
@@ -201,6 +204,13 @@ int main(int /*argc*/, char * argv[])
 
     // auto shipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "ship", imageWhiteInt, 0, imageDefaultNormalInt);
 
+    auto firstRope = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
+    firstRope.make_rope(vec3(-2, 3, 0), vec3(2, 3, 0), 40, 0.0025, 64.0, 0.88);
+    uint animIterPerFrame = 20;
+
+    auto firstGrid = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
+    firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 20, 0.005, 48.0, 0.65);
+
     Scene scene;
 
     // Add all objects to the scene
@@ -230,6 +240,11 @@ int main(int /*argc*/, char * argv[])
         cubeInstances.get()->setBlendToTransparent();
         domeGlassInstances.get()->setBlendToTransparent();
         // houseInstances.get()->setBlendToTransparent();
+
+
+        // Animation objects
+        scene.addInstance(firstRope.getInstance());
+        scene.addInstance(firstGrid.getInstance());
     }
 
     buttonInstances.get()->setBlendToTransparent();
@@ -518,8 +533,10 @@ int main(int /*argc*/, char * argv[])
     vec2 oldMouse;
     FPSCamera fpsCam = FPSCamera(win.width(), win.height());
 
-    auto startPoint = vec3(-19, 0.25, 6);
-    auto startLookPoint = vec3(-13, 2.3, 12);
+    // auto startPoint = vec3(-19, 0.25, 6);
+    // auto startLookPoint = vec3(-13, 2.3, 12);
+    auto startPoint = vec3(0, 0.25, 0);
+    auto startLookPoint = vec3(0, 0.25, -1);
     fpsCam.makeLookAt(startPoint, startLookPoint);
     fpsCam.update(win, walls, deltaT);
     fpsCam.resetMouse(win.mouse());
@@ -545,6 +562,7 @@ int main(int /*argc*/, char * argv[])
     mirror.computeCamera(fpsCam);
 
     bool fromMirror = false;
+    bool ropeFollowPlayer = false;
 
     std::vector<Button> buttons;
 
@@ -671,6 +689,28 @@ int main(int /*argc*/, char * argv[])
 
             skyboxInstances.get()->updateAngles(0, vec3(skyBoxAngles.x*degToRad, skyBoxAngles.y*degToRad, skyBoxAngles.z*degToRad));
             skyboxInstances.get()->computeAll();
+
+            auto updateGridCorner = 6 + sin(timer)*1.5;
+
+            if(ropeFollowPlayer) {
+                firstRope.setPos(fpsCam.getPos());
+            }
+            for (uint i = 0; i < animIterPerFrame; i++)
+            {
+
+                // Ka = h^2 * k/m
+                // Za = h * z/m
+
+
+                firstRope.update(deltaT/animIterPerFrame);
+
+                firstGrid.setPos(vec3(2, updateGridCorner, 2));
+                firstGrid.update(deltaT/animIterPerFrame);
+
+            }
+            // firstRope.update(deltaT);
+
+            
         }
 
         { // RENDERING
@@ -918,7 +958,8 @@ int main(int /*argc*/, char * argv[])
             }
             
             if (keys & keyDebug) {
-                fromMirror = !fromMirror;
+                ropeFollowPlayer = !ropeFollowPlayer;
+                // fromMirror = !fromMirror;
             }
 
 

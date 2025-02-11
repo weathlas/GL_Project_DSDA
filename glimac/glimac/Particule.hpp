@@ -30,12 +30,18 @@ namespace glimac {
             // vec3 m_accel
             vec3 m_forces_acc;
 
-            Particule(float mass, vec3 speed) {
+            Particule(float mass, vec3 pos, ParticuleComputeType type) {
                 m_mass = mass;
-                m_speed = speed;
+                m_pos = pos;
+                m_speed = vec3(0);
                 m_forces_acc = vec3(0);
-                m_type = fixed;
+                m_type = type;
             }
+
+            Particule(float mass, vec3 pos) : Particule(mass, pos, fixed) {
+            }
+
+            ~Particule(){}
 
             void update(float h) {
                 switch (m_type)

@@ -103,7 +103,7 @@ namespace glimac {
             bool m_canJump;
             bool m_jumped;
 
-            bool m_allowFlyMode;
+            bool m_allowFlyMode=true;
 
             bool m_canFly;
 
@@ -196,6 +196,7 @@ namespace glimac {
 
                         // if the player jumped in the air and falling while pressing the spacebar
                         if (!m_isFlying && !m_isGrounded) {
+                            std::cout <<"activated"<<std::endl;
                             m_isFlying = true;
                             m_verticalSpeed = 0.0f;
                             // m_inJump = false;
@@ -255,6 +256,7 @@ namespace glimac {
                     m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, 0.08f, 10000.f);
                 }
                 m_isGrounded = false;
+                auto before = m_verticalSpeed;
                 m_verticalSpeed = clamp(m_verticalSpeed - (playerGravity*playerGravity * deltaT), -playerMaxFallSpeed, playerJumpSpeed);
                 m_FootPosition.y += m_isFlying?0.0:m_verticalSpeed * deltaT;
                 computeBBox();
@@ -269,6 +271,7 @@ namespace glimac {
                 }
                 m_Position = m_FootPosition + m_HeadDisplacement + m_ShakeDisplacement;
                 updateMatrix();
+                std::cout << before << " | " << m_verticalSpeed << std::endl;
                 return collide;
             }
 
@@ -463,14 +466,17 @@ namespace glimac {
 
                 auto localAccel = playerSmoothAccel;
 
-                if(!m_isGrounded) {
+                if(!m_isGrounded && !m_isFlying) {
                     localAccel /= 3.0;
                     // m_FootPosition += m_speed * deltaT;
                     // std::cout << length(m_speed) << std::endl;
                     // return;
                 }
+                if(m_isFlying) {
+                    localAccel *= 3.0;
+                }
 
-                if(direction.x == 0 && direction.y == 0 && m_isGrounded) {
+                if(direction.x == 0 && direction.y == 0) {
                     auto lengthSpeed = length(m_speed);
                     if(lengthSpeed <= 0.0){
                         computeBBox();
@@ -557,9 +563,10 @@ namespace glimac {
                     return;
                 }
                 // std::cout << m_FootPosition.y << std::endl;
-                if((m_FootPosition.y <= 0.05 && m_canJump) || m_isGrounded || m_isFlying) {
+                if((m_FootPosition.y <= 0.05 && m_canJump) || m_isGrounded || (m_isFlying && state)) {//
                     m_canJump = false;
                     m_verticalSpeed = playerJumpSpeed*playerJumpSpeed;
+                    std::cout << "Jumped" << std::endl;
                 }
             }
             

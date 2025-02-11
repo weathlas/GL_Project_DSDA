@@ -19,10 +19,7 @@ namespace glimac {
         hook_spring,
         damper,
         damped_hook,
-        cond_damped_hook,
-        field_directional,
-        field_point,
-        field_magnet // might be too complex
+        cond_damped_hook
     };
 
     class Link {
@@ -76,16 +73,6 @@ namespace glimac {
                 m_s = s;
             }
 
-            void make_directional(vec3 direction, float k) {
-                m_type = LinkType::field_directional;
-                m_k = k;
-            }
-
-            void make_point(vec3 direction, float k) {
-                m_type = LinkType::field_point;
-                m_k = k;
-            }
-
             void update() {
                 switch (m_type)
                 {
@@ -100,12 +87,6 @@ namespace glimac {
                     break;
                 case LinkType::cond_damped_hook:
                     update_cond_damped_hook();
-                    break;
-                case LinkType::field_directional:
-                    update_field_directional();
-                    break;
-                case LinkType::field_point:
-                    update_field_point();
                     break;
                 default:
                     break;
@@ -158,20 +139,6 @@ namespace glimac {
                 vec3 F = - m_k * (d - m_length) * u + m_z * (m_M2->m_speed - m_M1->m_speed);
                 m_M1->m_forces_acc += F;
                 m_M2->m_forces_acc -= F;
-            }
-
-            void update_field_directional() {
-                m_M1->m_forces_acc += m_k * m_world_direction;
-            }
-
-            void update_field_point() {
-                vec3 v_diff = m_M1->m_pos - m_world_pos;
-                float d = length(v_diff);
-                if (d == 0)  {
-                    return;
-                }
-                vec3 u = normalize(v_diff);
-                m_M1->m_forces_acc += m_k * u;
             }
     };
 }

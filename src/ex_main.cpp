@@ -19,6 +19,7 @@
 #include <glimac/Button.hpp>
 #include <glimac/Particule.hpp>
 #include <glimac/Link.hpp>
+#include <glimac/Field.hpp>
 #include <glimac/Animation.hpp>
 #include <glimac/common.hpp>
 
@@ -205,11 +206,14 @@ int main(int /*argc*/, char * argv[])
     // auto shipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "ship", imageWhiteInt, 0, imageDefaultNormalInt);
 
     auto firstRope = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
-    firstRope.make_rope(vec3(-2, 3, 0), vec3(2, 3, 0), 40, 0.0025, 64.0, 0.88);
+    firstRope.make_rope(vec3(-2, 3, 0), vec3(2, 3, 0), 15, 0.0025, 64.0, 0.88);
+    firstRope.addField(FieldType::field_directional, vec3(0, -1, 0), 0.25);
     uint animIterPerFrame = 20;
 
     auto firstGrid = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
-    firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 20, 0.005, 48.0, 0.65);
+    firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 19, 0.005, 48.0, 0.65);
+    firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 0.25);
+    // firstGrid.addField(FieldType::field_point, vec3(0, 6, 0), -8.5);
 
     Scene scene;
 
@@ -693,8 +697,10 @@ int main(int /*argc*/, char * argv[])
             auto updateGridCorner = 6 + sin(timer)*1.5;
 
             if(ropeFollowPlayer) {
-                firstRope.setPos(fpsCam.getPos());
+                // firstRope.setPos(fpsCam.getPos());
+                firstGrid.setPosFirst(fpsCam.getPos());
             }
+            firstGrid.setPos(vec3(2, updateGridCorner, 2));
             for (uint i = 0; i < animIterPerFrame; i++)
             {
 
@@ -704,7 +710,6 @@ int main(int /*argc*/, char * argv[])
 
                 firstRope.update(deltaT/animIterPerFrame);
 
-                firstGrid.setPos(vec3(2, updateGridCorner, 2));
                 firstGrid.update(deltaT/animIterPerFrame);
 
             }

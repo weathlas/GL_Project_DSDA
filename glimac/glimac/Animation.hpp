@@ -8,6 +8,7 @@
 
 #include <glimac/Particule.hpp>
 #include <glimac/Link.hpp>
+#include <glimac/Field.hpp>
 #include <glimac/Instance.hpp>
 
 #include "common.hpp"
@@ -20,7 +21,8 @@ namespace glimac {
     enum AnimType {
         none,
         rope,
-        grid
+        grid,
+        cube
     };
 
     class Animation {
@@ -121,12 +123,51 @@ namespace glimac {
                 
             }
 
+            void make_cube(vec3 center, vec3 dimensions, uint count, float mass, float k, float z) {
+                if(m_type != AnimType::none) {
+                    std::cout << "Anim is already set (" << m_type << ")" << std::endl;
+                    return;
+                }
+                m_type = AnimType::cube;
+
+                vec3 offsets = dimensions * (1.0f*count);
+
+                for (float Z = 0; Z < count; Z++) {
+                    for (float Y = 0; Y < count; Y++) {
+                        for (float X = 0; X < count; X++) {
+
+                        }
+                    }
+                }
+            }
+
+            void addField(FieldType type, vec3 coords, float k) {
+                m_fields.push_back(Field());
+                switch (type)
+                {
+                case FieldType::field_directional:
+                    m_fields.back().make_directional(coords, k);
+                    break;
+                case FieldType::field_point:
+                    m_fields.back().make_point(coords, k);
+                    break;
+                default:
+                    break;
+                }
+                for(uint index = 0; index < m_particules.size(); index++) {
+                    m_fields.back().connect(&m_particules.at(index));
+                }
+            }
+
             void update(float h) {
                 for (auto link: m_links) {
                     link.update();
                 }
+                for (auto field: m_fields) {
+                    field.update();
+                }
                 for(uint index = 0; index < m_particules.size(); index++) {
-                    m_particules.at(index).m_forces_acc += vec3(0, -0.25, 0);
+                    // m_particules.at(index).m_forces_acc += vec3(0, -0.25, 0);
                     m_particules.at(index).update(h);
                     m_instance.get()->updatePosition(index, m_particules.at(index).m_pos);
                     m_instance.get()->compute(index);
@@ -136,11 +177,16 @@ namespace glimac {
             void setPos(vec3 pos) {
                 m_particules.back().m_pos = pos;
             }
+
+            void setPosFirst(vec3 pos) {
+                m_particules.front().m_pos = pos;
+            }
             
         private:
             AnimType m_type;
             std::shared_ptr<Instance> m_instance;
             std::vector<Particule> m_particules;
             std::vector<Link> m_links;
+            std::vector<Field> m_fields;
     };
 }

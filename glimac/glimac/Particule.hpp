@@ -36,6 +36,9 @@ namespace glimac {
                 m_speed = vec3(0);
                 m_forces_acc = vec3(0);
                 m_type = type;
+
+                m_initial_pos = m_pos;
+                m_initial_speed = m_speed;
             }
 
             Particule(float mass, vec3 pos) : Particule(mass, pos, fixed) {
@@ -58,9 +61,17 @@ namespace glimac {
                 }
             }
 
+            void reset() {
+                m_pos = m_initial_pos;
+                m_speed = m_initial_speed;
+            }
+
             
         private:
             ParticuleComputeType m_type;
+
+            vec3 m_initial_pos;
+            vec3 m_initial_speed;
 
             void update_leapfrog(float h) {
                 m_speed += h * m_forces_acc / m_mass;

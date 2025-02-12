@@ -53,6 +53,7 @@ namespace glimac {
                     return;
                 }
                 m_type = AnimType::rope;
+                // m_count_dimension = count;
                 // m_instance.get()->add(Transform(p1, vec3(), vec3(1)));
                 // m_instance.get()->add(Transform(p2, vec3(), vec3(1)));
                 auto diff = p2 - p1;
@@ -63,15 +64,24 @@ namespace glimac {
                 for (uint i = 1; i < count-1; i++) {
                     auto pos = p1 + diff * (1.0f*i/(count-1));
                     m_instance.get()->add(Transform(pos, vec3(), vec3(particuleSize)));
-                    m_particules.push_back(Particule(mass, pos, ParticuleComputeType::leapfrog));
+                    if(i==1) {
+                        m_particules.push_back(Particule(mass, pos, ParticuleComputeType::fixed));    
+                    }
+                    else {
+                        m_particules.push_back(Particule(mass, pos, ParticuleComputeType::leapfrog));
+                    }
                     std::cout << "particule at " << pos << std::endl;
                 }
                 m_instance.get()->add(Transform(p2, vec3(), vec3(particuleSize)));
-                m_particules.push_back(Particule(mass, p2, ParticuleComputeType::fixed));
+                // m_particules.push_back(Particule(mass, p2, ParticuleComputeType::fixed));
+                m_particules.push_back(Particule(mass, p2, ParticuleComputeType::leapfrog));
                 std::cout << "particule at " << p2 << std::endl;
 
                 for (uint i = 1; i < count; i++) {
                     m_links.push_back(Link(&m_particules.at(i-1), &m_particules.at(i), LinkType::damped_hook, length_segment, k, z, 0));
+                }
+                for (uint i = 2; i < count; i++) {
+                    m_links.push_back(Link(&m_particules.at(i-2), &m_particules.at(i), LinkType::damped_hook, length_segment*2, k*3, z*0.1, 0));
                 }
                 
             }
@@ -82,6 +92,7 @@ namespace glimac {
                     return;
                 }
                 m_type = AnimType::grid;
+                // m_count_dimension = count;
                 auto diff12 = p2 - p1;
                 auto diff13 = p3 - p1;
                 auto diff34 = p4 - p3;
@@ -99,7 +110,7 @@ namespace glimac {
                         auto pos = p1 + axisX * X + axisY * Y;
 
                         auto type = ParticuleComputeType::leapfrog;
-                        if((X == 0 && Y == 0) || (X == count-1 && Y == 0) || (X == 0 && Y == count-1) || (X == count-1 && Y == count-1)) {
+                        if(/*(X == 0 && Y == 0) ||*/ (X == count-1 && Y == 0) /*|| (X == 0 && Y == count-1)*/ || (X == count-1 && Y == count-1)) {
                             type = ParticuleComputeType::fixed;
                         }
 
@@ -118,6 +129,24 @@ namespace glimac {
                             auto length_segmentY = length(m_particules.at(X+count*(Y - 1)).m_pos - m_particules.at(X+count*Y).m_pos);
                             m_links.push_back(Link(&m_particules.at(X+count*(Y - 1)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segmentY, k, z, 0));
                         }
+
+                        if(X > 1) {
+                            auto length_segmentX = length(m_particules.at(X-2 + count*Y).m_pos - m_particules.at(X+count*Y).m_pos);
+                            m_links.push_back(Link(&m_particules.at(X-2 + count*Y), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segmentX, k, z*0.0, 0));
+                        }
+                        if(Y > 1) {
+                            auto length_segmentY = length(m_particules.at(X+count*(Y - 2)).m_pos - m_particules.at(X+count*Y).m_pos);
+                            m_links.push_back(Link(&m_particules.at(X+count*(Y - 2)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segmentY, k, z*0.0, 0));
+                        }
+                        
+                        if(X > 0 && Y > 0) {
+                            auto length_segment = length(m_particules.at((X-1) + count*(Y-1)).m_pos - m_particules.at(X+count*Y).m_pos);
+                            m_links.push_back(Link(&m_particules.at((X-1) + count*(Y-1)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                        }
+                        if(X <count && Y > 0) {
+                            auto length_segment = length(m_particules.at((X+1) + count*(Y-1)).m_pos - m_particules.at(X+count*Y).m_pos);
+                            m_links.push_back(Link(&m_particules.at((X+1) + count*(Y-1)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                        }
                     }
                 }
                 
@@ -129,6 +158,9 @@ namespace glimac {
                     return;
                 }
                 m_type = AnimType::cube;
+                // m_count_dimension = count;
+                // m_dimensions = dimensions;
+                // m_center = center;
 
                 vec3 offsets = dimensions * (1.0f/(count-1));
                 vec3 origin = center - dimensions * 0.5f;
@@ -139,13 +171,16 @@ namespace glimac {
                             auto pos = origin + vec3(X*offsets.x, Y*offsets.y, Z*offsets.z);
 
                             auto type = ParticuleComputeType::leapfrog;
-                            if(X == 0 || X == count-1) {
-                                if(Y == 0 || Y == count-1) {
-                                    if(Z == 0 || Z == count-1) {
-                                        type = ParticuleComputeType::fixed;
-                                    }
-                                }
+                            if(X==0 && Y==0 && Z==0) {
+                                type = ParticuleComputeType::fixed;
                             }
+                            // if(X == 0 || X == count-1) {
+                            //     if(Y == 0 /*|| Y == count-1*/) {
+                            //         if(Z == 0 || Z == count-1) {
+                            //             type = ParticuleComputeType::fixed;
+                            //         }
+                            //     }
+                            // }
                             // if((X == 0 && Y == 0 && Z == 0) || (X == count-1 && Y == 0 && Z == 0) || (X == 0 && Y == count-1 && Z == 0) || (X == count-1 && Y == count-1 && Z == 0) || (X == 0 && Y == 0 && Z == count-1) || (X == count-1 && Y == 0 && Z == count-1) || (X == 0 && Y == count-1 && Z == count-1) || (X == count-1 && Y == count-1 && Z == count-1)) {
                             //     type = ParticuleComputeType::fixed;
                             // }
@@ -173,9 +208,64 @@ namespace glimac {
                                 auto length_segmentZ = length(m_particules.at(X+count*Y + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
                                 m_links.push_back(Link(&m_particules.at(X+count*Y + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentZ, k, z, 0));
                             }
+
+                            if(X > 1) {
+                                auto length_segmentX = length(m_particules.at(X-2 + count*Y + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at(X-2 + count*Y + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentX, k, z*0.0, 0));
+                            }
+                            if(Y > 1) {
+                                auto length_segmentY = length(m_particules.at(X+count*(Y - 2) + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at(X+count*(Y - 2) + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentY, k, z*0.0, 0));
+                            }
+                            if(Z > 1) {
+                                auto length_segmentZ = length(m_particules.at(X+count*Y + count*count*(Z-2)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at(X+count*Y + count*count*(Z-2)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentZ, k, z*0.0, 0));
+                            }
+
+                            if(X > 0 && Y > 0) {
+                                auto length_segment = length(m_particules.at((X-1) + count*(Y-1) + count*count*(Z)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at((X-1) + count*(Y-1) + count*count*(Z)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                            }
+                            if(X > 0 && Z > 0) {
+                                auto length_segment = length(m_particules.at((X-1) + count*(Y) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at((X-1) + count*(Y) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                            }
+                            if(Y > 0 && Z > 0) {
+                                auto length_segment = length(m_particules.at((X) + count*(Y-1) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at((X) + count*(Y-1) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                            }
+
+                            if(X <count && Y > 0) {
+                                auto length_segment = length(m_particules.at((X+1) + count*(Y-1) + count*count*(Z)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at((X+1) + count*(Y-1) + count*count*(Z)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                            }
+                            if(X <count && Z > 0) {
+                                auto length_segment = length(m_particules.at((X+1) + count*(Y) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at((X+1) + count*(Y) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                            }
+                            if(Y <count && Z > 0) {
+                                auto length_segment = length(m_particules.at((X) + count*(Y+1) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                m_links.push_back(Link(&m_particules.at((X) + count*(Y+1) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                            }
                         }
                     }
                 }
+            }
+
+            void reset() {
+
+                for(uint index = 0; index < m_particules.size(); index++) {
+                    m_particules.at(index).reset();
+                }
+
+                // switch (m_type)
+                // {
+                // case AnimType::cube:
+                //     reset_cube();
+                //     break;
+                // default:
+                //     break;
+                // }
             }
 
             void addField(FieldType type, vec3 coords, float k) {
@@ -228,5 +318,29 @@ namespace glimac {
             std::vector<Particule> m_particules;
             std::vector<Link> m_links;
             std::vector<Field> m_fields;
+
+            // int m_count_dimension;
+            // vec3 m_dimensions;
+            // vec3 m_center;
+
+            // void reset_cube() {
+            //     vec3 offsets = m_dimensions * (1.0f/(m_count_dimension-1));
+            //     vec3 origin = m_center - m_dimensions * 0.5f;
+            //     int index = 0;
+            //     for (float Z = 0; Z < m_count_dimension; Z++) {
+            //         for (float Y = 0; Y < m_count_dimension; Y++) {
+            //             for (float X = 0; X < m_count_dimension; X++) {
+            //                 auto pos = origin + vec3(X*offsets.x, Y*offsets.y, Z*offsets.z);
+
+                            
+            //                 m_particules.at(index).m_pos = pos;
+            //                 m_particules.at(index).m_speed = vec3(0);
+            //                 // push_back(Particule(mass, pos, type));
+            //                 index++;
+            //             }
+            //         }
+            //     }
+            // }
+
     };
 }

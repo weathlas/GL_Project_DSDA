@@ -77,7 +77,8 @@ int main(int /*argc*/, char * argv[])
     
     glimac::FilePath applicationPath(argv[0]);
 
-    BasicProgram programRoom(applicationPath, "src/shaders/roomOne/ground.vs.glsl", "src/shaders/roomOne/ground.fs.glsl");
+    // BasicProgram programRoom(applicationPath, "src/shaders/roomOne/ground.vs.glsl", "src/shaders/roomOne/ground.fs.glsl");
+    BasicProgram programRoom(applicationPath, "src/shaders/roomTwo/voronoi.vs.glsl", "src/shaders/roomTwo/voronoi.fs.glsl", ProgramType::LIGHTS);
     // BasicProgram programRoom(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
     // BasicProgram programSimpleDepth(applicationPath, "src/shaders/utils/simple_depth.vs.glsl", "src/shaders/utils/simple_depth.fs.glsl");
     // BasicProgram programMirrorTex(applicationPath, "src/shaders/utils/mirror_texture_test.vs.glsl", "src/shaders/utils/mirror_texture_test.fs.glsl");
@@ -173,7 +174,8 @@ int main(int /*argc*/, char * argv[])
     glimac::Sphere sphereLowPoly = glimac::Sphere(1, 8, 4);
     glimac::Sphere sphereLowPolyParticule = glimac::Sphere(1, 4, 2);
 
-    auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
+    // auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
+    auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     auto earthInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageEarthInt, imageCloudInt, imageDefaultNormalInt);
     auto sunInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
 
@@ -206,18 +208,21 @@ int main(int /*argc*/, char * argv[])
     // auto shipInstances = std::make_shared<Instance>(applicationPath.dirPath(), "ship", imageWhiteInt, 0, imageDefaultNormalInt);
 
     auto firstRope = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
-    firstRope.make_rope(vec3(-2, 3, 0), vec3(2, 3, 0), 15, 0.0025, 64.0, 0.88);
-    firstRope.addField(FieldType::field_directional, vec3(0, -1, 0), 0.25);
-    uint animIterPerFrame = 5;
+    firstRope.make_rope(vec3(0, 6, 0), vec3(-8, 6, 0), 30, 1.0, 100000000.0, 0);
+    firstRope.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81*0.1);
+    uint animIterPerFrame = 7;
 
     auto firstGrid = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
-    firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 7, 0.005, 48.0, 0.65);
+    // firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 7, 0.005, 48.0, 0.65);
+    firstGrid.make_grid(vec3(-2, 6, 0), vec3(2, 6, 0), vec3(-2, 10, 0), vec3(2, 10, 0), 15, 0.005, 24.0, 0.02);
     firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 0.25);
+    firstGrid.addField(FieldType::field_directional, vec3(0, 0, 1), 1.3);
     // firstGrid.addField(FieldType::field_point, vec3(0, 6, 0), -8.5);
 
     auto firstCube = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 13, 5.5, 1000.0, 100);
-    firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 7, 5.5, 10000, 300);
+    firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 10, 10, 10000, 300);
+    // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 7, 5.5, 0, 0);
     firstCube.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
     // firstCube.addField(FieldType::field_point, vec3(0, 10, 0), -9.81);
 
@@ -226,26 +231,28 @@ int main(int /*argc*/, char * argv[])
     // Add all objects to the scene
     {
         scene.addInstance(roomInstances);
-        scene.addInstance(earthInstances);
-        scene.addInstance(particulesInstances);
-        scene.addInstance(shelveInstances);
-        scene.addInstance(collumnInstances);
-        scene.addInstance(titleInstances);
-        scene.addInstance(spaceShipInstances);
+        // scene.addInstance(earthInstances);
+        // scene.addInstance(particulesInstances);
+        // scene.addInstance(shelveInstances);
+        // scene.addInstance(collumnInstances);
+        // scene.addInstance(titleInstances);
+        // scene.addInstance(spaceShipInstances);
         scene.addInstance(planeInstances);
-        scene.addInstance(statueInstances);
-        scene.addInstance(citadelInstances);
-        scene.addInstance(footInstances);
-        scene.addInstance(houseInstances);
+        // scene.addInstance(statueInstances);
+        // scene.addInstance(citadelInstances);
+        // scene.addInstance(footInstances);
+        // scene.addInstance(houseInstances);
+        // scene.addInstance(domeWireInstances);
+        // scene.addInstance(benchInstances);
+
+        // NOP
         // scene.addInstance(buttonInstances);
-        scene.addInstance(domeWireInstances);
-        scene.addInstance(benchInstances);
         // scene.addInstance(shipInstances);
         // scene.addInstance(mirrorInstances);
 
         // transparents objects
-        scene.addInstance(cubeInstances);
-        scene.addInstance(domeGlassInstances);
+        // scene.addInstance(cubeInstances);
+        // scene.addInstance(domeGlassInstances);
 
         cubeInstances.get()->setBlendToTransparent();
         domeGlassInstances.get()->setBlendToTransparent();
@@ -254,8 +261,8 @@ int main(int /*argc*/, char * argv[])
 
         // Animation objects
         // scene.addInstance(firstRope.getInstance());
-        // scene.addInstance(firstGrid.getInstance());
-        scene.addInstance(firstCube.getInstance());
+        scene.addInstance(firstGrid.getInstance());
+        // scene.addInstance(firstCube.getInstance());
     }
 
     buttonInstances.get()->setBlendToTransparent();
@@ -703,14 +710,15 @@ int main(int /*argc*/, char * argv[])
 
             auto updateGridCorner = 6 + sin(timer)*1.5;
 
-            if(ropeFollowPlayer) {
+            if((ropeFollowPlayer && false) || depthMapId == 0) {
                 // firstRope.setPos(fpsCam.getPos());
                 // firstGrid.setPosFirst(fpsCam.getPos());
-                firstCube.setPosFirst(fpsCam.getPos());
+                // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, -5, 0));
+                firstGrid.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
             }
-            firstGrid.setPos(vec3(2, updateGridCorner, 2));
+            // firstGrid.setPos(vec3(2, updateGridCorner, 2));
 
-            auto animTimerDebug = glfwGetTime();
+            // auto animTimerDebug = glfwGetTime();
             for (uint i = 0; i < animIterPerFrame; i++)
             {
 
@@ -720,9 +728,9 @@ int main(int /*argc*/, char * argv[])
 
                 // firstRope.update(deltaT/animIterPerFrame);
 
-                // firstGrid.update(deltaT/animIterPerFrame);
-                auto timeStartOneIteration = glfwGetTime();
-                firstCube.update(deltaT/animIterPerFrame);
+                firstGrid.update(deltaT/animIterPerFrame);
+                // auto timeStartOneIteration = glfwGetTime();
+                // firstCube.update(deltaT/animIterPerFrame);
                 // std::cout << glfwGetTime() - timeStartOneIteration << std::endl;
                 // break;
 
@@ -977,7 +985,10 @@ int main(int /*argc*/, char * argv[])
             }
             
             if (keys & keyDebug) {
-                ropeFollowPlayer = !ropeFollowPlayer;
+                // ropeFollowPlayer = !ropeFollowPlayer;
+                firstRope.reset();
+                firstGrid.reset();
+                firstCube.reset();
                 // fromMirror = !fromMirror;
             }
 

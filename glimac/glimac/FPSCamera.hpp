@@ -526,8 +526,10 @@ namespace glimac {
             }
 
             void rotate(float degreesLeft, float degreeUp, float deltaT) {
-                m_fPhy += degreesLeft*degToRad*deltaT;
-                m_fTheta += degreeUp*degToRad*deltaT;
+                // m_fPhy += degreesLeft*degToRad*deltaT;
+                // m_fTheta += degreeUp*degToRad*deltaT;
+                m_fPhy += degreesLeft*degToRad*0.04;
+                m_fTheta += degreeUp*degToRad*0.04;
                 m_fTheta = clamp<float>(m_fTheta, -glm::pi<float>()/2, glm::pi<float>()/2);
                 computeDirectionVectors();
             }

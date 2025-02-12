@@ -175,7 +175,7 @@ int main(int /*argc*/, char * argv[])
     glimac::Sphere sphereLowPolyParticule = glimac::Sphere(1, 4, 2);
 
     // auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
-    auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
+    auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
     auto earthInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageEarthInt, imageCloudInt, imageDefaultNormalInt);
     auto sunInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
 
@@ -221,10 +221,11 @@ int main(int /*argc*/, char * argv[])
 
     auto firstCube = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 13, 5.5, 1000.0, 100);
-    firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 10, 10, 10000, 300);
+            firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 10, 10, 10000, 300);
+    // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 10, 1, 100, 0.1);
     // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 7, 5.5, 0, 0);
-    firstCube.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
-    // firstCube.addField(FieldType::field_point, vec3(0, 10, 0), -9.81);
+    // firstCube.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+    firstCube.addField(FieldType::field_point, vec3(-10, 10, 0), 3.6);
 
     Scene scene;
 
@@ -261,8 +262,8 @@ int main(int /*argc*/, char * argv[])
 
         // Animation objects
         // scene.addInstance(firstRope.getInstance());
-        scene.addInstance(firstGrid.getInstance());
-        // scene.addInstance(firstCube.getInstance());
+        // scene.addInstance(firstGrid.getInstance());
+        scene.addInstance(firstCube.getInstance());
     }
 
     buttonInstances.get()->setBlendToTransparent();
@@ -708,13 +709,20 @@ int main(int /*argc*/, char * argv[])
             skyboxInstances.get()->updateAngles(0, vec3(skyBoxAngles.x*degToRad, skyBoxAngles.y*degToRad, skyBoxAngles.z*degToRad));
             skyboxInstances.get()->computeAll();
 
-            auto updateGridCorner = 6 + sin(timer)*1.5;
+            // auto updateGridCorner = 6 + sin(timer)*1.5;
 
             if((ropeFollowPlayer && false) || depthMapId == 0) {
                 // firstRope.setPos(fpsCam.getPos());
                 // firstGrid.setPosFirst(fpsCam.getPos());
                 // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, -5, 0));
-                firstGrid.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
+
+                // firstRope.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
+                // firstGrid.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
+                firstCube.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
+                firstCube.setTypeFirst(ParticuleComputeType::fixed);
+            }
+            else {
+                firstCube.setTypeFirst(ParticuleComputeType::leapfrog);
             }
             // firstGrid.setPos(vec3(2, updateGridCorner, 2));
 
@@ -725,12 +733,12 @@ int main(int /*argc*/, char * argv[])
                 // Ka = h^2 * k/m
                 // Za = h * z/m
 
+                // auto timeStartOneIteration = glfwGetTime();
 
                 // firstRope.update(deltaT/animIterPerFrame);
+                // firstGrid.update(deltaT/animIterPerFrame);
+                firstCube.update(deltaT/animIterPerFrame);
 
-                firstGrid.update(deltaT/animIterPerFrame);
-                // auto timeStartOneIteration = glfwGetTime();
-                // firstCube.update(deltaT/animIterPerFrame);
                 // std::cout << glfwGetTime() - timeStartOneIteration << std::endl;
                 // break;
 

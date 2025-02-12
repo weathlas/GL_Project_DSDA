@@ -21,6 +21,8 @@ namespace glimac {
         field_magnet // might be too complex
     };
 
+    const float gravityConstant = 6.67f;
+
     class Field {
 
         public:
@@ -85,8 +87,9 @@ namespace glimac {
                 for (uint i = 0; i < m_particules.size(); i++) {
                     vec3 v_diff = m_particules.at(i)->m_pos - m_world_pos;
                     float d = length(v_diff);
-                    if(d < 0.1f) {
-                        continue;
+                    if(d < 0.25f) {
+                        d = 0.25f;
+                        // continue;
                     }
                     // if(v_diff.x == 0.0f && v_diff.y == 0.0f && v_diff.z == 0.0f) {
                     //     continue;
@@ -96,7 +99,10 @@ namespace glimac {
                     //     return;
                     // }
                     vec3 u = normalize(v_diff);
-                    m_particules.at(i)->m_forces_acc += m_k * u * (1/d);
+
+                    m_particules.at(i)->m_forces_acc -= gravityConstant * ((m_particules.at(i)->m_mass * m_k) / (d*d)) * u;
+
+                    // m_particules.at(i)->m_forces_acc += m_k * u * (gravityConstant/d);
                     // m_particules.at(i)->m_forces_acc -= 0.0001f * vec3(m_k/v_diff.x, m_k/v_diff.y, m_k/v_diff.z);
                     // m_particules.at(i)->m_forces_acc += v_diff;
                     // m_particules.at(i)->m_forces_acc += vec3(0, -0.1, 0);

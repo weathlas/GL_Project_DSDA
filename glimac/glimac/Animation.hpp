@@ -171,9 +171,9 @@ namespace glimac {
                             auto pos = origin + vec3(X*offsets.x, Y*offsets.y, Z*offsets.z);
 
                             auto type = ParticuleComputeType::leapfrog;
-                            if(X==0 && Y==0 && Z==0) {
-                                type = ParticuleComputeType::fixed;
-                            }
+                            // if(X==0 && Y==0 && Z==0) {
+                            //     type = ParticuleComputeType::fixed;
+                            // }
                             // if(X == 0 || X == count-1) {
                             //     if(Y == 0 /*|| Y == count-1*/) {
                             //         if(Z == 0 || Z == count-1) {
@@ -188,64 +188,68 @@ namespace glimac {
                             std::cout << "Pos " << pos << " type " << type << std::endl;
 
                             m_instance.get()->add(Transform(pos, vec3(), vec3(particuleSize)));
-                            m_particules.push_back(Particule(mass, pos, type));
+                            m_particules.push_back(Particule(mass, pos, vec3(-0.645, 0.12, 0.35), type));
+
+                            // m_particules.back().m_speed = ;
                         }
                     }
                 }
 
-                for (uint Z = 0; Z < count; Z++) {
-                    for (uint Y = 0; Y < count; Y++) {
-                        for (uint X = 0; X < count; X++) {
-                            if(X > 0) {
-                                auto length_segmentX = length(m_particules.at(X-1 + count*Y + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at(X-1 + count*Y + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentX, k, z, 0));
-                            }
-                            if(Y > 0) {
-                                auto length_segmentY = length(m_particules.at(X+count*(Y - 1) + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at(X+count*(Y - 1) + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentY, k, z, 0));
-                            }
-                            if(Z > 0) {
-                                auto length_segmentZ = length(m_particules.at(X+count*Y + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at(X+count*Y + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentZ, k, z, 0));
-                            }
+                if(true) {
+                    for (uint Z = 0; Z < count; Z++) {
+                        for (uint Y = 0; Y < count; Y++) {
+                            for (uint X = 0; X < count; X++) {
+                                if(X > 0) {
+                                    auto length_segmentX = length(m_particules.at(X-1 + count*Y + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at(X-1 + count*Y + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentX, k, z, 0));
+                                }
+                                if(Y > 0) {
+                                    auto length_segmentY = length(m_particules.at(X+count*(Y - 1) + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at(X+count*(Y - 1) + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentY, k, z, 0));
+                                }
+                                if(Z > 0) {
+                                    auto length_segmentZ = length(m_particules.at(X+count*Y + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at(X+count*Y + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentZ, k, z, 0));
+                                }
 
-                            if(X > 1) {
-                                auto length_segmentX = length(m_particules.at(X-2 + count*Y + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at(X-2 + count*Y + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentX, k, z*0.0, 0));
-                            }
-                            if(Y > 1) {
-                                auto length_segmentY = length(m_particules.at(X+count*(Y - 2) + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at(X+count*(Y - 2) + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentY, k, z*0.0, 0));
-                            }
-                            if(Z > 1) {
-                                auto length_segmentZ = length(m_particules.at(X+count*Y + count*count*(Z-2)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at(X+count*Y + count*count*(Z-2)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentZ, k, z*0.0, 0));
-                            }
+                                if(X > 1) {
+                                    auto length_segmentX = length(m_particules.at(X-2 + count*Y + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at(X-2 + count*Y + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentX, k, z*0.0, 0));
+                                }
+                                if(Y > 1) {
+                                    auto length_segmentY = length(m_particules.at(X+count*(Y - 2) + count*count*Z).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at(X+count*(Y - 2) + count*count*Z), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentY, k, z*0.0, 0));
+                                }
+                                if(Z > 1) {
+                                    auto length_segmentZ = length(m_particules.at(X+count*Y + count*count*(Z-2)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at(X+count*Y + count*count*(Z-2)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segmentZ, k, z*0.0, 0));
+                                }
 
-                            if(X > 0 && Y > 0) {
-                                auto length_segment = length(m_particules.at((X-1) + count*(Y-1) + count*count*(Z)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at((X-1) + count*(Y-1) + count*count*(Z)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
-                            }
-                            if(X > 0 && Z > 0) {
-                                auto length_segment = length(m_particules.at((X-1) + count*(Y) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at((X-1) + count*(Y) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
-                            }
-                            if(Y > 0 && Z > 0) {
-                                auto length_segment = length(m_particules.at((X) + count*(Y-1) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at((X) + count*(Y-1) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
-                            }
+                                if(X > 0 && Y > 0) {
+                                    auto length_segment = length(m_particules.at((X-1) + count*(Y-1) + count*count*(Z)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at((X-1) + count*(Y-1) + count*count*(Z)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                                }
+                                if(X > 0 && Z > 0) {
+                                    auto length_segment = length(m_particules.at((X-1) + count*(Y) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at((X-1) + count*(Y) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                                }
+                                if(Y > 0 && Z > 0) {
+                                    auto length_segment = length(m_particules.at((X) + count*(Y-1) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at((X) + count*(Y-1) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                                }
 
-                            if(X <count && Y > 0) {
-                                auto length_segment = length(m_particules.at((X+1) + count*(Y-1) + count*count*(Z)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at((X+1) + count*(Y-1) + count*count*(Z)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
-                            }
-                            if(X <count && Z > 0) {
-                                auto length_segment = length(m_particules.at((X+1) + count*(Y) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at((X+1) + count*(Y) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
-                            }
-                            if(Y <count && Z > 0) {
-                                auto length_segment = length(m_particules.at((X) + count*(Y+1) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
-                                m_links.push_back(Link(&m_particules.at((X) + count*(Y+1) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                                if(X <count && Y > 0) {
+                                    auto length_segment = length(m_particules.at((X+1) + count*(Y-1) + count*count*(Z)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at((X+1) + count*(Y-1) + count*count*(Z)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                                }
+                                if(X <count && Z > 0) {
+                                    auto length_segment = length(m_particules.at((X+1) + count*(Y) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at((X+1) + count*(Y) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                                }
+                                if(Y <count && Z > 0) {
+                                    auto length_segment = length(m_particules.at((X) + count*(Y+1) + count*count*(Z-1)).m_pos - m_particules.at(X+count*Y + count*count*Z).m_pos);
+                                    m_links.push_back(Link(&m_particules.at((X) + count*(Y+1) + count*count*(Z-1)), &m_particules.at(X+count*Y + count*count*Z), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                                }
                             }
                         }
                     }
@@ -310,6 +314,10 @@ namespace glimac {
 
             void setPosFirst(vec3 pos) {
                 m_particules.front().m_pos = pos;
+            }
+
+            void setTypeFirst(ParticuleComputeType type) {
+                m_particules.front().setType(type);
             }
             
         private:

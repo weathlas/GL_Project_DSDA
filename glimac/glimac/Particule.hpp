@@ -30,16 +30,18 @@ namespace glimac {
             // vec3 m_accel
             vec3 m_forces_acc;
 
-            Particule(float mass, vec3 pos, ParticuleComputeType type) {
+            Particule(float mass, vec3 pos, vec3 speed, ParticuleComputeType type) {
                 m_mass = mass;
                 m_pos = pos;
-                m_speed = vec3(0);
+                m_speed = speed;
                 m_forces_acc = vec3(0);
                 m_type = type;
 
                 m_initial_pos = m_pos;
                 m_initial_speed = m_speed;
             }
+
+            Particule(float mass, vec3 pos, ParticuleComputeType type):Particule(mass, pos, vec3(0), type){}
 
             Particule(float mass, vec3 pos) : Particule(mass, pos, fixed) {
             }
@@ -64,6 +66,13 @@ namespace glimac {
             void reset() {
                 m_pos = m_initial_pos;
                 m_speed = m_initial_speed;
+            }
+
+            void setType(ParticuleComputeType type) {
+                m_type = type;
+                if(m_type == ParticuleComputeType::fixed) {
+                    m_speed = vec3(0);
+                }
             }
 
             

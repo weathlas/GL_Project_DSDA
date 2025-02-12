@@ -226,6 +226,7 @@ int main(int /*argc*/, char * argv[])
     // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 7, 5.5, 0, 0);
     // firstCube.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
     firstCube.addField(FieldType::field_point, vec3(-10, 10, 0), 3.6);
+    firstCube.addField(FieldType::field_fluid, vec3(0, 0, 0), 0.1f);
 
     Scene scene;
 

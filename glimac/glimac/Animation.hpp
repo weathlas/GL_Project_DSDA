@@ -282,6 +282,9 @@ namespace glimac {
                 case FieldType::field_point:
                     m_fields.back().make_point(coords, k);
                     break;
+                case FieldType::field_fluid: // TO DO ADD fluid movement
+                    m_fields.back().make_fluid(k);
+                    break;
                 default:
                     break;
                 }

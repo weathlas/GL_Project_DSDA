@@ -18,6 +18,7 @@ namespace glimac {
     enum FieldType {
         field_directional,
         field_point,
+        field_fluid,
         field_magnet // might be too complex
     };
 
@@ -58,6 +59,11 @@ namespace glimac {
                 m_k = k;
             }
 
+            void make_fluid(float k) {
+                m_type = FieldType::field_fluid;
+                m_k = k;
+            }
+
             void update() {
                 switch (m_type)
                 {
@@ -67,6 +73,9 @@ namespace glimac {
                     break;
                 case FieldType::field_point:
                     update_field_point();
+                    break;
+                case FieldType::field_fluid:
+                    update_field_fluid();
                     break;
                 default:
                     break;
@@ -108,6 +117,17 @@ namespace glimac {
                     // m_particules.at(i)->m_forces_acc += vec3(0, -0.1, 0);
                 }
 
+            }
+
+            void update_field_fluid() {
+                for (uint i = 0; i < m_particules.size(); i++) {
+                    float speed = length(m_particules.at(i)->m_speed);
+                    if (speed == 0.0f) {
+                        continue;
+                    }
+                    vec3 speed_unit_vector = m_particules.at(i)->m_speed / speed;
+                    m_particules.at(i)->m_forces_acc -= (speed * speed * m_k) * speed_unit_vector;
+                }
             }
     };
 }

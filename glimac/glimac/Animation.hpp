@@ -110,7 +110,8 @@ namespace glimac {
                         auto pos = p1 + axisX * X + axisY * Y;
 
                         auto type = ParticuleComputeType::leapfrog;
-                        if(/*(X == 0 && Y == 0) ||*/ (X == count-1 && Y == 0) /*|| (X == 0 && Y == count-1)*/ || (X == count-1 && Y == count-1)) {
+                        // if(/*(X == 0 && Y == 0) ||*/ (X == count-1 && Y == 0) /*|| (X == 0 && Y == count-1)*/ || (X == count-1 && Y == count-1)) {
+                        if(X == count-1) {
                             type = ParticuleComputeType::fixed;
                         }
 
@@ -185,7 +186,7 @@ namespace glimac {
                             //     type = ParticuleComputeType::fixed;
                             // }
 
-                            std::cout << "Pos " << pos << " type " << type << std::endl;
+                            // std::cout << "Pos " << pos << " type " << type << std::endl;
 
                             m_instance.get()->add(Transform(pos, vec3(), vec3(particuleSize)));
                             m_particules.push_back(Particule(mass, pos, vec3(-0.645, 0.12, 0.35), type));

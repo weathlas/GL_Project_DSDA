@@ -214,9 +214,10 @@ int main(int /*argc*/, char * argv[])
 
     auto firstGrid = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     // firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 7, 0.005, 48.0, 0.65);
-    firstGrid.make_grid(vec3(-2, 6, 0), vec3(2, 6, 0), vec3(-2, 10, 0), vec3(2, 10, 0), 15, 0.005, 24.0, 0.02);
-    firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 0.25);
-    firstGrid.addField(FieldType::field_directional, vec3(0, 0, 1), 1.3);
+    firstGrid.make_grid(vec3(-2, 10, 0), vec3(2, 10, 0), vec3(-2, 6, 0), vec3(2, 6, 0), 35, 0.05, 96.0, 0.2);
+    firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 1.0);
+    firstGrid.addField(FieldType::field_directional, vec3(0, 0, 1), 0.67);
+    // firstGrid.addField(FieldType::field_fluid, vec3(0, 0, 0), 0.001f);
     // firstGrid.addField(FieldType::field_point, vec3(0, 6, 0), -8.5);
 
     auto firstCube = Animation(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
@@ -263,8 +264,8 @@ int main(int /*argc*/, char * argv[])
 
         // Animation objects
         // scene.addInstance(firstRope.getInstance());
-        // scene.addInstance(firstGrid.getInstance());
-        scene.addInstance(firstCube.getInstance());
+        scene.addInstance(firstGrid.getInstance());
+        // scene.addInstance(firstCube.getInstance());
     }
 
     buttonInstances.get()->setBlendToTransparent();
@@ -718,12 +719,14 @@ int main(int /*argc*/, char * argv[])
                 // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, -5, 0));
 
                 // firstRope.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
-                // firstGrid.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
-                firstCube.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
-                firstCube.setTypeFirst(ParticuleComputeType::fixed);
+                firstGrid.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
+                // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
+                firstGrid.setTypeFirst(ParticuleComputeType::fixed);
+                // firstCube.setTypeFirst(ParticuleComputeType::fixed);
             }
             else {
-                firstCube.setTypeFirst(ParticuleComputeType::leapfrog);
+                firstGrid.setTypeFirst(ParticuleComputeType::leapfrog);
+                // firstCube.setTypeFirst(ParticuleComputeType::leapfrog);
             }
             // firstGrid.setPos(vec3(2, updateGridCorner, 2));
 
@@ -737,8 +740,8 @@ int main(int /*argc*/, char * argv[])
                 // auto timeStartOneIteration = glfwGetTime();
 
                 // firstRope.update(deltaT/animIterPerFrame);
-                // firstGrid.update(deltaT/animIterPerFrame);
-                firstCube.update(deltaT/animIterPerFrame);
+                firstGrid.update(deltaT/animIterPerFrame);
+                // firstCube.update(deltaT/animIterPerFrame);
 
                 // std::cout << glfwGetTime() - timeStartOneIteration << std::endl;
                 // break;

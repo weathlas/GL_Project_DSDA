@@ -133,20 +133,20 @@ namespace glimac {
 
                         if(X > 1) {
                             auto length_segmentX = length(m_particules.at(X-2 + count*Y).m_pos - m_particules.at(X+count*Y).m_pos);
-                            m_links.push_back(Link(&m_particules.at(X-2 + count*Y), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segmentX, k, z*0.0, 0));
+                            m_links.push_back(Link(&m_particules.at(X-2 + count*Y), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segmentX, k*5, z*0, 0));
                         }
                         if(Y > 1) {
                             auto length_segmentY = length(m_particules.at(X+count*(Y - 2)).m_pos - m_particules.at(X+count*Y).m_pos);
-                            m_links.push_back(Link(&m_particules.at(X+count*(Y - 2)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segmentY, k, z*0.0, 0));
+                            m_links.push_back(Link(&m_particules.at(X+count*(Y - 2)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segmentY, k*5, z*0, 0));
                         }
                         
                         if(X > 0 && Y > 0) {
                             auto length_segment = length(m_particules.at((X-1) + count*(Y-1)).m_pos - m_particules.at(X+count*Y).m_pos);
-                            m_links.push_back(Link(&m_particules.at((X-1) + count*(Y-1)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                            m_links.push_back(Link(&m_particules.at((X-1) + count*(Y-1)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segment, k*3, z*0, 0));
                         }
                         if(X <count && Y > 0) {
                             auto length_segment = length(m_particules.at((X+1) + count*(Y-1)).m_pos - m_particules.at(X+count*Y).m_pos);
-                            m_links.push_back(Link(&m_particules.at((X+1) + count*(Y-1)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segment, k, z*0.0, 0));
+                            m_links.push_back(Link(&m_particules.at((X+1) + count*(Y-1)), &m_particules.at(X+count*Y), LinkType::damped_hook, length_segment, k*3, z*0, 0));
                         }
                     }
                 }
@@ -285,6 +285,9 @@ namespace glimac {
                     break;
                 case FieldType::field_fluid: // TO DO ADD fluid movement
                     m_fields.back().make_fluid(k);
+                    break;
+                case FieldType::field_wall: // TO DO ADD fluid movement
+                    m_fields.back().make_wall(coords, k);
                     break;
                 default:
                     break;

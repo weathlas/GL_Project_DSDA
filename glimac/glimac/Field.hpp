@@ -19,6 +19,7 @@ namespace glimac {
         field_directional,
         field_point,
         field_fluid,
+        field_wall,
         field_magnet // might be too complex
     };
 
@@ -58,9 +59,15 @@ namespace glimac {
                 m_world_pos = position;
                 m_k = k;
             }
-
+            
             void make_fluid(float k) {
                 m_type = FieldType::field_fluid;
+                m_k = k;
+            }
+
+            void make_wall(vec3 position, float k) {
+                m_type = FieldType::field_wall;
+                m_world_pos = position;
                 m_k = k;
             }
 
@@ -76,6 +83,9 @@ namespace glimac {
                     break;
                 case FieldType::field_fluid:
                     update_field_fluid();
+                    break;
+                case FieldType::field_wall:
+                    update_field_wall();
                     break;
                 default:
                     break;
@@ -127,6 +137,18 @@ namespace glimac {
                     }
                     vec3 speed_unit_vector = m_particules.at(i)->m_speed / speed;
                     m_particules.at(i)->m_forces_acc -= (speed * speed * m_k) * speed_unit_vector;
+                }
+            }
+
+            void update_field_wall() {
+                for (uint i = 0; i < m_particules.size(); i++) {
+                    auto diff = m_particules.at(i)->m_pos.y - m_world_pos.y;
+                    if(diff < 0.0f) {
+                        // m_particules.at(i)->m_forces_acc += -diff * vec3(0, 1, 0);
+                        if(m_particules.at(i)->m_speed.y <= 0.0f) {
+                            m_particules.at(i)->m_speed.y = 0.0f;
+                        }
+                    }
                 }
             }
     };

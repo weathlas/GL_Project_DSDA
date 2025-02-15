@@ -23,6 +23,8 @@
 #include <glimac/Animation.hpp>
 #include <glimac/common.hpp>
 
+#include <thread>
+
 
 using namespace std;
 using namespace glimac;
@@ -89,8 +91,7 @@ int main(int /*argc*/, char * argv[])
     std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programRoom, &programLight};
 
     std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom};
-    // std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programMirrorTex, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
-    
+
     std::cout << "Loading Textures..." << std::endl;
 
     GLuint imageWhiteInt = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
@@ -121,7 +122,7 @@ int main(int /*argc*/, char * argv[])
 
     auto firstGrid = Animation(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     // firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 7, 0.005, 48.0, 0.65);
-    firstGrid.make_grid(vec3(-2, 10, 0), vec3(2, 10, 0), vec3(-2, 6, 0), vec3(2, 6, 0), 15, 1.0, 128.0, 0.6);
+    firstGrid.make_grid(vec3(-2, 10, 0), vec3(2, 10, 0), vec3(-2, 6, 0), vec3(2, 6, 0), 50, 1.0, 128.0, 0.6);
     firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 45.81);
     firstGrid.addField(FieldType::field_directional, vec3(0, 0, 1), 30);
     firstGrid.addField(FieldType::field_wall, vec3(0, 5.8, 0), 0.1);
@@ -229,17 +230,16 @@ int main(int /*argc*/, char * argv[])
     BasicProgram *currentProgram = allPrograms.at(currentRoom);
 
 
-    float oldTime = -1.0f;
-    float deltaT = 0;
+    double oldTime = -1.0f;
+    double deltaT = 0;
     bool animateSwitch = true;
-    float timer = 0.0f;
-    float animateTimer = 0.0f;
+    double timer = 0.0f;
     bool boolRightRoom = false;
+
 
     glm::mat4 shadowMatrix;
 
     vec3 currentCamPos;
-    vec2 oldMouse;
     FPSCamera fpsCam = FPSCamera(win.width(), win.height());
 
     auto startPoint = vec3(0, 0.25, 0);
@@ -266,22 +266,24 @@ int main(int /*argc*/, char * argv[])
     std::cout << "Main loop" << std::endl;
 
     /* Loop until the user closes the window */
+    uint refreshTitle = 0;
     while (win.running()) {
 
         { // INIT CODE
             clear_screen();
             fpsCam.update(win, walls, deltaT);
             timer = glfwGetTime();
-            deltaT = std::min(timer - oldTime, 1.0f/24);
+            deltaT = std::min(timer - oldTime, 1.0/24);
+            // deltaT = timer - oldTime;
             if(oldTime < 0) { // first frame
                 deltaT = 0.0f;
             }
-            if (animateSwitch) { // the animation is running
-                animateTimer += deltaT;
-            }
+            // if (animateSwitch) { // the animation is running
+            //     animateTimer += deltaT;
+            // }
             oldTime = timer;
-            oldMouse = win.mouse();
-
+            // oldMouse = win.mouse();
+            // currentCamPos = fpsCam.getPos();
         }
 
         { // UPDATES
@@ -332,7 +334,7 @@ int main(int /*argc*/, char * argv[])
                 }
                 else {
                     scene.drawScene(win, programRoom, fpsCam, shadowMatrix, lightsRoomLeft, depthMapId, sunPos);
-                   programLight.activate(win, fpsCam, shadowMatrix, lightsRoomLeft, sunPos);
+                    programLight.activate(win, fpsCam, shadowMatrix, lightsRoomLeft, sunPos);
                     lightInstances.get()->drawAll(programLight, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), depthMapId);
                 }
             }
@@ -399,9 +401,12 @@ int main(int /*argc*/, char * argv[])
             fpsCam.resetMouse(win.mouse());
         }
 
-
-    
-        win.updateTitle(fpsCam.getPos(), deltaT, false);
+        if(refreshTitle == 100) {
+            // std::cout << 1.0f/deltaT << std::endl;
+            refreshTitle = 0;
+            win.updateTitle(vec3(0), deltaT, false);
+        }
+        refreshTitle++;
     }
 
     lightInstances.get()->~Instance();

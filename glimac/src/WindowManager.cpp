@@ -15,12 +15,12 @@ namespace glimac {
 
     
     bool WindowManager::init(int win_width, int win_height) {
-        m_dimensions = vec2(win_width, win_height);
-        m_keys = 0u;
-        m_title[255] = '\0';
         if(m_windowInitialized) {
             return false;
         }
+        m_dimensions = vec2(win_width, win_height);
+        m_keys = 0u;
+        m_title[255] = '\0';
         // glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_FALSE);
         m_Window = glfwCreateWindow(m_dimensions.x, m_dimensions.y, "Deux Salles, Deux Ambiances", nullptr, nullptr);
         if (!m_Window) {

@@ -60,7 +60,6 @@ namespace glimac {
                 auto length_segment = length(diff * (1.0f/(count-1)));
                 m_instance.get()->add(Transform(p1, vec3(), vec3(particuleSize)));
                 m_particules.push_back(Particule(mass, p1, ParticuleComputeType::fixed));
-                std::cout << "particule at " << p1 << std::endl;
                 for (uint i = 1; i < count-1; i++) {
                     auto pos = p1 + diff * (1.0f*i/(count-1));
                     m_instance.get()->add(Transform(pos, vec3(), vec3(particuleSize)));
@@ -70,12 +69,10 @@ namespace glimac {
                     else {
                         m_particules.push_back(Particule(mass, pos, ParticuleComputeType::leapfrog));
                     }
-                    std::cout << "particule at " << pos << std::endl;
                 }
                 m_instance.get()->add(Transform(p2, vec3(), vec3(particuleSize)));
                 // m_particules.push_back(Particule(mass, p2, ParticuleComputeType::fixed));
                 m_particules.push_back(Particule(mass, p2, ParticuleComputeType::leapfrog));
-                std::cout << "particule at " << p2 << std::endl;
 
                 for (uint i = 1; i < count; i++) {
                     m_links.push_back(Link(&m_particules.at(i-1), &m_particules.at(i), LinkType::damped_hook, length_segment, k, z, 0));
@@ -83,7 +80,7 @@ namespace glimac {
                 for (uint i = 2; i < count; i++) {
                     m_links.push_back(Link(&m_particules.at(i-2), &m_particules.at(i), LinkType::damped_hook, length_segment*2, k*3, z*0.1, 0));
                 }
-                
+                std::cout << "New Rope Anim with " << m_particules.size() << " particule and " << m_links.size() << " links" << std::endl;
             }
 
             void make_grid(vec3 p1, vec3 p2, vec3 p3, vec3 p4, uint count, float mass, float k, float z) {
@@ -150,7 +147,7 @@ namespace glimac {
                         }
                     }
                 }
-                
+                std::cout << "New Grid Anim with " << m_particules.size() << " particule and " << m_links.size() << " links" << std::endl;
             }
 
             void make_cube(vec3 center, vec3 dimensions, uint count, float mass, float k, float z) {
@@ -255,6 +252,7 @@ namespace glimac {
                         }
                     }
                 }
+                std::cout << "New Cube Anim with " << m_particules.size() << " particule and " << m_links.size() << " links" << std::endl;
             }
 
             void reset() {

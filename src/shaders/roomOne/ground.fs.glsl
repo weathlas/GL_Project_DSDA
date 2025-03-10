@@ -103,7 +103,7 @@ void main() {
     }
 
     vec3 sunColor = vec3(1, 1, 1);
-    float diffuseFromSun = diffuseFromLight(uSunLightPos, sunColor, 0.0, 0.0).r;
+    float diffuseFromSun = min(1.0, pow(diffuseFromLight(uSunLightPos, sunColor, 0.0, 0.0).r, 0.2));
     vec3 specularFromSun = specularFromLight(uSunLightPos, sunColor, 0.0, 0.0);
     // diffuseSum += diffuseFromSun;
     // specularSum += 
@@ -118,8 +118,8 @@ void main() {
     // shadowColor = vec3(1);
 
     // float dotProduct = dot(normalize(normal), normalize(vec3(1, 1, -1)));
-    float dotProduct = dot(normalize(normal), normalize(uSunLightPos));
-    float alignedWithSun = dotProduct > 0 ? 1.0 : max(0.0, 1 + dotProduct*3);
+                // float dotProduct = dot(normalize(normal), normalize(uSunLightPos));
+                // float alignedWithSun = dotProduct > 0 ? 1.0 : max(0.0, 1 + dotProduct*3);
     // float alignedWithSun = min(1, dot(normalize(normal), normalize(vec3(1, 1, -1)))+0.25);
 
     // ambient += vec3(Ka * alignedWithSun) * colorFromSun * haveLightFromSun;
@@ -150,6 +150,8 @@ void main() {
     // fFragColor.rgb = texture(uNormalMap, vec2(vUV.x, 1 - vUV.y)).rgb;
 
     // fFragColor.rgb = vec3(diffuseFromSun);
-    // fFragColor.rgb = tangent;
-    // fFragColor.rgb = realNormal;
+    // fFragColor.rgb = normal;
+    // fFragColor.rgb = vec3(-tangent.x, -tangent.y, -tangent.z);
+    // fFragColor.rgb = vec3(-bitangent.x, -bitangent.y, -bitangent.z);
+    // fFragColor.rgb = vec3(-normal.x, -normal.y, -normal.z);
 }

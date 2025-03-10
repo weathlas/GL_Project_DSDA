@@ -47,13 +47,17 @@ namespace glimac {
 
             void display();
 
-            void updateTitle(vec3 pos, float deltaT, bool colliding);
+            void updateTitle(vec3 pos, float deltaT, float simuTime);
 
             bool isFocused();
 
             void showCursor();
 
             void hideCursor();
+
+            bool isMouseCaptured();
+
+            void mouseCapture(bool state);
 
             void flushKeys();
 

@@ -31,7 +31,9 @@ namespace glimac
         leftClick   = (1u << 14),
         spacebar    = (1u << 15),
         keySun      = (1u << 16),
-        keyDebug    = (1u << 17)
+        keyDebug    = (1u << 17),
+        keyEscape   = (1u << 18),
+        keyTab      = (1u << 19)
     };
 
 }

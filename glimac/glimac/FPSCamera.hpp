@@ -39,7 +39,7 @@ namespace glimac {
     const float playerGravity = 9.81f*0.500;
 
     const float playerMaxFallSpeed = playerGravity*9.0;
-    const float playerJumpSpeed = playerGravity*1.0;
+    const float playerJumpSpeed = playerGravity*1.25;
 
     const float walkSpeed = 2.54f;
     const float runMultiplier = 2.0f;
@@ -256,7 +256,7 @@ namespace glimac {
                     m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, 0.08f, 10000.f);
                 }
                 m_isGrounded = false;
-                auto before = m_verticalSpeed;
+                // auto before = m_verticalSpeed;
                 m_verticalSpeed = clamp(m_verticalSpeed - (playerGravity*playerGravity * deltaT), -playerMaxFallSpeed, playerJumpSpeed);
                 m_FootPosition.y += m_isFlying?0.0:m_verticalSpeed * deltaT;
                 computeBBox();
@@ -352,6 +352,10 @@ namespace glimac {
 
             float getReach() {
                 return m_buttonReach;
+            }
+
+            BBox3f getBBox() {
+                return BBox3f(m_bbox);
             }
 
         private:
@@ -525,7 +529,7 @@ namespace glimac {
                 computeBBox();
             }
 
-            void rotate(float degreesLeft, float degreeUp, float deltaT) {
+            void rotate(float degreesLeft, float degreeUp, float /*deltaT*/) {
                 // m_fPhy += degreesLeft*degToRad*deltaT;
                 // m_fTheta += degreeUp*degToRad*deltaT;
                 m_fPhy += degreesLeft*degToRad*0.04;

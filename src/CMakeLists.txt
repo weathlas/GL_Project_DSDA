@@ -4,6 +4,8 @@ file(GLOB EXE_SRC_FILES ex[^\#]*.cpp)
 #file(GLOB_RECURSE SHADER_FILES *.glsl)
 list(REMOVE_ITEM EXT_SRC_FILES ${EXE_SRC_FILES})
 
+# add_subdirectory(cuda)
+
 foreach(EXE_SRC_FILE ${EXE_SRC_FILES})
 	get_filename_component(FILE ${EXE_SRC_FILE} NAME_WE)
 	get_filename_component(DIR ${CMAKE_CURRENT_SOURCE_DIR} NAME)
@@ -12,6 +14,8 @@ foreach(EXE_SRC_FILE ${EXE_SRC_FILES})
     message(STATUS "Configuring executable ${OUTPUT}")
 	set(SRC_FILES ${EXT_SRC_FILES} ${EXE_SRC_FILE})
 	add_executable(${OUTPUT} ${SRC_FILES} ${HEADER_FILES})
+
+	target_link_libraries(${OUTPUT} pthread)
 
     target_link_libraries(${OUTPUT} glimac)
     target_include_directories(${OUTPUT} PUBLIC glimac)

@@ -74,6 +74,22 @@ namespace glimac {
             }
 
             void update() {
+
+                // TODO make the wait passive
+                // Should prevent deadlock if the 2 particules are updated by 2 threads
+                while(true) {
+                    // wait to get the first lock (active wait)
+                    while(!m_M1->try_lock()) {}
+                    // try to get the second lock
+                    if(!m_M2->try_lock()) {
+                        // unlock the first lock
+                        m_M1->unlock();
+                        continue;
+                    }
+                    // both particules are locked
+                    break;
+                }
+
                 switch (m_type)
                 {
                 case LinkType::hook_spring:
@@ -91,6 +107,10 @@ namespace glimac {
                 default:
                     break;
                 }
+
+                // open the locks
+                m_M1->unlock();
+                m_M2->unlock();
             }
             
         private:
@@ -99,10 +119,11 @@ namespace glimac {
             void update_hook_spring() {
                 vec3 v_diff = m_M1->m_pos - m_M2->m_pos;
                 float d = length(v_diff);
-                if (d == 0)  {
-                    return;
-                }
+                // if (d == m_length)  {
+                //     return;
+                // }
                 vec3 u = normalize(v_diff);
+                // u = vec3(0, u.y, 0);
                 vec3 F = - m_k * (d - m_length) * u;
                 m_M1->m_forces_acc += F;
                 m_M2->m_forces_acc -= F;
@@ -117,11 +138,14 @@ namespace glimac {
             void update_damped_hook() {
                 vec3 v_diff = m_M1->m_pos - m_M2->m_pos;
                 float d = length(v_diff);
-                if (d == 0)  {
-                    return;
-                }
+                // if (d == 0)  {
+                //     return;
+                // }
                 vec3 u = normalize(v_diff);
+                // u = vec3(0, u.y, 0);
+                // vec3 spd = vec3(0, m_M2->m_speed.y, 0) - vec3(0, m_M1->m_speed.y, 0);
                 vec3 F = - m_k * (d - m_length) * u + m_z * (m_M2->m_speed - m_M1->m_speed);
+                // vec3 F = - m_k * (d - m_length) * u + m_z * spd;
                 m_M1->m_forces_acc += F;
                 m_M2->m_forces_acc -= F;
             }

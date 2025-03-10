@@ -82,25 +82,27 @@ int main(int /*argc*/, char * argv[])
     glimac::FilePath applicationPath(argv[0]);
 
     std::cout << "Compiling Shaders..." << std::endl;
-
-    // BasicProgram programRoom(applicationPath, "src/shaders/roomOne/ground.vs.glsl", "src/shaders/roomOne/ground.fs.glsl");
-    BasicProgram programRoom(applicationPath, "src/shaders/roomTwo/voronoi.vs.glsl", "src/shaders/roomTwo/voronoi.fs.glsl", ProgramType::LIGHTS);
-
+    BasicProgram programRoom(applicationPath, "src/shaders/roomOne/ground.vs.glsl", "src/shaders/roomOne/ground.fs.glsl");
+    BasicProgram programSky(applicationPath, "src/shaders/skybox/skybox_shader.vs.glsl", "src/shaders/skybox/skybox_shader.fs.glsl", ProgramType::TEXTURE);
     BasicProgram programLight(applicationPath, "src/shaders/light/light.vs.glsl", "src/shaders/light/light.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programVoronoi(applicationPath, "src/shaders/roomTwo/voronoi.vs.glsl", "src/shaders/roomTwo/voronoi.fs.glsl", ProgramType::LIGHTS);
-    std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programRoom, &programLight};
-
+    std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programRoom, &programLight, &programSky};
     std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom};
 
     std::cout << "Loading Textures..." << std::endl;
-
     GLuint imageWhiteInt = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
     GLuint imageDefaultNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/normal.png");
-
+    GLuint imageBrickDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_diffuse.jpg");
+    GLuint imageBrickRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_roughness.jpg");
+    GLuint imageBrickNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_normal.jpg");
+    GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/alpha-mayoris.jpg");
     std::vector<GLuint*> allTextures = {
-
         &imageWhiteInt,
-        &imageDefaultNormalInt
+        &imageDefaultNormalInt,
+        &imageBrickDiffuseInt,
+        &imageBrickRoughnessInt,
+        &imageBrickNormalInt,
+        &imageSkyboxInt
     };
 
     glimac::Sphere sphere = glimac::Sphere(1, 32, 16);
@@ -108,46 +110,132 @@ int main(int /*argc*/, char * argv[])
     glimac::Sphere sphereLowPoly = glimac::Sphere(1, 8, 4);
     glimac::Sphere sphereLowPolyParticule = glimac::Sphere(1, 4, 2);
 
-    std::cout << "Importing Objects..." << std::endl;
+    std::vector<BBox3f> walls;
 
-    auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda", imageWhiteInt, imageWhiteInt, imageDefaultNormalInt);
+    // Add all the walls
+    {
+        const float wallThickness = 1.0f;
+        walls.push_back(BBox3f(vec3(-220, -wallThickness*10, -130), vec3(220, 0, 130)));
+        walls.push_back(BBox3f(vec3(-1, -1, -12), vec3(1, 3, -2)));
+        walls.push_back(BBox3f(vec3(-1, -1, 2), vec3(1, 3, 12)));
+        walls.push_back(BBox3f(vec3(-22, -1, 12), vec3(22, 3, 12+wallThickness)));
+        walls.push_back(BBox3f(vec3(-22, -1, -12-wallThickness), vec3(22, 3, -12)));
+        walls.push_back(BBox3f(vec3(-21-wallThickness, -1, -13), vec3(-21, 3, 13)));
+        walls.push_back(BBox3f(vec3(21, -1, -13), vec3(21+wallThickness, 3, 13)));
+
+    }
+
+    std::cout << "Importing Objects..." << std::endl;
+    auto skyboxInstances = std::make_shared<Instance>(sphereInverted.getVertexCount(), sphereInverted.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
+    auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda", imageBrickDiffuseInt, imageBrickRoughnessInt, imageBrickNormalInt);
     auto lightInstances = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
     auto lightInstances2 = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
 
-
+    std::cout << "Particules Initialisation..." << std::endl;
+    std::cout << "Rope..." << std::endl;
     auto firstRope = Animation(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
-    firstRope.make_rope(vec3(0, 6, 0), vec3(-8, 6, 0), 30, 1.0, 100000000.0, 0);
-    firstRope.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81*0.1);
-    uint animIterPerFrame = 1;
+    // firstRope.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+    firstRope.make_rope(vec3(-10, 6, 0), vec3(10, 6, 0), 7, 1.0, 16000, 0);
+    firstRope.addField(FieldType::field_cube, BBox3f(), 0.1);
 
+    std::cout << "Grid..." << std::endl;
     auto firstGrid = Animation(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     // firstGrid.make_grid(vec3(-2, 6, -2), vec3(2, 6, -2), vec3(-2, 6, 2), vec3(2, 6, 2), 7, 0.005, 48.0, 0.65);
-    firstGrid.make_grid(vec3(-2, 10, 0), vec3(2, 10, 0), vec3(-2, 6, 0), vec3(2, 6, 0), 50, 1.0, 128.0, 0.6);
-    firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 45.81);
-    firstGrid.addField(FieldType::field_directional, vec3(0, 0, 1), 30);
-    firstGrid.addField(FieldType::field_wall, vec3(0, 5.8, 0), 0.1);
-    // firstGrid.addField(FieldType::field_fluid, vec3(0, 0, 0), 0.001f);
-    // firstGrid.addField(FieldType::field_point, vec3(0, 6, 0), -8.5);
+    if (true) { // work with 7 threads
+        // firstGrid.make_grid(vec3(-2, 8, 0), vec3(2, 8, 0), vec3(-2, 4, 0), vec3(2, 4, 0), 70, 1.0, 8192.0, 10);
+        firstGrid.make_grid(vec3(-6, 12, -6), vec3(6, 12, -6), vec3(-6, 12, 6), vec3(6, 12, 6), 70, 3.0, 16000, 10);
+        // firstGrid.make_grid(vec3(-21, 4, -12), vec3(21, 4, -12), vec3(-21, 4, 12), vec3(21, 4, 12), 80, 50.0, 1024.0, 60);
+        firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+        // firstGrid.addField(FieldType::field_directional, vec3(0, 0, -1), 6.3);
+        // firstGrid.addField(FieldType::field_wall, vec3(0, 3, 0), 0.1);
+        const float wallFriction = 0.33f;
 
+        const float radiusCube = 3.0f;
+        firstGrid.addField(FieldType::field_cube, BBox3f(vec3(-radiusCube, -radiusCube+6, -radiusCube), vec3(radiusCube, radiusCube+6, radiusCube)), wallFriction);
+        for(auto wall: walls) {
+            firstGrid.addField(FieldType::field_cube, wall, wallFriction);
+        }
+
+        // player BBox
+        firstGrid.addField(FieldType::field_cube, BBox3f(), 0.1);
+    }
+    if (false) { // work with 15 threads
+        firstGrid.make_grid(vec3(-2, 5, 0), vec3(-6, 5, 0), vec3(-2, 1, 0), vec3(-6, 1, 0), 70, 40.0, 2048.0, 60);
+        firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+        firstGrid.addField(FieldType::field_directional, vec3(0, 0, -1), 6.3);
+        firstGrid.addField(FieldType::field_wall, vec3(0, 0, 0), 0.1);
+    }
+    if (false) { // work with 15 threads, no sub connection
+        firstGrid.make_grid(vec3(-2, 5, 0), vec3(-6, 5, 0), vec3(-2, 1, 0), vec3(-6, 1, 0), 450, 40.0, 2048.0, 60);
+        firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+        firstGrid.addField(FieldType::field_directional, vec3(0, 0, -1), 6.3);
+        firstGrid.addField(FieldType::field_wall, vec3(0, 0, 0), 0.1);
+    }
+
+
+    std::cout << "Cube..." << std::endl;
     auto firstCube = Animation(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
     // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 13, 5.5, 1000.0, 100);
-            firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 10, 10, 10000, 300);
-    // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 10, 1, 100, 0.1);
-    // firstCube.make_cube(vec3(0, 10, 0), vec3(4, 4, 4), 7, 5.5, 0, 0);
-    // firstCube.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
-    firstCube.addField(FieldType::field_point, vec3(-10, 10, 0), 3.6);
-    firstCube.addField(FieldType::field_fluid, vec3(0, 0, 0), 0.1f);
+    
+    if (false) {
+        firstCube.make_cube(vec3(-11, 7, 0), vec3(4, 4, 4), 25, 50, 3000, 30);
+        firstCube.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+        firstCube.addField(FieldType::field_wall, vec3(0, 0, 0), 0.1);
+    }
+    
+    if (true) {
+        firstCube.make_cube(vec3(0, 7, -1.9), vec3(2), 15, 1, 15000, 3);
+        firstCube.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+        // firstCube.addField(FieldType::field_fluid, vec3(0), 0.001);
+        // firstCube.addField(FieldType::field_wall, vec3(0, 0, 0), 0.1);
+        const float wallFriction = 0.45f;
+
+        for(auto wall: walls) {
+            firstCube.addField(FieldType::field_cube, wall, wallFriction);
+        }
+
+        // Player Bbox
+        firstCube.addField(FieldType::field_cube, BBox3f(), 0.1);
+    }
+
+    auto secondCube = Animation(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
+    secondCube.make_cube(vec3(0, 7, -1.9), vec3(0.5), 2, 0.1, 400, 0.3);
+    secondCube.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+    for(auto wall: walls) {
+        secondCube.addField(FieldType::field_cube, wall, 0.05f);
+    }
+    secondCube.addField(FieldType::field_cube, BBox3f(), 0.1);
+
+
+    std::vector<Animation*> allAnimations = {
+        &firstRope,
+        &firstGrid,
+        &firstCube,
+        &secondCube
+    };
+
+
+    bool cubeInsteadOfFlag = true;
 
     Scene scene;
 
     // Add all objects to the scene
     {
         scene.addInstance(roomInstances);
+        // scene.addInstance(transparentInstances);
 
         // Animation objects
         // scene.addInstance(firstRope.getInstance());
-        scene.addInstance(firstGrid.getInstance());
-        // scene.addInstance(firstCube.getInstance());
+        if(cubeInsteadOfFlag) {
+            scene.addInstance(firstCube.getInstance());
+        }
+        else {
+            // scene.addInstance(firstGrid.getInstance());
+            scene.addInstance(firstRope.getInstance());
+        }
+        scene.addInstance(secondCube.getInstance());
+
+        // transparentInstances.get()->setBlendToTransparent();
     }
 
     // SHADERS INVARIANTS
@@ -156,14 +244,10 @@ int main(int /*argc*/, char * argv[])
     // Add all objects positions
     {
         roomInstances.get()->add();
-    }
+        // transparentInstances.get()->add(Transform(vec3(0), vec3(0), vec3(50, 6, 25)));
+        // transparentInstances.get()->add(Transform(vec3(0, 6, 0), vec3(0), vec3(50, 6, 25)));
 
-    std::vector<BBox3f> walls;
-
-    // Add all the walls
-    {
-        const float wallThickness = 1.0f;
-        walls.push_back(BBox3f(vec3(-21, -wallThickness*10, -12), vec3(21, 0, 12)));
+        skyboxInstances.get()->add(Transform(vec3(0), vec3(135*degToRad, -105*degToRad, 15*degToRad), vec3(5000)));
     }
 
     Light lightsRoomLeft;
@@ -219,7 +303,7 @@ int main(int /*argc*/, char * argv[])
             vec3 pos = vec3(linearRand(1.0f, 20.0f), linearRand(.1f, 1.0f), linearRand(-11.0f, 11.0f));
             pos = vec3(pos.x, pos.y/20, pos.z);
             vec3 color = vec3(linearRand(.1f, 1.0f), linearRand(.1f, 1.0f), linearRand(.1f, 1.0f));
-            lightsRoomRight.add(LightStruct(pos, color, vec3(3, 0.5, lightSize)));
+            lightsRoomRight.add(LightStruct(pos, color, vec3(5, 1, lightSize)));
             lightInstances2.get()->add(Transform(pos, vec3(0), vec3(lightSize)));
         }
     }
@@ -232,10 +316,10 @@ int main(int /*argc*/, char * argv[])
 
     double oldTime = -1.0f;
     double deltaT = 0;
-    bool animateSwitch = true;
+    bool animateSwitch = false;
     double timer = 0.0f;
     bool boolRightRoom = false;
-
+    vec2 mousePos = win.mouse();
 
     glm::mat4 shadowMatrix;
 
@@ -246,7 +330,7 @@ int main(int /*argc*/, char * argv[])
     auto startLookPoint = vec3(0, 0.25, -1);
     fpsCam.makeLookAt(startPoint, startLookPoint);
     fpsCam.update(win, walls, deltaT);
-    fpsCam.resetMouse(win.mouse());
+    fpsCam.resetMouse(mousePos);
 
     
     ShadowMap shadowMap(applicationPath);
@@ -261,9 +345,158 @@ int main(int /*argc*/, char * argv[])
     vec3 sunPos = shadowMap.getLightPos();
 
 
-    bool ropeFollowPlayer = false;
+    // bool ropeFollowPlayer = false;
 
     std::cout << "Main loop" << std::endl;
+
+    enum ThreadProcessState {
+        NothingDone,
+        LinksDone,
+        ParticulesDone
+    };
+
+    enum ThreadProcessComparaison {
+        Compute_1,
+        Compute_2,
+        Compute_3
+    };
+
+    uint nb_threads = 6;
+    volatile bool killThreads = false;
+    volatile bool computeAnim = false;
+    volatile double animFrameTime = 0.0;
+    volatile auto deltaTThreads = 0.010f;
+    std::vector<ThreadProcessState> threadStates;
+    std::vector<ThreadProcessComparaison> threadComparaison;
+    std::vector<std::thread> threadList;
+
+    std::vector<ThreadProcessState> threadStates_flag;
+    std::vector<ThreadProcessComparaison> threadComparaison_flag;
+    std::vector<std::thread> threadList_flag;
+
+    auto animUpdateLambda = [&] (int index, Animation* animation) {
+        uint startLinksIndex = (1.0f*index/nb_threads) * animation->getLinksCount();
+        uint endLinksIndex = (1.0f*(index+1)/nb_threads) * animation->getLinksCount();
+
+        uint startParticuleIndex = (1.0f*index/nb_threads) * animation->getParticulesCount();
+        uint endParticuleIndex = (1.0f*(index+1)/nb_threads) * animation->getParticulesCount();
+
+        threadStates.at(index) = NothingDone;
+        threadComparaison.at(index) = Compute_1;
+
+        auto canStartNextStep = false;
+        auto canUpdateParticule = false;
+
+        auto timer = 0.0f;
+        auto oldTime = 0.0f;
+
+        while(!killThreads) {
+
+            // This block should wait for the other threads to have finished their computation
+            canStartNextStep = true;
+            switch (threadComparaison.at(index))
+            {
+            case Compute_1:
+                
+                for(auto state: threadComparaison) {
+                    if(state == Compute_3) {
+                        canStartNextStep = false;
+                        break;
+                    }
+                }
+                break;
+            case Compute_2:
+                for(auto state: threadComparaison) {
+                    if(state == Compute_1) {
+                        canStartNextStep = false;
+                        break;
+                    }
+                }
+                break;
+            case Compute_3:
+                for(auto state: threadComparaison) {
+                    if(state == Compute_2) {
+                        canStartNextStep = false;
+                        break;
+                    }
+                }
+                break;
+            }
+            if(!canStartNextStep) {
+                continue;
+            }
+
+            if(computeAnim) {
+                timer = glfwGetTime();
+                threadStates.at(index) = NothingDone;
+
+                animation->getFields()->back().make_cube(fpsCam.getBBox(), 0);
+                animation->update_links(startLinksIndex, endLinksIndex);
+                threadStates.at(index) = LinksDone;
+
+                while(!killThreads) {
+                    
+                    canUpdateParticule = true;
+                    for (size_t i = 0; i < threadStates.size(); i++) {
+                        if(threadStates.at(i) == NothingDone) {
+                            canUpdateParticule = false;
+                            break;
+                        }
+                    }   
+                    if(canUpdateParticule) {
+                        break;
+                    }
+                }
+                if(killThreads) {
+                    return;
+                }
+
+                animation->update_particules(deltaTThreads, startParticuleIndex, endParticuleIndex);
+                threadStates.at(index) = ParticulesDone;
+
+
+                // tell the other thread that it has finished computing this frame
+                switch (threadComparaison.at(index))
+                {
+                case Compute_1:
+                    threadComparaison.at(index) = Compute_2;
+                    break;
+                case Compute_2:
+                    threadComparaison.at(index) = Compute_3;
+                    break;
+                case Compute_3:
+                    threadComparaison.at(index) = Compute_1;
+                    break;
+                }
+                if(index == 0) {
+                    // std::cout << 1.0/(glfwGetTime() - timer) << std::endl;
+                    animFrameTime = glfwGetTime() - timer;
+                    // animFrameTime = glfwGetTime() - oldTime;
+                    deltaTThreads = animFrameTime;
+                }
+            }
+
+            while(oldTime+deltaTThreads > glfwGetTime()){}
+            oldTime = glfwGetTime();
+        }
+    };
+    std::cerr << "Before Threads shenanigans" << std::endl;
+    for (uint i = 0; i < nb_threads; i++) {
+        threadStates.push_back(NothingDone);
+        threadComparaison.push_back(Compute_1);
+        if(cubeInsteadOfFlag) {
+            threadList.push_back(std::thread(animUpdateLambda, i, &firstCube));
+        }
+    }
+    for (uint i = 0; i < nb_threads; i++) {
+        threadStates_flag.push_back(NothingDone);
+        threadComparaison_flag.push_back(Compute_1);
+        if(!cubeInsteadOfFlag) {
+            threadList_flag.push_back(std::thread(animUpdateLambda, i, &firstRope));
+            // threadList_flag.push_back(std::thread(animUpdateLambda, i, &firstGrid));
+        }
+    }
+    computeAnim = false;
 
     /* Loop until the user closes the window */
     uint refreshTitle = 0;
@@ -283,43 +516,65 @@ int main(int /*argc*/, char * argv[])
             // }
             oldTime = timer;
             // oldMouse = win.mouse();
-            // currentCamPos = fpsCam.getPos();
+            currentCamPos = fpsCam.getPos();
         }
 
         { // UPDATES
 
-            if((ropeFollowPlayer && false) || depthMapId == 0) {
-
-                // firstRope.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
-                firstGrid.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
-                // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
-                firstGrid.setTypeFirst(ParticuleComputeType::fixed);
-                // firstCube.setTypeFirst(ParticuleComputeType::fixed);
+            if(cubeInsteadOfFlag) {
+                firstCube.update_visual();
             }
             else {
-                firstGrid.setTypeFirst(ParticuleComputeType::leapfrog);
-                // firstCube.setTypeFirst(ParticuleComputeType::leapfrog);
+                // firstGrid.update_visual();
+                firstRope.update_visual();
             }
 
-            for (uint i = 0; i < animIterPerFrame; i++)
-            {
-
-                // Ka = h^2 * k/m
-                // Za = h * z/m
-
-                // auto timeStartOneIteration = glfwGetTime();
-
-                // firstRope.update(deltaT/animIterPerFrame);
-                firstGrid.update(deltaT/animIterPerFrame);
-                // firstCube.update(deltaT/animIterPerFrame);
-
+            if(computeAnim) {
+                secondCube.getFields()->back().make_cube(fpsCam.getBBox(), 0);
+                secondCube.update(deltaT);
             }
+            secondCube.update_visual();
+
+            if(depthMapId != 0) {
+                shadowMap.renderTexture(win, scene);
+            }
+
+            // if((ropeFollowPlayer && false) || depthMapId == 0) {
+
+            //     // firstRope.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
+            //     firstGrid.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
+            //     // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
+            //     firstGrid.setTypeFirst(ParticuleComputeType::fixed);
+            //     // firstCube.setTypeFirst(ParticuleComputeType::fixed);
+            // }
+            // else {
+            //     firstGrid.setTypeFirst(ParticuleComputeType::leapfrog);
+            //     // firstCube.setTypeFirst(ParticuleComputeType::leapfrog);
+            // }
+
+            // Ka = h^2 * k/m
+            // Za = h * z/m
+
+            // particules: 20525
+            // links: 264966
+
+            // auto timeStartOneIteration = glfwGetTime();
+            // firstRope.update(deltaT/animIterPerFrame);
+            // firstGrid.update(deltaT);
+            // firstCube.update(deltaT/animIterPerFrame);
+
             
         }
 
         { // RENDERING
 
             {
+
+                programSky.activate(win, fpsCam, shadowMatrix, lightsRoomRight, sunPos);
+                glCullFace(GL_FRONT);
+                skyboxInstances.get()->drawAll(programSky, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), 0);
+                glCullFace(GL_BACK);
+
                 if(currentCamPos.x < -0.1) {
                     boolRightRoom = false;
                 }
@@ -331,11 +586,15 @@ int main(int /*argc*/, char * argv[])
                     scene.drawScene(win, *currentProgram, fpsCam, shadowMatrix, lightsRoomRight, depthMapId, sunPos);
                     programLight.activate(win, fpsCam, shadowMatrix, lightsRoomRight, sunPos);
                     lightInstances2.get()->drawAll(programLight, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), depthMapId);
+                    // programParticules.activate(win, fpsCam, shadowMatrix, lightsRoomLeft, sunPos);
+                    // firstGrid.getInstance().get()->drawAll(programParticules, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), depthMapId);
                 }
                 else {
                     scene.drawScene(win, programRoom, fpsCam, shadowMatrix, lightsRoomLeft, depthMapId, sunPos);
                     programLight.activate(win, fpsCam, shadowMatrix, lightsRoomLeft, sunPos);
                     lightInstances.get()->drawAll(programLight, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), depthMapId);
+                    // programParticules.activate(win, fpsCam, shadowMatrix, lightsRoomLeft, sunPos);
+                    // firstGrid.getInstance().get()->drawAll(programParticules, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), depthMapId);
                 }
             }
 
@@ -348,9 +607,21 @@ int main(int /*argc*/, char * argv[])
 
         /* Poll for and process events */
         if (win.isFocused()) { // EVENTS
-            win.hideCursor();
+            if (keys & keyTab) {
+                win.mouseCapture(!win.isMouseCaptured());
+                mousePos = win.mouse();
+                fpsCam.resetMouse(mousePos);
+            }
+            
+            if(win.isMouseCaptured()) {
+                win.hideCursor();
+                mousePos = win.mouse();
+            }
+            else {
+                win.showCursor();
+            }
 
-            fpsCam.updateKeys(keys, win.mouse(), deltaT);
+            fpsCam.updateKeys(keys, mousePos, deltaT);
 
             if (keys & scrollDown) {
                 currentRoom = (currentRoom+1) % allRoomTwoPrograms.size();
@@ -360,6 +631,7 @@ int main(int /*argc*/, char * argv[])
 
             if (keys & scrollUp) {
                 animateSwitch = !animateSwitch;
+                computeAnim = !computeAnim;
                 // std::cout << "animate room 1 " << animateSwitch << std::endl;
             }
 
@@ -377,8 +649,8 @@ int main(int /*argc*/, char * argv[])
                 firstRope.reset();
                 firstGrid.reset();
                 firstCube.reset();
+                secondCube.reset();
             }
-
 
             if (keys & switchMode) {
                 GLint polygonMode[2];
@@ -396,18 +668,37 @@ int main(int /*argc*/, char * argv[])
 
         }
         else {
+            win.mouseCapture(false);
             win.showCursor();
             win.flushKeys();
-            fpsCam.resetMouse(win.mouse());
+            fpsCam.resetMouse(mousePos);
         }
 
-        if(refreshTitle == 100) {
+        if(refreshTitle == 10) {
             // std::cout << 1.0f/deltaT << std::endl;
             refreshTitle = 0;
-            win.updateTitle(vec3(0), deltaT, false);
+            win.updateTitle(currentCamPos, deltaT, animFrameTime);
         }
-        refreshTitle++;
+        else {
+            refreshTitle++;
+        }
     }
+
+    killThreads = true;
+    for (uint i = 0; i < threadList.size(); i++)
+    {
+        threadList.at(i).join();
+    }
+    for (uint i = 0; i < threadList_flag.size(); i++)
+    {
+        threadList_flag.at(i).join();
+    }
+    std::cout << "Thread joined" << std::endl;
+    
+    // Make the audio lag
+    // for(auto anim : allAnimations) {
+    //     anim->~Animation();
+    // }
 
     lightInstances.get()->~Instance();
     lightInstances2.get()->~Instance();
@@ -424,5 +715,7 @@ int main(int /*argc*/, char * argv[])
     }
 
     win.close();
+
+    std::cout << "Programm Finished" << std::endl;
     return 0;
 }

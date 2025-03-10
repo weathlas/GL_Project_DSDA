@@ -12,6 +12,7 @@ namespace glimac {
     static vec3 m_MousePos;
 
     static bool m_windowInitialized;
+    static bool m_mouseCaptured = false;
 
     
     bool WindowManager::init(int win_width, int win_height) {
@@ -69,7 +70,7 @@ namespace glimac {
 
         auto out = m_keys;
         // prevent the scrollwheel event to be duplicated
-        m_keys &= ~(scrollDown | scrollUp | switchMode | keySun | keyDebug);
+        m_keys &= ~(scrollDown | scrollUp | switchMode | keySun | keyDebug | keyTab | keyEscape);
         return out;
     }
 
@@ -112,10 +113,10 @@ namespace glimac {
         // glFlush();
     }
 
-    void WindowManager::updateTitle(vec3 pos, float deltaT, bool colliding) {
+    void WindowManager::updateTitle(vec3 pos, float deltaT, float simuTime) {
         snprintf ( m_title, 255,
-                    "%s %s - [FPS: %3.2f] - x:%3.0f y:%3.0f z:%3.0f, collision: %d",
-                    "Deux Salles, Deux Ambiances", "v0.3", 1.0f / (float)deltaT , pos.x, pos.y, pos.z, colliding);
+                    "%s %s - [FPS: %3.2f] - x:%3.0f y:%3.0f z:%3.0f, particules: %3.2f",
+                    "Deux Salles, Deux Ambiances", "v0.3", 1.0f / (float)deltaT , pos.x, pos.y, pos.z, 1.0f / (float)simuTime);
 
         glfwSetWindowTitle (m_Window, m_title);
 
@@ -130,6 +131,14 @@ namespace glimac {
     }
     void WindowManager::showCursor() {
         glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+    bool WindowManager::isMouseCaptured() {
+        return m_mouseCaptured;
+    }
+
+    void WindowManager::mouseCapture(bool state) {
+        m_mouseCaptured = state;
     }
 
     void WindowManager::flushKeys() {
@@ -190,6 +199,12 @@ namespace glimac {
             case GLFW_KEY_R:
                 m_keys |= keyDebug;
                 break;
+            case GLFW_KEY_ESCAPE:
+                m_keys |= keyEscape;
+                break;
+            case GLFW_KEY_TAB:
+                m_keys |= keyTab;
+                break;
             
             default:
                 break;
@@ -238,6 +253,12 @@ namespace glimac {
                 break;
             case GLFW_KEY_R:
                 m_keys &= ~keyDebug;
+                break;
+            case GLFW_KEY_ESCAPE:
+                m_keys &= ~keyEscape;
+                break;
+            case GLFW_KEY_TAB:
+                m_keys &= ~keyTab;
                 break;
             
             default:

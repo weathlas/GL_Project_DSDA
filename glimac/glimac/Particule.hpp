@@ -5,6 +5,8 @@
 #include <glad/glad.h>
 
 #include <vector>
+#include <mutex>
+#include <atomic>
 
 
 #include "common.hpp"
@@ -28,6 +30,7 @@ namespace glimac {
             vec3 m_pos;
             vec3 m_speed;
             // vec3 m_accel
+            std::mutex* m_mutex;
             vec3 m_forces_acc;
 
             Particule(float mass, vec3 pos, vec3 speed, ParticuleComputeType type) {
@@ -39,6 +42,10 @@ namespace glimac {
 
                 m_initial_pos = m_pos;
                 m_initial_speed = m_speed;
+
+                // std::cerr << "Creating the Mutex" << std::endl;
+                m_mutex = new std::mutex();
+                // std::cerr << "Mutex OK" << std::endl;
             }
 
             Particule(float mass, vec3 pos, ParticuleComputeType type):Particule(mass, pos, vec3(0), type){}
@@ -46,9 +53,14 @@ namespace glimac {
             Particule(float mass, vec3 pos) : Particule(mass, pos, fixed) {
             }
 
-            ~Particule(){}
+            ~Particule(){
+                delete m_mutex;
+            }
 
             void update(float h) {
+                std::unique_lock<std::mutex> guard(*m_mutex);
+                // std::lock_guard<std::mutex> guard(m_mutex);
+                // m_mutex.lock();
                 switch (m_type)
                 {
                 case ParticuleComputeType::euler:
@@ -61,18 +73,37 @@ namespace glimac {
                     update_fixed(h);
                     break;
                 }
+                // m_mutex.unlock();
             }
 
             void reset() {
+                std::unique_lock<std::mutex> guard(*m_mutex);
+                // std::lock_guard<std::mutex> guard(m_mutex);
+                // m_mutex.lock();
                 m_pos = m_initial_pos;
                 m_speed = m_initial_speed;
+                // m_mutex.unlock();
             }
 
             void setType(ParticuleComputeType type) {
+                std::unique_lock<std::mutex> guard(*m_mutex);
+                // std::lock_guard<std::mutex> guard(m_mutex);
+                // m_mutex.lock();
                 m_type = type;
                 if(m_type == ParticuleComputeType::fixed) {
                     m_speed = vec3(0);
                 }
+                // m_mutex.unlock();
+            }
+
+            bool try_lock() {
+                return m_mutex->try_lock();
+                // return m_mutex.try_lock();
+            }
+
+            void unlock() {
+                m_mutex->unlock();
+                // m_mutex.unlock();
             }
 
             
@@ -94,7 +125,7 @@ namespace glimac {
                 m_forces_acc = vec3(0);
             }
                 
-            void update_fixed(float h) {
+            void update_fixed(float /*h*/) {
                 m_forces_acc = vec3(0);
             }
 

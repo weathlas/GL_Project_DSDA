@@ -49,6 +49,7 @@ namespace glimac {
                 for (auto* p: m_particules) {
                     delete p;
                 }
+                m_instance.get()->~Instance();
                 std::cout << "Deleted " << size << " particules." << std::endl;
             }
 

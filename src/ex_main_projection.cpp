@@ -1065,44 +1065,50 @@ int main(int /*argc*/, char * argv[])
     // // could be optimized with the length as 1.0 and x/y/z as the position
     // // or not since there is a disvision by the length of x/y/z
 
+    std::vector<rigidBody> allRigidBodies;
 
-
-    rigidBody rb;
-    rigidBody rb2;
-
+    allRigidBodies.push_back(rigidBody());
     // rb.com = vecToPoint(pos);
     auto rb1Pos = vec3(0.0, 0.0, 0.0);
     auto rb1Motor = posToTranslator(rb1Pos) * anglesToRotor(ax, ay, az);
-    rb.setMass(1000.0f);
-    rb.setStatic(true);
-    rb.setMotor(rb1Motor);
-    simpleCube.get()->getVertex(&rb.points);
-    simpleCube.get()->getEdgesIndex(&rb.edges_index);
-    simpleCube.get()->getTrianglesIndex(&rb.triangles_index);
-    simpleCube.get()->generateTriangles(&rb.triangles_from_Instance);
-    simpleCube.get()->generateEdges(&rb.edges_from_Instance);
-    rb.reduceAll();
-    rb.computeAll();
 
-    std::cout << "Nb points for rb: " << rb.points.size() << " computed: " << rb.points_computed.size() << " edges: " << rb.edges_computed.size() << std::endl;
+    allRigidBodies.at(0).setMass(1000.0f);
+    allRigidBodies.at(0).setStatic(true);
+    allRigidBodies.at(0).setMotor(rb1Motor);
+    simpleCube.get()->setupRigidBody(&allRigidBodies.at(0));
+    allRigidBodies.at(0).reduceAll();
+    allRigidBodies.at(0).computeAll();
+
+    // rigidBody rb2;
+
+    // rb.setMass(1000.0f);
+    // rb.setStatic(true);
+    // rb.setMotor(rb1Motor);
+    // simpleCube.get()->getVertex(&rb.points);
+    // simpleCube.get()->getEdgesIndex(&rb.edges_index);
+    // simpleCube.get()->getTrianglesIndex(&rb.triangles_index);
+    // simpleCube.get()->generateTriangles(&rb.triangles_from_Instance);
+    // simpleCube.get()->generateEdges(&rb.edges_from_Instance);
+    // rb.reduceAll();
+    // rb.computeAll();
+
+    std::cout << "Nb points for rb: " << allRigidBodies.at(0).points.size() << " computed: " << allRigidBodies.at(0).points_computed.size() << " edges: " << allRigidBodies.at(0).edges_computed.size() << std::endl;
+
+    allRigidBodies.push_back(rigidBody());
 
     // rb2.com = vecToPoint(pos+vec3(0, 1.3, 0));
     auto rb2Pos = vec3(0.0, 4.0, 0.25);
     auto rb2Motor = posToTranslator(rb2Pos) * anglesToRotor(ax2, ay2, az2);
-    rb2.setMass(1.0f);
-    rb2.setStatic(true);
-    rb2.setMotor(rb2Motor);
+    allRigidBodies.at(1).setMass(1.0f);
+    allRigidBodies.at(1).setStatic(true);
+    allRigidBodies.at(1).setMotor(rb2Motor);
     // rb2.translator_tick = posToTranslator(0.0f, -2.0f, 0.0f);
     // rb2.motor = kln::motor(posToTranslator(0.0f, -0.1f, 0.0f));
-    simpleCube.get()->getVertex(&rb2.points);
-    simpleCube.get()->getEdgesIndex(&rb2.edges_index);
-    simpleCube.get()->getTrianglesIndex(&rb2.triangles_index);
-    simpleCube.get()->generateTriangles(&rb2.triangles_from_Instance);
-    simpleCube.get()->generateEdges(&rb2.edges_from_Instance);
-    rb2.reduceAll();
-    rb2.computeAll();
+    simpleCube.get()->setupRigidBody(&allRigidBodies.at(1));
+    allRigidBodies.at(1).reduceAll();
+    allRigidBodies.at(1).computeAll();
 
-    std::cout << "Nb points for rb2: " << rb2.points.size() << " computed: " << rb2.points_computed.size() << " edges: " << rb2.edges_computed.size() << std::endl;
+    std::cout << "Nb points for rb2: " << allRigidBodies.at(1).points.size() << " computed: " << allRigidBodies.at(1).points_computed.size() << " edges: " << allRigidBodies.at(1).edges_computed.size() << std::endl;
 
     // std::vector<triangle> cubeTriangles;
     // simpleCube.get()->getTrianglesIndex(&cubeTriangles);
@@ -1156,7 +1162,7 @@ firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
 // firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 1.0f);
 const float wallFriction = 0.68f;
 
-firstGrid.addField(FieldType::field_convex, &rb, wallFriction);
+firstGrid.addField(FieldType::field_convex, &allRigidBodies.at(0), wallFriction);
 
 firstGrid.addField(FieldType::field_cube, BBox3f(vec3(-50, -15, -50), vec3(50, -5, 50)), wallFriction);
 
@@ -1376,13 +1382,13 @@ computeAnim = false;
                 // simpleCube.get()->generateTriangles(&rb.triangles_from_Instance);
 
 
-                rb.setMotor(rb1Motor);
+                allRigidBodies.at(0).setMotor(rb1Motor);
                 // rb.updateMotor(deltaT);
-                rb.computeAll();
+                allRigidBodies.at(0).computeAll();
 
                 // simpleCube.get()->generateTriangles(&rb2.triangles_from_Instance);
-                rb2.updateMotor(deltaT);
-                rb2.computeAll();
+                allRigidBodies.at(1).updateMotor(deltaT);
+                allRigidBodies.at(1).computeAll();
 
                 // auto count = collideRigidBody(&rb, &rb2);
             }
@@ -1398,9 +1404,9 @@ computeAnim = false;
             if(false && (animateSwitch || computeNextFrame)) {
                 if(nbIntersections>0) {
 
-                    auto displace1 = resolveInternalPoint(&rb, centerCollisionRB1, false);
-                    auto displace2 = resolveInternalPoint(&rb2, centerCollisionRB2, false);
-                    updatePhysic(&rb, &rb2, centerCollisionRB1, centerCollisionRB2, displace1, displace2);
+                    auto displace1 = resolveInternalPoint(&allRigidBodies.at(0), centerCollisionRB1, false);
+                    auto displace2 = resolveInternalPoint(&allRigidBodies.at(1), centerCollisionRB2, false);
+                    updatePhysic(&allRigidBodies.at(0), &allRigidBodies.at(1), centerCollisionRB1, centerCollisionRB2, displace1, displace2);
                     edgeCollisionRender.get()->add(Transform(displace1 + centerCollisionRB1, vec3(0), vec3(0.300)));
                     edgeCollisionRender.get()->add(Transform(displace2 + centerCollisionRB2, vec3(0), vec3(0.300)));
                 }
@@ -1450,11 +1456,11 @@ computeAnim = false;
 
             // }
 
-            simpleCube.get()->updatePosition(0, pointToVec(rb.com));
+            simpleCube.get()->updatePosition(0, pointToVec(allRigidBodies.at(0).com));
             simpleCube.get()->updateAngles(0, vec3(ax, ay, az));
             simpleCube.get()->computeAll();
 
-            simpleCube.get()->updatePosition(1, pointToVec(rb2.com));
+            simpleCube.get()->updatePosition(1, pointToVec(allRigidBodies.at(1).com));
             // simpleCube.get()->updateAngles(1, vec3(0));
             simpleCube.get()->compute(1);
 
@@ -1462,7 +1468,7 @@ computeAnim = false;
             if(false) {
 
                 edgeRender.get()->clear();
-                for(auto &e: rb.edges_computed) {
+                for(auto &e: allRigidBodies.at(0).edges_computed) {
                     size_t count = 20;
                     auto len = length(pointToVec(e.p2) - pointToVec(e.p1));
                     for (size_t i = 0; i <= count; i++)
@@ -1471,7 +1477,7 @@ computeAnim = false;
                         edgeRender.get()->add(Transform(pointToVec(point), vec3(0), vec3(0.5f*len/count)));
                     } 
                 }
-                for(auto &e: rb2.edges_computed) {
+                for(auto &e: allRigidBodies.at(1).edges_computed) {
                     size_t count = 20;
                     auto len = length(pointToVec(e.p2) - pointToVec(e.p1));
                     for (size_t i = 0; i <= count; i++)
@@ -1483,12 +1489,12 @@ computeAnim = false;
                 // std::cout << "COM: " << pointToVec(rb.com) << ", " << pointToVec(rb2.com) << std::endl;
 
                 auto indexCorner = 0;
-                for(auto &point: rb.points_computed) {
+                for(auto &point: allRigidBodies.at(0).points_computed) {
                     cornerRender.get()->updatePosition(indexCorner, pointToVec(point));
                     indexCorner++;
                 }
 
-                for(auto &point: rb2.points_computed) {
+                for(auto &point: allRigidBodies.at(1).points_computed) {
                     cornerRender.get()->updatePosition(indexCorner, pointToVec(point));
                     indexCorner++;
                 }
@@ -1513,7 +1519,7 @@ computeAnim = false;
                         bool firstProjection = true;
                         vec3 displacement;
 
-                        for(auto &tr: rb.triangles_computed) {
+                        for(auto &tr: allRigidBodies.at(0).triangles_computed) {
                             auto result = projectToTriangle(tr, point);
 
                             // if collided is false, we will ignore the displacement
@@ -1657,13 +1663,13 @@ computeAnim = false;
                 // graphRender.get()->computeAll();
 
 
-                rb.setMotor(rb1Motor);
-                rb.computeAll();
-                rb2.setMotor(rb2Motor);
+                allRigidBodies.at(0).setMotor(rb1Motor);
+                allRigidBodies.at(0).computeAll();
+                allRigidBodies.at(1).setMotor(rb2Motor);
                 // rb2.translator_tick = posToTranslator(0.0f, -2.0f, 0.0f);
-                rb2.computeAll();
+                allRigidBodies.at(1).computeAll();
 
-                simpleCube.get()->updatePosition(1, pointToVec(rb2.com));
+                simpleCube.get()->updatePosition(1, pointToVec(allRigidBodies.at(1).com));
                 simpleCube.get()->updateAngles(1, vec3(ax2, ay2, az2));
                 simpleCube.get()->compute(1);
             }
@@ -1693,7 +1699,7 @@ computeAnim = false;
         if(refreshTitle == 10) {
             // std::cout << 1.0f/deltaT << std::endl;
             refreshTitle = 0;
-            win.updateTitle(pointToVec(rb2.com), deltaT, deltaTThreads);
+            win.updateTitle(pointToVec(allRigidBodies.at(1).com), deltaT, deltaTThreads);
         }
         else {
             refreshTitle++;

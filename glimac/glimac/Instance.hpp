@@ -183,6 +183,14 @@ namespace glimac {
                 // return triangles;
             }
 
+            void setupRigidBody(rigidBody* R) {
+                getVertex(&R->points);
+                getEdgesIndex(&R->edges_index);
+                getTrianglesIndex(&R->triangles_index);
+                generateTriangles(&R->triangles_from_Instance);
+                generateEdges(&R->edges_from_Instance);
+            }
+
             std::vector<BBox3f> getBBox() {
                 auto box = m_geometry.getBoundingBox();
                 std::vector<BBox3f> allBBox;

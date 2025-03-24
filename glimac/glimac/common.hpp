@@ -322,6 +322,16 @@ namespace glimac {
         }
     };
 
+    enum collision_state {
+        collision_state_none,
+        collision_state_closest,
+    };
+    struct manifold {
+        rigidBody* R1, R2;
+        glm::vec3 closestToR1, closestToR2;
+        glm::vec3 localVelocity;
+    };
+
     struct ShapeVertex {
         glm::vec3 position;
         glm::vec3 normal;

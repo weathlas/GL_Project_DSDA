@@ -508,7 +508,163 @@ edgeCast collideEdgeTriangle(triangle& t, edge& e) {
     return edgeCast(true, intersection.normalized(), e);
 }
 
-int RBCollide(rigidBody* R1, rigidBody* R2, std::vector<edgeCast> * lst, vec3* I1, vec3* I2) {
+int RBCollide(rigidBody* R1, rigidBody* R2, std::vector<edgeCast> * lst, vec3* I1, vec3* I2, int* id, triangle* collided_triangle) {
+    auto nbCollide1 = 0;
+    auto nbCollide2 = 0;
+    auto foundPointInside1 = false;
+    auto foundPointInside2 = false;
+    triangle savedTriangle1(kln::point{0, 0, 0}, kln::point{0, 0, 0}, kln::point{0, 0, 0});
+    triangle savedTriangle2(kln::point{0, 0, 0}, kln::point{0, 0, 0}, kln::point{0, 0, 0});
+    std::vector<edgeCast> allIntersectionsR1;
+    std::vector<edgeCast> allIntersectionsR2;
+    *I1 = vec3(0);
+    *I2 = vec3(0);
+    *id = -1;
+
+    for (size_t i = 0; i < R1->points_computed.size(); i++) {
+        auto c = collision(false);
+        auto point = kln::point(R1->points_computed[i]).normalized();
+
+        float smallestDistance;
+        bool firstProjection = true;
+        vec3 displacement;
+
+        for (auto &tr: R2->triangles_computed) {
+
+            auto result = projectToTriangle(tr, point);
+
+            if(firstProjection) {
+                firstProjection = false;
+                smallestDistance = result.distance;
+                displacement = result.offset;
+                c = result;
+                savedTriangle1 = triangle(tr.p1, tr.p2, tr.p3);
+                continue;
+            }
+            if(result.distance < smallestDistance) {
+                smallestDistance = result.distance;
+                displacement = result.offset;
+                c = result;
+                savedTriangle1 = triangle(tr.p1, tr.p2, tr.p3);
+                continue;
+            }
+        }
+
+        if(displacement != vec3(0)) {
+            nbCollide1++;
+            foundPointInside1 = true;
+            *I2 = pointToVec(point);
+            // std::cout << "Point collided: 1" << std::endl;
+            break;
+        }
+        // else {
+        //     std::cout << "Point did not collide for 1: " << c.collided << " | " << c.distance << " | x:" << c.offset.x << " y:" << c.offset.x << " z:" << c.offset.x << std::endl;
+        // }
+    }
+    for (size_t i = 0; i < R2->points_computed.size(); i++) {
+        auto c = collision(false);
+        auto point = kln::point(R2->points_computed[i]).normalized();
+
+        float smallestDistance;
+        bool firstProjection = true;
+        vec3 displacement;
+
+        for (auto &tr: R1->triangles_computed) {
+
+            auto result = projectToTriangle(tr, point);
+
+            if(firstProjection) {
+                firstProjection = false;
+                smallestDistance = result.distance;
+                displacement = result.offset;
+                c = result;
+                savedTriangle2 = triangle(tr.p1, tr.p2, tr.p3);
+                continue;
+            }
+            if(result.distance < smallestDistance) {
+                smallestDistance = result.distance;
+                displacement = result.offset;
+                c = result;
+                savedTriangle2 = triangle(tr.p1, tr.p2, tr.p3);
+                continue;
+            }
+        }
+
+        if(displacement != vec3(0)) {
+            nbCollide2++;
+            foundPointInside2 = true;
+            *I1 = pointToVec(point);
+            // std::cout << "Point collided: 2" << std::endl;
+            break;
+        }
+        // else {
+        //     std::cout << "Point did not collide for 2: " << c.collided << " | " << c.distance << " | x:" << c.offset.x << " y:" << c.offset.x << " z:" << c.offset.x << std::endl;
+        // }
+    }
+
+    if(!foundPointInside1) {
+        for (size_t i = 0; i < R1->edges_computed.size(); i++) {
+            for (auto &tr: R2->triangles_computed) {
+                auto result = collideEdgeTriangle(tr, R1->edges_computed[i]);
+                if (result.collided) {
+                    if(lst != nullptr) {
+                        allIntersectionsR1.push_back(result);
+                        lst->push_back(result);
+                    }
+                    nbCollide1++;
+                }
+            }
+        }
+        // if(nbCollide1 == 0)
+    }
+
+    if(!foundPointInside2) {
+        for (size_t i = 0; i < R2->edges_computed.size(); i++) {
+            for (auto &tr: R1->triangles_computed) {
+                auto result = collideEdgeTriangle(tr, R2->edges_computed[i]);
+                if (result.collided) {
+                    if(lst != nullptr) {
+                        allIntersectionsR2.push_back(result);
+                        lst->push_back(result);
+                    }
+                    nbCollide2++;
+                }
+            }
+        }
+    }
+
+    if(foundPointInside1 && !foundPointInside2) {
+        *id = 0;
+        *collided_triangle = triangle(savedTriangle1.p1, savedTriangle1.p2, savedTriangle1.p3);
+        return nbCollide1+nbCollide2;
+    }
+    if(!foundPointInside1 && foundPointInside2) {
+        *id = 1;
+        *collided_triangle = triangle(savedTriangle2.p1, savedTriangle2.p2, savedTriangle2.p3);
+        return nbCollide1+nbCollide2;
+    }
+
+    if(nbCollide1>1) {
+        for(auto& p: allIntersectionsR1) {
+            *I2+= pointToVec(p.intersection);
+        }
+        *I2/=allIntersectionsR1.size();
+    }
+    if(nbCollide2>1) {
+        for(auto& p: allIntersectionsR2) {
+            *I1+= pointToVec(p.intersection);
+        }
+        *I1/=allIntersectionsR2.size();
+    }
+
+    // if(nbCollide1 > 0 || nbCollide2 > 0) {
+    //     std::cout << "NB edge collide: " << (nbCollide1+nbCollide2) << " = " << nbCollide1 << " + " << nbCollide2 << std::endl;
+    // }
+
+    return nbCollide1+nbCollide2;
+}
+
+int RBCollideNOP(rigidBody* R1, rigidBody* R2, std::vector<edgeCast> * lst, vec3* I1, vec3* I2) {
     auto nbCollide1 = 0;
     auto nbCollide2 = 0;
     std::vector<edgeCast> allIntersectionsR1;
@@ -1391,6 +1547,32 @@ computeAnim = false;
                 allRigidBodies.at(1).computeAll();
 
                 // auto count = collideRigidBody(&rb, &rb2);
+            }
+
+            if (animateSwitch || computeNextFrame){
+                for (size_t i = 0; i < allRigidBodies.size(); i++)
+                {
+                    for (size_t j = i+1; j < allRigidBodies.size(); j++) {
+
+
+                        auto RB1 = &allRigidBodies.at(i);
+                        auto RB2 = &allRigidBodies.at(j);
+
+                        vec3 centerCollisionRB1;
+                        vec3 centerCollisionRB2;
+
+                        std::vector<edgeCast> edgeCollision;
+                        auto nbIntersections = RBCollide(RB1, RB2, &edgeCollision, &centerCollisionRB1, &centerCollisionRB2);
+
+                        if(nbIntersections>0) {
+                            auto displace1 = resolveInternalPoint(RB1, centerCollisionRB1, false);
+                            auto displace2 = resolveInternalPoint(RB2, centerCollisionRB2, false);
+                            updatePhysic(RB1, RB2, centerCollisionRB1, centerCollisionRB2, displace1, displace2);
+                            edgeCollisionRender.get()->add(Transform(displace1 + centerCollisionRB1, vec3(0), vec3(0.300)));
+                            edgeCollisionRender.get()->add(Transform(displace2 + centerCollisionRB2, vec3(0), vec3(0.300)));
+                        }
+                    }
+                }
             }
 
             vec3 centerCollisionRB1;

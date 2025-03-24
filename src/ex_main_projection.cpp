@@ -896,7 +896,8 @@ int main(int /*argc*/, char * argv[])
 /**/auto graphRenderStatic = std::make_shared<Instance>(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageDefaultNormalInt, 0, imageDefaultNormalInt);
 // /**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassDiffuseInt, 0, imageGlassNormalInt);
 // /**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "cylinder", imageGlassNormalInt, 0, imageGlassNormalInt);
-/**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "ico", imageGlassNormalInt, 0, imageGlassNormalInt);
+// /**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "ico", imageGlassNormalInt, 0, imageGlassNormalInt);
+/**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "disc", imageGlassNormalInt, 0, imageGlassNormalInt);
 /**/auto edgeCollisionRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageGlassDiffuseInt, 0, imageGlassNormalInt);
 /**/auto edgeCollisionLineRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
 /**/auto edgeRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageBrickDiffuseInt, 0, imageDefaultNormalInt);
@@ -1144,7 +1145,7 @@ scene.addInstance(firstGrid.getInstance());
 float radiusCube = 1.0f;
 float height = 1.5f;
 // firstGrid.make_grid(vec3(-radiusCube, height, -radiusCube), vec3(radiusCube, height, -radiusCube), vec3(-radiusCube, height, radiusCube), vec3(radiusCube, height, radiusCube), 25, 1.0, 10000, 50);
-firstGrid.make_grid(vec3(-radiusCube, height, -radiusCube), vec3(radiusCube, height, -radiusCube), vec3(-radiusCube, height, radiusCube), vec3(radiusCube, height, radiusCube), 15, 1.0, 1000, 50);
+firstGrid.make_grid(vec3(-radiusCube, height, -radiusCube), vec3(radiusCube, height, -radiusCube), vec3(-radiusCube, height, radiusCube), vec3(radiusCube, height, radiusCube), 18, 1.0, 1000, 50);
 firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
 // firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 1.0f);
 const float wallFriction = 0.68f;

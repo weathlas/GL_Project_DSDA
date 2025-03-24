@@ -894,16 +894,17 @@ int main(int /*argc*/, char * argv[])
 /**/auto graphRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageBrickDiffuseInt, 0, imageDefaultNormalInt);
 /**/auto cornerRender = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
 /**/auto graphRenderStatic = std::make_shared<Instance>(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageDefaultNormalInt, 0, imageDefaultNormalInt);
-// /**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassDiffuseInt, 0, imageGlassNormalInt);
-// /**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "cylinder", imageGlassNormalInt, 0, imageGlassNormalInt);
-// /**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "ico", imageGlassNormalInt, 0, imageGlassNormalInt);
-/**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "disc", imageGlassNormalInt, 0, imageGlassNormalInt);
+/**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassDiffuseInt, 0, imageGlassNormalInt);
+/**/auto meshCylinder = std::make_shared<Instance>(applicationPath.dirPath(), "cylinder", imageGlassNormalInt, 0, imageGlassNormalInt);
+/**/auto meshIco = std::make_shared<Instance>(applicationPath.dirPath(), "ico", imageGlassNormalInt, 0, imageGlassNormalInt);
+/**/auto meshDisc = std::make_shared<Instance>(applicationPath.dirPath(), "disc", imageGlassNormalInt, 0, imageGlassNormalInt);
 /**/auto edgeCollisionRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageGlassDiffuseInt, 0, imageGlassNormalInt);
 /**/auto edgeCollisionLineRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
 /**/auto edgeRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageBrickDiffuseInt, 0, imageDefaultNormalInt);
 
 /**/Scene scene;
 /**/Scene sceneProj;
+/**/Scene sceneUnused;
 
 /**/// Add all objects to the scene
 /**/{
@@ -918,6 +919,11 @@ int main(int /*argc*/, char * argv[])
 
         // edgeCollisionRender.get()->setBlendToTransparent();
         // simpleCube.get()->setBlendToTransparent();
+
+
+        sceneUnused.addInstance(meshCylinder);
+        sceneUnused.addInstance(meshIco);
+        sceneUnused.addInstance(meshDisc);
     }
 
 /**/// SHADERS INVARIANTS
@@ -1620,6 +1626,10 @@ computeAnim = false;
                 computeNextFrame = true;
             }
 
+            if (keys & keyWrap) {
+                fpsCam.makeLookAt(startPoint, startLookPoint);
+            }
+
             
             if (keys & keySun) {
                 if (depthMapId != 0) {
@@ -1702,6 +1712,7 @@ computeAnim = false;
     lightInstances2.get()->~Instance();
     scene.~Scene();
     sceneProj.~Scene();
+    sceneUnused.~Scene();
 
     for(auto prgm : allPrograms) {
         prgm->~BasicProgram();

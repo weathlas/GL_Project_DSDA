@@ -22,6 +22,7 @@ namespace glimac {
         field_fluid,
         field_wall,
         field_cube,
+        field_convex,
         field_magnet // might be too complex
     };
 
@@ -33,6 +34,7 @@ namespace glimac {
         public:
             float m_k, m_z, m_s;
             vec3 m_world_pos, m_world_direction;
+            rigidBody * convexHull;
             // std::vector<Particule*> m_particules;
 
             Field() {
@@ -80,7 +82,14 @@ namespace glimac {
                 m_k = k;
             }
 
+            void make_convex(rigidBody* rb, float k) {
+                m_type = FieldType::field_convex;
+                convexHull = rb;
+                m_k = k;
+            }
+
             void update(Particule* p, float h) {
+                // std::cout<<"Field Update " << m_type << std::endl;
                 switch (m_type)
                 {
 
@@ -98,6 +107,9 @@ namespace glimac {
                     break;
                 case FieldType::field_cube:
                     update_field_cube(p, h);
+                    break;
+                case FieldType::field_convex:
+                    update_field_convex(p, h);
                     break;
                 default:
                     break;
@@ -206,6 +218,23 @@ namespace glimac {
                 p->m_forces_acc += (p->m_mass * (len/(h*h))) * norm + (-m_k * p->m_mass * (1/h)) * (p->m_speed);
                 //  - p->m_speed * p->m_mass;
                 // p->m_mass * (-p->m_speed) / h;
+            }
+
+            void update_field_convex(Particule* p, float h) {
+                vec3 offset = convexHull->getDisplacementPoint(p->m_pos);
+                // std::cout << "Convex offset: { " << offset.x << ", " << offset.y << ", " << offset.z << " }" << std::endl;
+                if(offset.x == 0.0f && offset.y == 0.0f && offset.z == 0.0f) {
+                    // std::cout<<"Convex offset is zero" << std::endl;
+                    return;
+                };
+                auto len = length(offset);
+                if(len<0.0001f) {
+                    // std::cout<<"Length for convex is too small " << len << std::endl;
+                    return;
+                }
+                vec3 norm = offset * (1.0f/len); // replace normalize 
+                // std::cout<<"############################################## Length for convex is " << len << std::endl;
+                p->m_forces_acc += (p->m_mass * (len/(h*h))) * norm + (-m_k * p->m_mass * (1/h)) * (p->m_speed);
             }
 
             // void update_field_cube(Particule* p, float h) {

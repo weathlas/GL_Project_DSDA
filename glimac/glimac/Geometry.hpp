@@ -7,6 +7,10 @@
 #include "FilePath.hpp"
 #include "BBox.hpp"
 
+#include <klein/klein.hpp>
+
+#include <glimac/common.hpp>
+
 namespace glimac {
 
 class Geometry {
@@ -43,6 +47,13 @@ public:
         const Image* m_pKsMap;
         const Image* m_pNormalMap;
     };
+    
+    void generatePoints(unsigned int meshIndex, std::vector<kln::point>* lst);
+    void generateTriangles(unsigned int meshIndex, std::vector<triangle>* lst);
+    void generateEdges(unsigned int meshIndex, std::vector<edge>* lst);
+
+    void getEdgesIndex(unsigned int meshIndex, std::vector<tuple<unsigned int>>* lst);
+    void getTrianglesIndex(unsigned int meshIndex, std::vector<triple<unsigned int>>* lst);
 
 private:
     std::vector<Vertex> m_VertexBuffer;

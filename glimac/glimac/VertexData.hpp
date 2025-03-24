@@ -23,8 +23,8 @@ namespace glimac {
         public:
             const VertexDataType type;
 
-            VertexData(const glimac::Geometry &geometry) : type(GEOMETRY) {
-                m_vertexCount = geometry.getVertexCount();
+            VertexData(const glimac::Geometry *geometry) : type(GEOMETRY) {
+                m_vertexCount = geometry->getVertexCount();
                 m_vbo = vboInit(geometry);
                 std::cout << "vboInit ok " << glGetError() << std::endl;
                 m_vao = vaoInit(m_vbo);
@@ -34,6 +34,7 @@ namespace glimac {
             };
             VertexData(size_t vertexCount, const glimac::ShapeVertex * dataPointer) : type(CANONICAL) {
                 m_vertexCount = vertexCount;
+                std::cout << "vertexCount:" << vertexCount << " %3?: " << (vertexCount%3==0) << std::endl;
                 m_vbo = vboInit(vertexCount, dataPointer);
                 m_vao = vaoInit(m_vbo);
                 m_elementBuffer=0;
@@ -62,22 +63,24 @@ namespace glimac {
             GLuint m_vbo;
             GLuint m_elementBuffer;
             size_t m_vertexCount;
+            glimac::ShapeVertex * dataPointer;
+            glimac::Geometry * geometry;
 
-            GLuint elementBufferInit(const glimac::Geometry &geometry) {
+            GLuint elementBufferInit(const glimac::Geometry *geometry) {
                 GLuint elementBuffer;
                 glGenBuffers(1, &elementBuffer);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-                glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry.getIndexCount() * sizeof(unsigned int), geometry.getIndexBuffer(), GL_STATIC_DRAW);
+                glBufferData(GL_ELEMENT_ARRAY_BUFFER, geometry->getIndexCount() * sizeof(unsigned int), geometry->getIndexBuffer(), GL_STATIC_DRAW);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
                 return elementBuffer;
             }
 
-            GLuint vboInit(const glimac::Geometry &geometry) {
+            GLuint vboInit(const glimac::Geometry *geometry) {
                 GLuint vbo; // Vertex Buffer Object
                 glGenBuffers(1, &vbo);
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                glBufferData(GL_ARRAY_BUFFER, geometry.getVertexCount() * sizeof(glimac::Geometry::Vertex), geometry.getVertexBuffer(), GL_STATIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, geometry->getVertexCount() * sizeof(glimac::Geometry::Vertex), geometry->getVertexBuffer(), GL_STATIC_DRAW);
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
                 return vbo;
             }

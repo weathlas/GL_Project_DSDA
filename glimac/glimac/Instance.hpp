@@ -52,7 +52,7 @@ namespace glimac {
 
             Instance(glimac::FilePath root, std::string name, GLuint baseTex, GLuint alternateTex, GLuint normalTex) {
                 m_geometry.loadOBJ(root + ("assets/models/" + name + ".obj"), root + ("assets/models/" + name + ".mtl"), false);
-                m_vertexData = std::make_shared<VertexData>(m_geometry);
+                m_vertexData = std::make_shared<VertexData>(&m_geometry);
                 m_baseTex = baseTex;
                 m_alternateTex = alternateTex;
                 m_normalTex = normalTex;
@@ -75,6 +75,11 @@ namespace glimac {
 
             size_t size() {
                 return m_transforms.size();
+            }
+
+            void clear() {
+                m_transforms.clear();
+                m_matrices.clear();
             }
 
             void add() {
@@ -136,6 +141,46 @@ namespace glimac {
             void compute(unsigned int index) {
                 Transform t = m_transforms.at(index);
                 m_matrices.at(index) = scale(rotate(rotate(rotate(translate(mat4(1), t.m_Position), t.m_Angles.y, Y_Vector), t.m_Angles.x, X_Vector), t.m_Angles.z, Z_Vector), t.m_Scales);
+            }
+
+            void getVertex(std::vector<kln::point>* points) {
+                for (size_t i = 0; i < m_geometry.getMeshCount(); i++)
+                {
+                    m_geometry.generatePoints(i, points);
+                }
+                // return triangles;
+            }
+
+            void getEdgesIndex(std::vector<tuple<unsigned int>>* edges) {
+                for (size_t i = 0; i < m_geometry.getMeshCount(); i++)
+                {
+                    m_geometry.getEdgesIndex(i, edges);
+                }
+                // return triangles;
+            }
+
+            void getTrianglesIndex(std::vector<triple<unsigned int>>* triangles) {
+                for (size_t i = 0; i < m_geometry.getMeshCount(); i++)
+                {
+                    m_geometry.getTrianglesIndex(i, triangles);
+                }
+                // return triangles;
+            }
+
+            void generateEdges(std::vector<edge>* edges) {
+                for (size_t i = 0; i < m_geometry.getMeshCount(); i++)
+                {
+                    m_geometry.generateEdges(i, edges);
+                }
+                // return triangles;
+            }
+
+            void generateTriangles(std::vector<triangle>* triangles) {
+                for (size_t i = 0; i < m_geometry.getMeshCount(); i++)
+                {
+                    m_geometry.generateTriangles(i, triangles);
+                }
+                // return triangles;
             }
 
             std::vector<BBox3f> getBBox() {

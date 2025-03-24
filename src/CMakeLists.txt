@@ -22,7 +22,7 @@ foreach(EXE_SRC_FILE ${EXE_SRC_FILES})
     target_include_directories(${OUTPUT} PUBLIC glimac/third-party/glad/include)
 
     set_target_properties(${OUTPUT} PROPERTIES
-		CXX_STANDARD 11
+		CXX_STANDARD 14
 		CXX_STANDARD_REQUIRED YES
 		CXX_EXTENSIONS NO
 	)

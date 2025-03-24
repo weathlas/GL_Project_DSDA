@@ -43,6 +43,84 @@ void Geometry::generateTangeants(unsigned int meshIndex) {
     }
 }
 
+void Geometry::generatePoints(unsigned int meshIndex, std::vector<kln::point>* lst) {
+    auto indexOffset = m_MeshBuffer[meshIndex].m_nIndexOffset;
+    for (auto j = 0u; j < m_MeshBuffer[meshIndex].m_nIndexCount; j += 1) {
+        auto i1 = m_IndexBuffer[indexOffset + j];
+        auto p1 = kln::point(m_VertexBuffer[i1].m_Position.x, m_VertexBuffer[i1].m_Position.y, m_VertexBuffer[i1].m_Position.z);
+        lst->push_back(p1);
+    }
+}
+
+void Geometry::getEdgesIndex(unsigned int meshIndex, std::vector<tuple<unsigned int>>* lst) {
+    auto indexOffset = m_MeshBuffer[meshIndex].m_nIndexOffset;
+    for (auto j = 0u; j < m_MeshBuffer[meshIndex].m_nIndexCount; j += 3) {
+        auto i1 = m_IndexBuffer[indexOffset + j];
+        auto i2 = m_IndexBuffer[indexOffset + j + 1];
+        auto i3 = m_IndexBuffer[indexOffset + j + 2];
+
+        lst->push_back(tuple<unsigned int>{i1, i2});
+        lst->push_back(tuple<unsigned int>{i2, i3});
+        lst->push_back(tuple<unsigned int>{i3, i1});
+    }
+}
+
+void Geometry::getTrianglesIndex(unsigned int meshIndex, std::vector<triple<unsigned int>>* lst) {
+    auto indexOffset = m_MeshBuffer[meshIndex].m_nIndexOffset;
+    for (auto j = 0u; j < m_MeshBuffer[meshIndex].m_nIndexCount; j += 3) {
+        auto i1 = m_IndexBuffer[indexOffset + j];
+        auto i2 = m_IndexBuffer[indexOffset + j + 1];
+        auto i3 = m_IndexBuffer[indexOffset + j + 2];
+
+        lst->push_back(triple<unsigned int>{
+            i1,
+            i3,
+            i2
+        });
+        // lst->push_back(triple<unsigned int>{
+        //     i1,
+        //     i3,
+        //     i2
+        // });
+    }
+}
+
+void Geometry::generateEdges(unsigned int meshIndex, std::vector<edge>* lst) {
+    auto indexOffset = m_MeshBuffer[meshIndex].m_nIndexOffset;
+    for (auto j = 0u; j < m_MeshBuffer[meshIndex].m_nIndexCount; j += 3) {
+        auto i1 = m_IndexBuffer[indexOffset + j];
+        auto i2 = m_IndexBuffer[indexOffset + j + 1];
+        auto i3 = m_IndexBuffer[indexOffset + j + 2];
+
+        auto p1 = kln::point(m_VertexBuffer[i1].m_Position.x, m_VertexBuffer[i1].m_Position.y, m_VertexBuffer[i1].m_Position.z);
+        auto p2 = kln::point(m_VertexBuffer[i2].m_Position.x, m_VertexBuffer[i2].m_Position.y, m_VertexBuffer[i2].m_Position.z);
+        auto p3 = kln::point(m_VertexBuffer[i3].m_Position.x, m_VertexBuffer[i3].m_Position.y, m_VertexBuffer[i3].m_Position.z);
+
+        lst->push_back(edge(p1, p2));
+        lst->push_back(edge(p2, p3));
+        lst->push_back(edge(p3, p1));
+    }
+}
+
+void Geometry::generateTriangles(unsigned int meshIndex, std::vector<triangle>* lst) {
+    auto indexOffset = m_MeshBuffer[meshIndex].m_nIndexOffset;
+    for (auto j = 0u; j < m_MeshBuffer[meshIndex].m_nIndexCount; j += 3) {
+        auto i1 = m_IndexBuffer[indexOffset + j];
+        auto i2 = m_IndexBuffer[indexOffset + j + 1];
+        auto i3 = m_IndexBuffer[indexOffset + j + 2];
+
+        auto p1 = kln::point(m_VertexBuffer[i1].m_Position.x, m_VertexBuffer[i1].m_Position.y, m_VertexBuffer[i1].m_Position.z);
+        auto p2 = kln::point(m_VertexBuffer[i3].m_Position.x, m_VertexBuffer[i3].m_Position.y, m_VertexBuffer[i3].m_Position.z);
+        auto p3 = kln::point(m_VertexBuffer[i2].m_Position.x, m_VertexBuffer[i2].m_Position.y, m_VertexBuffer[i2].m_Position.z);
+
+        lst->push_back(triangle(
+            p1,
+            p2,
+            p3
+        ));
+    }
+}
+
 bool Geometry::loadOBJ(const FilePath& filepath, const FilePath& mtlBasePath, bool loadTextures) {
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;

@@ -22,6 +22,9 @@
 #include <glimac/Field.hpp>
 #include <glimac/Animation.hpp>
 #include <glimac/common.hpp>
+#include <glimac/PGA.hpp>
+
+#include <klein/klein.hpp>
 
 #include <thread>
 
@@ -50,13 +53,593 @@ void clear_screen() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void printFloat(float v) {
+    std::cout << "v:" << v << std::endl;
+}
+
+void printBool(bool v) {
+    std::cout << "bool: " << (v?"true":"false") << std::endl;
+}
+
+void printPoint(kln::point& p) {
+    std::cout << "{ " << p.x() << ", " << p.y() << ", " << p.z() << " }" << std::endl;
+}
+
+void printTranslator(kln::translator& p) {
+    std::cout << "{ " << p.e01() << ", " << p.e02() << ", " << p.e03() << ", " << p.e10() << ", " << p.e20() << ", " << p.e30() << " }" << std::endl;
+}
+
+void printDual(kln::dual& p) {
+    std::cout << "{ value:" << p.e0123() << ", p:" << p.p << ", q:" << p.q << ", scalar:" << p.scalar() << " }" << std::endl;
+}
+
+void printMotor(kln::motor& p) {
+    std::cout
+    << "{ e12: " << p.e12()//
+    << ", e13: " << p.e13()//
+    << ", e23: " << p.e23()//
+    << "} { e0123: " << p.e0123()
+    << ", e01: " << p.e01()
+    << ", e02: " << p.e02()
+    << ", e03: " << p.e03()
+    << ", e10: " << p.e10()
+    << ", e12: " << p.e12()//
+    << ", e13: " << p.e13()//
+    << ", e20: " << p.e20()
+    << ", e20: " << p.e20()
+    << ", e21: " << p.e21()
+    << ", e23: " << p.e23()//
+    << ", e30: " << p.e30()
+    << ", e31: " << p.e31()
+    << ", e32: " << p.e32()
+    << " }"
+    << std::endl;
+    // std::cout << "{ value:" << p.e0123() << ", p:" << p.p << ", q:" << p.q << ", scalar:" << p.scalar() << " }" << std::endl;
+}
+
+void printLine(kln::line& p) {
+    std::cout
+    << "{ "
+    << "e01:" << p.e01()
+    << ", e02:" << p.e02()
+    << ", e03:" << p.e03()
+    << ", e10:" << p.e10()
+    << ", e12:" << p.e12()
+    << ", e13:" << p.e13()
+    << ", e20:" << p.e20()
+    << ", e21:" << p.e21()
+    << ", e23:" << p.e23()
+    << ", e30:" << p.e30()
+    << ", e31:" << p.e31()
+    << ", e32:" << p.e32()
+    << " }"
+    << std::endl;
+    // std::cout << "{ value:" << p.e0123() << ", p:" << p.p << ", q:" << p.q << ", scalar:" << p.scalar() << " }" << std::endl;
+}
+
+kln::point vecToPoint(const glm::vec3& v) {
+    return kln::point(v.x, v.y, v.z);
+}
+
+glm::vec3 pointToVec(const kln::point& p) {
+    auto tmp = p.normalized();
+    return glm::vec3(tmp.x(), tmp.y(), tmp.z());
+}
+
+float signedVolume(kln::point& p1, kln::point& p2, kln::point& p3, kln::point& p4) {
+    return (p4.normalized() & p1.normalized() & p2.normalized() & p3.normalized()).scalar() * (1.0/6);
+}
+
+struct collision
+{
+    kln::point location;
+    vec3 offset;
+    float distance = 0.0;
+    bool collided;
+    collision():location(kln::point(0, 0, 0)), offset(vec3(0)), collided(false){}
+    collision(bool collide):location(kln::point(0, 0, 0)), offset(vec3(0)), collided(collide){}
+    collision(kln::point loc, vec3 off, float d, bool collide):location(loc), offset(off), distance(d), collided(collide) {}
+};
+
+bool geometryToTriangles(Geometry& g, std::vector<triangle> lst) {
+    auto vc = g.getVertexCount();
+    auto vb = g.getVertexBuffer();
+    auto ic = g.getIndexCount();
+    auto ib = g.getIndexBuffer();
+    auto mc = g.getMeshCount();
+    auto mb = g.getMeshBuffer();
+
+    // vb[0].
+    // ib[0]
+    // mb[0].
+
+}
+
+float sameSign(float a, float b, float c) {
+    return (a >= 0 && b >= 0 && c >= 0) || (a <= 0 && b <= 0 && c <= 0);
+    // return (a > 0 && b > 0 && c > 0) || (a < 0 && b < 0 && c < 0);
+}
+
+float sameSign(float a, float b) {
+    return (a >= 0 && b >= 0) || (a <= 0 && b <= 0);
+    // return (a > 0 && b > 0) || (a < 0 && b < 0);
+}
+
+float sameSignMotor(kln::motor& m1, kln::motor& m2, kln::motor& m3) {
+    return
+    sameSign(m1.e12(), m2.e12(), m3.e12()) && 
+    sameSign(m1.e13(), m2.e13(), m3.e13()) &&
+    sameSign(m1.e23(), m2.e23(), m3.e23());
+}
+
+vec3 translatorToVec3(kln::translator p) {
+    float out[4];
+    _mm_store_ps(out, p.p2_);
+    return vec3(out[1], out[2], out[3]);
+}
+
+collision projectToTriangle(triangle& t, kln::point& p) {
+    auto plane = (t.p1 & t.p2 & t.p3);
+    auto projectedPoint = kln::project(p, plane).normalized();
+    if((plane ^ p).e0123() > 0) {
+        return collision(false);
+    }
+    auto offset = translatorToVec3(p * projectedPoint);
+
+
+    // not the case anymore // made in a way to reduce the amount of computation is the point is not behind the triangle
+    auto l12 = (t.p1 & t.p2).normalized();
+    auto l13 = (t.p1 & t.p3).normalized();
+    auto l1p = (t.p1 & projectedPoint).normalized();
+    auto l23 = (t.p2 & t.p3).normalized();
+    auto l2p = (t.p2 & projectedPoint).normalized();
+    auto lp3 = (projectedPoint & t.p3).normalized();
+
+    auto k11 = l12 | l13;
+    auto k12 = l12 | l1p;
+    auto k21 = l23 | l12.inverse();
+    auto k22 = l23 | l2p;
+    auto k31 = l13 | l23;
+    auto k32 = l13 | lp3;
+
+    if(k11 < k12 || k21 < k22 || k31 < k32) {
+        return collision(projectedPoint, offset, length(offset), false);
+        // return collision(false);
+    }
+
+    return collision(projectedPoint, offset, length(offset), true);
+}
+
+collision collide(triangle& t, kln::point& p, bool showData) {
+    // kln::point zero{0, 0, 0};
+    // auto plane = (t.p1 & t.p2 & t.p3).normalized();
+    // auto dual = (p ^ plane);
+    // auto distance = dual.e0123();
+    auto l12 = (t.p1 & t.p2).normalized();
+    auto plane = (t.p1.normalized() & t.p2.normalized() & t.p3.normalized()).normalized();
+    auto distance = (plane ^ p).e0123();
+    auto pp = kln::project(p, plane).normalized();
+
+    // auto diff = (p * pp);
+
+    // auto trans = pp.normalized();
+    // float out[4];
+    // _mm_store_ps(out, trans.p3_);
+    // auto diffLength = vec3(out[1], out[2], out[3]);
+    // vec3 outVector = vec3(trans.x(), trans.y(), trans.z());
+    // if(distance != length(diffLength)) {
+    //     std::cout << "diff length: " << distance << " != " << length(diffLength) << std::endl;
+    // }
+    // return collision(pp, diffLength, distance, true);
+    // return collision(pp, vec3(out[1], out[2], out[3]), distance, true);
+    if (distance >= 0.0) {
+        // std::cout << "NOP 1" << std::endl;
+        return collision(false);
+    }
+    // return sameSign(((t.p1 & t.p2) ^ (t.p1 & p)).scalar(), ((t.p2 & t.p3) ^ (t.p2 & p)).scalar(), ((t.p3 & t.p1) ^ (t.p3 & p)).scalar());
+
+
+    // auto m1 = (l1 * (t.p1 & pp).normalized());
+    // auto m2 = ((t.p2 & t.p3).normalized() * (t.p2 & pp).normalized());
+    // auto m3 = ((t.p3 & t.p1).normalized() * (t.p3 & pp).normalized());
+
+
+    // auto d1 = (l1 ^ (t.p1 & pp).normalized());
+    // auto d2 = ((t.p2 & t.p3).normalized() ^ (t.p2 & pp).normalized());
+    // auto d3 = ((t.p3 & t.p1).normalized() ^ (t.p3 & pp).normalized());
+
+    // auto t1 = ((t.p2 - t.p1).normalized() * (pp - t.p1).normalized());
+    // auto t2 = ((t.p3 - t.p2).normalized() * (pp - t.p2).normalized());
+    // auto t3 = ((t.p1 - t.p3).normalized() * (pp - t.p3).normalized());
+
+    // auto l12 = (t.p1 & t.p2).normalized();
+    auto l13 = (t.p1 & t.p3).normalized();
+    auto l23 = (t.p2 & t.p3).normalized();
+
+    auto k11 = l12 | l13;
+    auto k12 = l12 | (t.p1 & pp).normalized();
+
+    auto k21 = l23 | l12.inverse();
+    auto k22 = l23 | (t.p2 & pp).normalized();
+
+    auto k31 = l13 | l23;
+    auto k32 = l13 | (pp & t.p3).normalized();
+
+    // auto k11 = (t.p1 & t.p2).normalized() | (t.p1 & t.p3).normalized();
+    // auto k12 = (t.p1 & t.p2).normalized() | (t.p1 & pp).normalized();
+    // auto k21 = (t.p2 & t.p3).normalized() | (t.p2 & t.p1).normalized();
+    // auto k22 = (t.p2 & t.p3).normalized() | (t.p2 & pp).normalized();
+    // auto k31 = (t.p1 & t.p3).normalized() | (t.p2 & t.p3).normalized();
+    // auto k32 = (t.p1 & t.p3).normalized() | (pp & t.p3).normalized();
+
+    if(showData) {
+        // printMotor(m1);
+        // printMotor(m2);
+        // printMotor(m3);
+
+        // printDual(d1);
+        // printDual(d2);
+        // printDual(d3);
+
+        // printTranslator(t1);
+        // printTranslator(t2);
+        // printTranslator(t3);
+
+        
+        printFloat(k11);
+        printFloat(k12);
+        printFloat(k21);
+        printFloat(k22);
+        printFloat(k31);
+        printFloat(k32);
+    }
+
+    if(k11 > k12 && k21 > k22 && k31 > k32) {
+        // auto pp = kln::project(p, plane).normalized();
+
+        auto plane = (t.p1 & t.p2 & t.p3);
+        auto projectedPoint = kln::project(p, plane).normalized();
+
+        auto diff = (p * projectedPoint);
+        float out[4];
+        _mm_store_ps(out, diff.p2_);
+        auto offset = vec3(out[1], out[2], out[3]);
+        return collision(projectedPoint, offset, length(offset), true);
+
+        // auto diff = (p * pp);
+        // float out[4];
+        // _mm_store_ps(out, diff.p2_);
+        // return collision(pp, vec3(out[1], out[2], out[3]), distance, true);
+    }
+
+    // if(sameSignMotor(m1, m2, m3)) {
+    // }
+
+
+    // auto v1 = (l1 | (t.p1 & p).normalized());
+    // auto v2 = ((t.p2 & t.p3).normalized() | (t.p2 & p).normalized());
+    // if(sameSign(v1, v2)) {
+    //     auto v3 = ((t.p3 & t.p1).normalized() | (t.p3 & p).normalized());
+    //     // if(sameSign(v1, v2, v3)) {
+    //     // }
+    //         auto pp = kln::project(p, plane).normalized();
+    //         auto diff = (p * pp);
+    //         float out[4];
+    //         _mm_store_ps(out, diff.p2_);
+    //         // std::cout << "YEP" << std::endl;
+    //         if(showData) {
+    //             std::cout << "v1:" << v1 << " v2:" << v2 << " v3:" << v3 << std::endl;
+    //         }
+
+    //         return collision(pp, vec3(out[1], out[2], out[3]), distance, true);
+    //         // return collision(pp, vec3(diff.x(), diff.y(), diff.z()), distance, true);
+    // }
+    // if(sameSign(, , ((t.p3 & t.p1) | (t.p3 & p)))) {
+    //     // auto pp = project(p, plane).normalized();
+    //     // auto diff = p - pp;
+    //     // auto output = length(vec3(diff.x(), diff.y(), diff.z()));
+    //     // if(display) {
+    //     //     printFloat(distance);
+    //     // }
+    //     // return output;
+    //     return distance;
+    // }
+    // std::cout << "NOP 2" << std::endl;
+    return collision(false);
+
+    // slower
+    // if (signedVolume(t.p1, t.p2, t.p3, p) != 0) {
+    //     return false;
+    // }
+
+    // auto pp = project(p, plane);
+    // auto v1 = (t.p1 & t.p2) ^ (t.p1 & p);
+    // auto v2 = (t.p2 & t.p3) ^ (t.p2 & p);
+    // auto v3 = (t.p3 & t.p1) ^ (t.p3 & p);
+    // // printDual(v1);
+    // // printDual(v2);
+    // // printDual(v3);
+    // return sameSign(v1.scalar(), v2.scalar(), v3.scalar());
+    // printFloat(v1);
+    // printFloat(v2);
+    // printFloat(v3);
+    // return sameSign(v1, v2, v3);
+}
+
+collision collide(triangle& t, kln::point& p){return collide(t, p, false);}
+
+int sign(float a, float b) {
+    return (a*b >= 0) - (a*b < 0);// + ((a==0)*((b>0) - (b<0))) - ((b==0)*((a>0) - (a<0)));
+}
+
 int main(int /*argc*/, char * argv[])
 {
+
+    // for (int i = -10; i < 10; i++)
+    // {
+    //     auto result = sign(i, 1);
+    //     std::cout << i << ": " << result << std::endl;
+    // }
+
+    // std::cout << 84156 << ": " << sign(sign(0, 1), 0) << std::endl;
+    // return 0;
 
     /* Initialize the library */
     if (!glfwInit()) {
         return -1;
     }
+    // kln::point p1{1.0f, 0, 0};
+    // kln::point p2{0, 1.0f, 0};
+    // kln::point p3{0, 0, 1.0f};
+    // kln::point p4{0, 0, 0};
+    // // kln::point p1{-0.5, 0, -1};
+    // // kln::point p2{0.5, 0, -1};
+    // // kln::point p3{0, -0.5, +1};
+    // // kln::point p4{0, 0.5, +1};
+    // auto vol = ((p4.normalized() & p1.normalized() & p2.normalized() & p3.normalized()));
+    // auto volume = vol.scalar() * (1.0/6);
+    // printDual(vol);
+    // printFloat(volume);
+
+    if(false){
+
+        vec4 vp1(+1, +1, 0, 1);
+        vec4 vp2(-1, +1, 0, 1);
+        vec4 vp3( 0, -1, 0, 1);
+
+
+        float degree = 1;
+        float a = degree * pi<float>() / 180;
+        auto rotationMatrix = rotate(mat4(1), a, vec3(0, 0, 1));
+
+        vp1 = rotationMatrix * vp1;
+        vp2 = rotationMatrix * vp2;
+        vp3 = rotationMatrix * vp3;
+
+        // cos(a)*vp1.x + sin(a)*vp1.y, sin(a)*vp1.x + cos(a)*vp1.y
+
+        kln::point p1{vp1.x, vp1.y, 0};
+        kln::point p2{vp2.x, vp2.y, 0};
+        kln::point p3{vp3.x, vp3.y, 0};
+        triangle t{p1, p2, p3};
+
+        // auto p8 = kln::point(0, 0, -1);
+        // auto alors = collide(t, p8, true);
+        // std::cout << "{ " << p8.x() << ", " << p8.y() << ", " << p8.z() << " }" << ": collision:" << alors.collided << ", distance:" << alors.distance << ", at: " << "{ " << alors.location.x() << ", " << alors.location.y() << ", " << alors.location.z() << " }" << " offset:" << "{ " << alors.offset.x << ", " << alors.offset.y << ", " << alors.offset.z << " }" << std::endl;
+        // return 0;
+
+
+
+
+
+
+
+
+
+
+        // kln::point q1{-1, -1, 0};
+        // kln::point q2{-1, -1, 0};
+        // kln::point q1{1, 1, 1684136};
+        // kln::point q2{0, 0, 0};
+
+
+
+
+        // auto v1 = (t.p1 & t.p2) | (t.p1 & p);
+        // auto v2 = (t.p2 & t.p3) | (t.p2 & p);
+        // auto v3 = (t.p3 & t.p1) | (t.p3 & p);
+        // printFloat(v1);
+        // printFloat(v2);
+        // printFloat(v3);
+
+        // // auto sign = sameSign(v1.scalar(), v2.scalar(), v3.scalar());
+        // auto signr = sameSign(v1, v2, v3);
+
+        // printFloat(signr);
+
+        // return 0;
+
+        auto start = glfwGetTime();
+        auto duration = 1.0/60;
+        auto end = start + duration;
+        size_t count = 0ull;
+        size_t safeGuard = ~0ull;
+        // std::cout << "Sign: " << std::endl;
+        // while(glfwGetTime() < end) {
+        //     // collide(t, point);
+        //     kln::point p{1, 1, 1684136};
+        //     sameSign(((t.p1 & t.p2) | (t.p1 & p)), ((t.p2 & t.p3) | (t.p2 & p)), ((t.p3 & t.p1) | (t.p3 & p)));
+        //     count++;
+        //     if (count == safeGuard) {
+        //         std::cout << "Safeguard reached: " << count << std::endl;
+        //         break;
+        //     }
+        // }
+        // std::cout << "Time limit reached: " << count << std::endl;
+        // count = 0ull;
+        // end = glfwGetTime() + duration;
+        // std::cout << "Distance: " << std::endl;
+        // while(glfwGetTime() < end) {
+        //     // collide(t, point);
+        //     kln::point p{1, 1, 1684136};
+        //     (p ^ (t.p1 & t.p2 & t.p3)).e0123();
+        //     count++;
+        //     if (count == safeGuard) {
+        //         std::cout << "Safeguard reached: " << count << std::endl;
+        //         break;
+        //     }
+        // }
+        // std::cout << "Time limit reached: " << count << std::endl;
+        count = 0ull;
+        end = glfwGetTime() + duration; 
+        kln::point point{0, 0, +0.25};
+        std::cout << "Collide: " << std::endl;
+        while(glfwGetTime() < end) {
+            // collide(t, point);
+            projectToTriangle(t, point);
+            // std::abs((p ^ (t.p1 & t.p2 & t.p3)).e0123());
+            count++;
+            if (count == safeGuard) {
+                std::cout << "Safeguard reached: " << count << std::endl;
+                break;
+            }
+        }
+        std::cout << "Time limit reached: " << count << std::endl;
+
+        for (int i = -10; i < 10; i++)
+        {
+            // auto p = kln::point(0.1561, 0.75, i*0.1f);
+            auto p = kln::point(0, i*0.2f, -1);
+            auto result = collide(t, p);
+            std::cout << i << ": { " << p.x() << ", " << p.y() << ", " << p.z() << " }" << ": collision:" << result.collided << ", distance:" << result.distance << ", at: " << "{ " << result.location.x() << ", " << result.location.y() << ", " << result.location.z() << " }" << " offset:" << "{ " << result.offset.x << ", " << result.offset.y << ", " << result.offset.z << " }" << std::endl;
+            // printFloat(result.distance);
+        }
+
+        // auto p = kln::point(0, 1.5, -100);
+        // auto result = collide(t, p, true);
+        // std::cout << "{ " << p.x() << ", " << p.y() << ", " << p.z() << " }" << ": collision:" << result.collided << ", distance:" << result.distance << ", at: " << "{ " << result.location.x() << ", " << result.location.y() << ", " << result.location.z() << " }" << " offset:" << "{ " << result.offset.x << ", " << result.offset.y << ", " << result.offset.z << " }" << std::endl;
+        
+        // auto min = -4.0f;
+        // auto max = 4.0f;
+        // auto resolution = 50;
+        // auto range = max-min;
+        // auto epsilon = 0.1f;
+        // auto offset = range / resolution;
+        // for (float y = max; y >= min; y=y-offset)
+        // {
+        //     for (float x = min; x <= max; x=x+offset) {
+        //         if((std::abs(x-t.p1.x())<epsilon && std::abs(y-t.p1.y())<epsilon) || (std::abs(x-t.p2.x())<epsilon && std::abs(y-t.p2.y())<epsilon) || (std::abs(x-t.p3.x())<epsilon && std::abs(y-t.p3.y())<epsilon)) {
+        //             std::cout << "<>";
+        //             continue;
+        //         }
+        //         // auto p = kln::point(0.1561, 0.75, i*0.1f);
+        //         auto p = kln::point(x, y, -1);
+        //         auto result = collide(t, p);
+        //         auto falseTxt = (std::abs(x) > 1.0 || std::abs(y) > 1.0) ? "  ":"__";
+
+        //         std::cout << ((result.distance==-1.0f)?"##":falseTxt);
+        //     }
+        //     std::cout << std::endl;
+        // }
+
+
+
+        return 0;
+
+        // printBool(output);
+
+
+
+
+
+        // // diff sign
+        // auto s1 = signedVolume(q1, p1, p2, p3);
+        // auto s2 = signedVolume(q2, p1, p2, p3);
+
+        // // AND
+
+        // auto s3 = signedVolume(q1, q2, p1, p2);
+        // auto s4 = signedVolume(q1, q2, p2, p3);
+        // auto s5 = signedVolume(q1, q2, p3, p1);
+
+        // if((s1 > 0 && s2 < 0) || (s1 < 0 && s2 > 0)) {
+        //     if((s3 > 0 && s4 > 0 && s5 > 0) || (s3 < 0 && s4 < 0 && s5 < 0)) {
+        //         std::cout << "Intersecion" << std::endl;
+        //     }
+        //     else {
+        //         std::cout << "No Intersecion 2" << std::endl;
+        //     }
+        // }
+        // else {
+        //     std::cout << "No Intersecion 1" << std::endl;
+        // }
+        
+        // kln::point p1{2, 0, 0};
+        // kln::point p2{4, 0, 0};
+        // kln::plane plane1{1, 0, 0, 0};
+        // // kln::line myLine(0, 0, 0, 1, 0, 0);
+
+        // auto wedge = p1 * p2;
+
+        // auto exterior = plane1 ^ p1;
+
+        // auto inner = p1 | p2;
+
+        // auto reg = p1 & p2; // line passing by p1 and p2
+
+        // kln::point p3{3, 0, 0};
+
+        // auto p4 = project(p3, reg);
+
+        // auto test = p3 | p4;
+
+        // float distplaneToP1 = std::abs((p3 ^ plane1).e0123());
+        // printFloat(distplaneToP1);
+
+        // printDual(p3 ^ plane1);
+
+
+        // // auto tmp = (p3|reg);
+        // // auto pp = reg * tmp;
+        // float distance = kln::plane{reg & p3}.norm();
+
+        // printFloat(distance);
+
+        // printPoint(p3);
+        // printPoint(p4);
+        // printFloat(test);
+
+
+        // kln::point res = kln::project(p1, plane1);
+
+        // printFloat(test);
+
+        // printFloat(inner);
+
+        // printPoint(res);
+
+        // printTranslator(wedge);
+
+        // printLine(reg);
+
+
+        // for (int i = -10; i < 10; i++)
+        // {
+        //     auto value = plane1 ^ kln::point(i*0.1f, 56, 0);
+        //     printDual(value);
+        // }
+        // printDual(exterior);
+
+        // kln::point center{0, 0, 0};
+        // for (int i = -10; i <= 10; i++)
+        // {
+        //     auto value = center | kln::point(i*0.1f, 0, 0);
+        //     printFloat(value);
+        // }
+
+        // return 0;
+    }
+
 
     /* Create a window and its OpenGL context */
 #ifdef __APPLE__
@@ -87,7 +670,7 @@ int main(int /*argc*/, char * argv[])
     BasicProgram programLight(applicationPath, "src/shaders/light/light.vs.glsl", "src/shaders/light/light.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programVoronoi(applicationPath, "src/shaders/roomTwo/voronoi.vs.glsl", "src/shaders/roomTwo/voronoi.fs.glsl", ProgramType::LIGHTS);
     std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programRoom, &programLight, &programSky};
-    std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom};
+    std::vector<BasicProgram*> allRoomTwoPrograms = {&programRoom, &programVoronoi};
 
     std::cout << "Loading Textures..." << std::endl;
     GLuint imageWhiteInt = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
@@ -95,6 +678,8 @@ int main(int /*argc*/, char * argv[])
     GLuint imageBrickDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_diffuse.jpg");
     GLuint imageBrickRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_roughness.jpg");
     GLuint imageBrickNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_normal.jpg");
+    GLuint imageGlassDiffuseInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/glass_diffuse.png");
+    GLuint imageGlassNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/glass_normal.jpg");
     GLuint imageSkyboxInt = bind_texture(applicationPath.dirPath() + "/assets/textures/alpha-mayoris.jpg");
     std::vector<GLuint*> allTextures = {
         &imageWhiteInt,
@@ -102,6 +687,8 @@ int main(int /*argc*/, char * argv[])
         &imageBrickDiffuseInt,
         &imageBrickRoughnessInt,
         &imageBrickNormalInt,
+        &imageGlassDiffuseInt,
+        &imageGlassNormalInt,
         &imageSkyboxInt
     };
 
@@ -115,13 +702,13 @@ int main(int /*argc*/, char * argv[])
     // Add all the walls
     {
         const float wallThickness = 1.0f;
-        walls.push_back(BBox3f(vec3(-220, -wallThickness*10, -130), vec3(220, 0, 130)));
-        walls.push_back(BBox3f(vec3(-1, -1, -12), vec3(1, 3, -2)));
-        walls.push_back(BBox3f(vec3(-1, -1, 2), vec3(1, 3, 12)));
-        walls.push_back(BBox3f(vec3(-22, -1, 12), vec3(22, 3, 12+wallThickness)));
-        walls.push_back(BBox3f(vec3(-22, -1, -12-wallThickness), vec3(22, 3, -12)));
-        walls.push_back(BBox3f(vec3(-21-wallThickness, -1, -13), vec3(-21, 3, 13)));
-        walls.push_back(BBox3f(vec3(21, -1, -13), vec3(21+wallThickness, 3, 13)));
+        walls.push_back(BBox3f(vec3(-220, -wallThickness*10, -130), vec3(220, -5, 130)));
+        // walls.push_back(BBox3f(vec3(-1, -1, -12), vec3(1, 3, -2)));
+        // walls.push_back(BBox3f(vec3(-1, -1, 2), vec3(1, 3, 12)));
+        // walls.push_back(BBox3f(vec3(-22, -1, 12), vec3(22, 3, 12+wallThickness)));
+        // walls.push_back(BBox3f(vec3(-22, -1, -12-wallThickness), vec3(22, 3, -12)));
+        // walls.push_back(BBox3f(vec3(-21-wallThickness, -1, -13), vec3(-21, 3, 13)));
+        // walls.push_back(BBox3f(vec3(21, -1, -13), vec3(21+wallThickness, 3, 13)));
 
     }
 
@@ -130,6 +717,13 @@ int main(int /*argc*/, char * argv[])
     auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda", imageBrickDiffuseInt, imageBrickRoughnessInt, imageBrickNormalInt);
     auto lightInstances = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
     auto lightInstances2 = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
+    auto graphRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageBrickDiffuseInt, 0, imageDefaultNormalInt);
+    auto cornerRender = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), imageDefaultNormalInt, 0, imageDefaultNormalInt);
+    auto graphRenderStatic = std::make_shared<Instance>(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageDefaultNormalInt, 0, imageDefaultNormalInt);
+    // auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassDiffuseInt, 0, imageGlassNormalInt);
+    // auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "ico", imageDefaultNormalInt, 0, imageGlassNormalInt);
+    // auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "cylinder", imageDefaultNormalInt, 0, imageGlassNormalInt);
+    auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "disc", imageDefaultNormalInt, 0, imageGlassNormalInt);
 
     std::cout << "Particules Initialisation..." << std::endl;
     std::cout << "Rope..." << std::endl;
@@ -215,25 +809,31 @@ int main(int /*argc*/, char * argv[])
     };
 
 
-    bool cubeInsteadOfFlag = true;
+    bool cubeInsteadOfFlag = false;
 
     Scene scene;
 
     // Add all objects to the scene
     {
         scene.addInstance(roomInstances);
+        scene.addInstance(graphRender);
+        scene.addInstance(cornerRender);
+        scene.addInstance(graphRenderStatic);
+        scene.addInstance(simpleCube);
         // scene.addInstance(transparentInstances);
+
+        // simpleCube.get()->setBlendToTransparent();
 
         // Animation objects
         // scene.addInstance(firstRope.getInstance());
-        if(cubeInsteadOfFlag) {
-            scene.addInstance(firstCube.getInstance());
-        }
-        else {
-            // scene.addInstance(firstGrid.getInstance());
-            scene.addInstance(firstRope.getInstance());
-        }
-        scene.addInstance(secondCube.getInstance());
+        // if(cubeInsteadOfFlag) {
+        //     scene.addInstance(firstCube.getInstance());
+        // }
+        // else {
+        //     scene.addInstance(firstGrid.getInstance());
+        //     // scene.addInstance(firstRope.getInstance());
+        // }
+        // scene.addInstance(secondCube.getInstance());
 
         // transparentInstances.get()->setBlendToTransparent();
     }
@@ -241,13 +841,122 @@ int main(int /*argc*/, char * argv[])
     // SHADERS INVARIANTS
     std::cout << "Placing all objects..." << std::endl;
 
+    // vec4 vp1(+1, 0, +1, 1);
+    // vec4 vp2(-1, 0, +1, 1);
+    // vec4 vp3( 0, 0.6f, -1, 1);
+    // vec4 vp1(+4,   0, 0, 1);
+    // vec4 vp2(-4,   0, 0, 1);
+    // vec4 vp3( 0, 4,  4, 1);
+    vec4 vp1(-0.5, 0, -0.5, 1);
+    vec4 vp2(-0.5, 0,  0.5, 1);
+    vec4 vp3(+0.5, 0,  0.5, 1);
+    vec4 vp4(+0.5, 0, -0.5, 1);
+
+    auto resolution = 15;
+    auto len1 = length(vec3(vp1.x, vp1.y, vp1.z));
+    auto len2 = length(vec3(vp2.x, vp2.y, vp2.z));
+    auto len3 = length(vec3(vp3.x, vp3.y, vp3.z));
+
+    auto maxLen = 0.95 * std::max(std::max(len1, len2), len3);
+
+    auto min = -maxLen;
+    auto max = maxLen;
+    auto range = max-min;
+    auto offset = range / resolution;
+
+    float degree = 0.0f;
+    float a = degree * pi<float>() / 180;
+    auto rotationMatrix = rotate(mat4(1), a, vec3(0, 1, 0));
+
+    auto vrp1 = rotationMatrix * vp1;
+    auto vrp2 = rotationMatrix * vp2;
+    auto vrp3 = rotationMatrix * vp3;
+    auto vrp4 = rotationMatrix * vp4;
+
+    kln::point p1{vrp1.x, vrp1.y, vrp1.z};
+    kln::point p2{vrp2.x, vrp2.y, vrp2.z};
+    kln::point p3{vrp3.x, vrp3.y, vrp3.z};
+    kln::point p4{vrp4.x, vrp4.y, vrp4.z};
+
+    triangle t{p1, p2, p3};
+    triangle t2{p3, p4, p1};
+
+    auto ax = -30.f*degToRad;
+    auto ay = 45.f*degToRad;
+    auto az = 7.0f*degToRad;
+    // auto ax = 0.f*degToRad;
+    // auto ay = 0.f*degToRad;
+    // auto az = 35.f*degToRad;
+    // auto ax = 0.0f*degToRad;
+    // auto ay = 0.0f*degToRad;
+    // auto az = 0.0f*degToRad;
+
+    // kln::rotor rx(-az, 1, 0, 0);
+    // kln::rotor ry(ay, 0, 1, 0);
+    // kln::rotor rz(ax, 0, 0, 1);
+    // kln::rotor rx(-ax, 1, 0, 0);
+    // kln::rotor ry(ay, 0, 1, 0);
+    // kln::rotor rz(-az, 0, 0, 1);
+
+    kln::rotor rx(-ax, 1, 0, 0);
+    kln::rotor ry(-ay, 0, 1, 0);
+    kln::rotor rz(-az, 0, 0, 1);
+    auto finalRotor = ry * rx * rz;
+    finalRotor.normalize();
+    
+
+    // could be optimized with the length as 1.0 and x/y/z as the position
+    // or not since there is a disvision by the length of x/y/z
+    auto pos = vec3(0.0, 0.0, 0.0);
+    kln::translator tx(pos.x, 1.0, 0.0, 0.0);
+    kln::translator ty(pos.y, 0.0, 1.0, 0.0);
+    kln::translator tz(pos.z, 0.0, 0.0, 1.0);
+    auto finalTranslator = tx * ty * tz;
+
+    auto finalMotor = finalTranslator * finalRotor;
+
+    rigidBody rb;
+    rigidBody rb2;
+
+    rb.com = vecToPoint(pos);
+    rb.motor = finalMotor;
+    simpleCube.get()->getTriangles(rb.motor, &rb.triangles);
+
+    rb2.com = vecToPoint(pos+vec3(0, 2.5, 0));
+    rb2.motor = finalMotor;
+    simpleCube.get()->getTriangles(rb2.motor, &rb2.triangles);
+
+
+    std::vector<triangle> cubeTriangles;
+    simpleCube.get()->getTriangles(finalMotor, &cubeTriangles);
+
+    simpleCube.get()->add(Transform(pos, vec3(ax, ay, az)));
+    simpleCube.get()->add(Transform(pos+vec3(0, 1, 0)));
+
     // Add all objects positions
     {
-        roomInstances.get()->add();
+        roomInstances.get()->add(Transform(vec3(0, -5, 0)));
         // transparentInstances.get()->add(Transform(vec3(0), vec3(0), vec3(50, 6, 25)));
         // transparentInstances.get()->add(Transform(vec3(0, 6, 0), vec3(0), vec3(50, 6, 25)));
 
         skyboxInstances.get()->add(Transform(vec3(0), vec3(135*degToRad, -105*degToRad, 15*degToRad), vec3(5000)));
+
+        for (float z = max; z >= min; z=z-offset)
+        {
+            for (float x = min; x <= max; x=x+offset) {
+                graphRender.get()->add(Transform(vec3(x, 0, z), vec3(0, 45*degToRad, 0), vec3((1.0/cos(45*degToRad))*(offset/2.0))));
+            }
+        }
+        for (float z = max; z >= min; z=z-offset)
+        {
+            for (float x = min; x <= max; x=x+offset) {
+                graphRenderStatic.get()->add(Transform(vec3(x, 0, z), vec3(0, 45*degToRad, 0), vec3(0.00625f)));
+            }
+        }
+        cornerRender.get()->add(Transform(vec3(vrp1), vec3(), vec3(offset)));
+        cornerRender.get()->add(Transform(vec3(vrp2), vec3(), vec3(offset)));
+        cornerRender.get()->add(Transform(vec3(vrp3), vec3(), vec3(offset)));
+        cornerRender.get()->add(Transform(vec3(vrp4), vec3(), vec3(offset)));
     }
 
     Light lightsRoomLeft;
@@ -311,13 +1020,14 @@ int main(int /*argc*/, char * argv[])
     std::cout << "Initializing variables..." << std::endl;
 
     unsigned int currentRoom = 0;
-    BasicProgram *currentProgram = allPrograms.at(currentRoom);
+    BasicProgram *currentProgram = allRoomTwoPrograms.at(currentRoom);
 
 
     double oldTime = -1.0f;
     double deltaT = 0;
     bool animateSwitch = false;
     double timer = 0.0f;
+    double animateTimer = 0.0f;
     bool boolRightRoom = false;
     vec2 mousePos = win.mouse();
 
@@ -361,7 +1071,7 @@ int main(int /*argc*/, char * argv[])
         Compute_3
     };
 
-    uint nb_threads = 6;
+    uint nb_threads = 1;
     volatile bool killThreads = false;
     volatile bool computeAnim = false;
     volatile double animFrameTime = 0.0;
@@ -481,21 +1191,21 @@ int main(int /*argc*/, char * argv[])
         }
     };
     std::cerr << "Before Threads shenanigans" << std::endl;
-    for (uint i = 0; i < nb_threads; i++) {
-        threadStates.push_back(NothingDone);
-        threadComparaison.push_back(Compute_1);
-        if(cubeInsteadOfFlag) {
-            threadList.push_back(std::thread(animUpdateLambda, i, &firstCube));
-        }
-    }
-    for (uint i = 0; i < nb_threads; i++) {
-        threadStates_flag.push_back(NothingDone);
-        threadComparaison_flag.push_back(Compute_1);
-        if(!cubeInsteadOfFlag) {
-            threadList_flag.push_back(std::thread(animUpdateLambda, i, &firstRope));
-            // threadList_flag.push_back(std::thread(animUpdateLambda, i, &firstGrid));
-        }
-    }
+    // for (uint i = 0; i < nb_threads; i++) {
+    //     threadStates.push_back(NothingDone);
+    //     threadComparaison.push_back(Compute_1);
+    //     if(cubeInsteadOfFlag) {
+    //         threadList.push_back(std::thread(animUpdateLambda, i, &firstCube));
+    //     }
+    // }
+    // for (uint i = 0; i < nb_threads; i++) {
+    //     threadStates_flag.push_back(NothingDone);
+    //     threadComparaison_flag.push_back(Compute_1);
+    //     if(!cubeInsteadOfFlag) {
+    //         // threadList_flag.push_back(std::thread(animUpdateLambda, i, &firstRope));
+    //         threadList_flag.push_back(std::thread(animUpdateLambda, i, &firstGrid));
+    //     }
+    // }
     computeAnim = false;
 
     /* Loop until the user closes the window */
@@ -511,9 +1221,9 @@ int main(int /*argc*/, char * argv[])
             if(oldTime < 0) { // first frame
                 deltaT = 0.0f;
             }
-            // if (animateSwitch) { // the animation is running
-            //     animateTimer += deltaT;
-            // }
+            if (animateSwitch) { // the animation is running
+                animateTimer += deltaT;
+            }
             oldTime = timer;
             // oldMouse = win.mouse();
             currentCamPos = fpsCam.getPos();
@@ -521,19 +1231,200 @@ int main(int /*argc*/, char * argv[])
 
         { // UPDATES
 
-            if(cubeInsteadOfFlag) {
-                firstCube.update_visual();
-            }
-            else {
-                // firstGrid.update_visual();
-                firstRope.update_visual();
+            // if(cubeInsteadOfFlag) {
+            //     firstCube.update_visual();
+            // }
+            // else {
+            //     firstGrid.update_visual();
+            //     // firstRope.update_visual();
+            // }
+
+            // if(computeAnim) {
+            //     secondCube.getFields()->back().make_cube(fpsCam.getBBox(), 0);
+            //     secondCube.update(deltaT);
+            // }
+            // secondCube.update_visual();
+            if(animateSwitch) {
+                // degree+=36.0f * 0.001f;
+                // a = degree * pi<float>() / 180;
+                // auto rotationMatrix = rotate(mat4(1), a, vec3(0, 1, 0));
+
+                // vp3.y = 4*cos(animateTimer);
+                // vp3.z = 4*sin(animateTimer);
+                // auto timedOffset = vec4(0, 0, 1.64817*cos(animateTimer), 0);
+
+                // vrp1 = rotationMatrix * (vp1 + timedOffset);
+                // vrp2 = rotationMatrix * (vp2 + timedOffset);
+                // vrp3 = rotationMatrix * (vp3 + timedOffset);
+
+                // p1 = kln::point{vrp1.x, vrp1.y, vrp1.z};
+                // p2 = kln::point{vrp2.x, vrp2.y, vrp2.z};
+                // p3 = kln::point{vrp3.x, vrp3.y, vrp3.z};
+
+                // t = triangle{p1, p2, p3};
+                float degree = 36.f;
+                float a = degree * pi<float>() / 180;
+                auto rotationMatrix = rotate(rotate(mat4(1), 45.0f, vec3(0, 1, 0)), a, vec3(0, 0, 1));
+
+                auto vrp1 = rotationMatrix * vp1;
+                auto vrp2 = rotationMatrix * vp2;
+                auto vrp3 = rotationMatrix * vp3;
+                auto vrp4 = rotationMatrix * vp4;
+
+                kln::point p1{vrp1.x, vrp1.y, vrp1.z};
+                kln::point p2{vrp2.x, vrp2.y, vrp2.z};
+                kln::point p3{vrp3.x, vrp3.y, vrp3.z};
+                kln::point p4{vrp4.x, vrp4.y, vrp4.z};
+
+                t = triangle{p1, p2, p3};
+                t2 = triangle{p3, p4, p1};
+
+
+
+                ax = -30.f*degToRad*cos(animateTimer)*3.5;
+                // ay = 45.f*degToRad;
+                az = 0.0f*degToRad;
+                // ax = 0.f*degToRad;
+                ay = 15.f*degToRad*animateTimer;
+                rx = kln::rotor(-ax, 1, 0, 0);
+                ry = kln::rotor(-ay, 0, 1, 0);
+                rz = kln::rotor(-az, 0, 0, 1);
+
+                finalRotor = ry * rx * rz;
+                finalRotor.normalize();
+
+                pos = vec3(0.5*cos(animateTimer), 0.0, 0.5*sin(animateTimer));
+                tx = kln::translator(pos.x, 1.0, 0.0, 0.0);
+                ty = kln::translator(pos.y, 0.0, 1.0, 0.0);
+                tz = kln::translator(pos.z, 0.0, 0.0, 1.0);
+                finalTranslator = tx * ty * tz;
+
+                finalMotor = finalTranslator * finalRotor;
+                cubeTriangles.clear();
+                simpleCube.get()->getTriangles(finalMotor, &cubeTriangles);
+
+                simpleCube.get()->updatePosition(0, pos);
+                simpleCube.get()->updateAngles(0, vec3(ax, ay, az));
+                simpleCube.get()->computeAll();
+
+
+
+                auto indexGraph = 0;
+                for (float z = max; z >= min; z=z-offset)
+                {
+                    for (float x = min; x <= max; x=x+offset) {
+                        // auto pos = vec3(x, 1.2*(0.25+0.75*cos(animateTimer*1.1486)), z);
+                        auto pos = vec3(x, 0.12, z);
+                        auto point = kln::point(pos.x, pos.y, pos.z);
+
+                        float smallestDistance;
+                        bool firstProjection = true;
+                        bool collided = false;
+                        vec3 displacement;
+
+                        for(auto &tr: cubeTriangles) {
+                            auto result = projectToTriangle(tr, point);
+
+                            if(firstProjection) {
+                                firstProjection = false;
+                                smallestDistance = result.distance;
+
+                                // if collided is false, we will ignore the displacement
+                                // otherwise we will use it so no need for another conditional branch
+                                // collided = result.collided;
+                                // collided = true;
+                                displacement = result.offset;
+                                continue;
+                            }
+
+                            // new candidate for the closest plane from a triangle
+                            // if the closest plane is not in collision then there is no need for a collision
+                            // otherwise it is a smaller displacement that resolve the collision
+                            if(result.distance < smallestDistance) {
+                                // if(result.collided) {
+                                // }
+                                smallestDistance = result.distance;
+                                collided = result.collided;
+                                // collided = true;
+                                displacement = result.offset;
+                                continue;
+                            }
+                            // break;
+                        }
+
+                        // with hack from the nature of a cube
+                        // for(auto &tr: cubeTriangles) {
+                        //     auto result = projectToTriangle(tr, point);
+                        //     if(result.collided) {
+                        //         if(result.distance > 0.5) { // hack because its a cube of size 0.5
+                        //             continue;
+                        //         }
+                        //         if(!collided) {
+                        //             displacement = result.offset;
+                        //             smallestDistance = result.distance;
+                        //             collided = true;
+                        //             // break;
+                        //             continue;
+                        //         }
+                        //         if(result.distance < smallestDistance) {
+                        //             displacement = result.offset;
+                        //             smallestDistance = result.distance;
+                        //             // break;
+                        //             continue;
+                        //         }
+                        //     }
+                        //     // break;
+                        // }
+                        if(true) {
+                            pos += displacement;
+                        }
+                        graphRender.get()->updatePosition(indexGraph, pos);
+                        indexGraph++;
+
+
+
+
+
+
+
+                        // auto result = projectToTriangle(t, point);
+                        // if(result.collided) {
+                        //     pos += vec3(result.offset.x, result.offset.y, result.offset.z);
+                        // }
+                        // auto point2 = kln::point(pos.x, pos.y, pos.z);
+                        // auto result2 = projectToTriangle(t2, point2);
+                        // if(result2.collided) {
+                        //     pos += vec3(result2.offset.x, result2.offset.y, result2.offset.z);
+                        // }
+                        // auto result = collide(t, point);
+                        // if(std::abs(z) < 0.1 || std::abs(x) < 0.1) {
+                        // // std::cout << offset.x << " " << offset.y << " " << offset.z << std::endl;
+                        // std::cout << offset << std::endl;
+                        // // if(offset == vec3(0)) {
+                        // // }
+                        // }
+                    }
+                }
+                graphRender.get()->computeAll();
+                
+
+                // for (size_t i = 0; i < graphRender.get()->size(); i++)
+                // {
+                //     auto pos = graphRender.get()->get(i).m_Position;
+                //     auto point = kln::point(pos.x, pos.z, -0.2);
+                //     pos.y = collide(t, point).distance + 4;
+                //     graphRender.get()->updatePosition(i, pos);
+                // }
+                // graphRender.get()->computeAll();
+
+                cornerRender.get()->updatePosition(0, vec3(vrp1.x, vrp1.y, vrp1.z));
+                cornerRender.get()->updatePosition(1, vec3(vrp2.x, vrp2.y, vrp2.z));
+                cornerRender.get()->updatePosition(2, vec3(vrp3.x, vrp3.y, vrp3.z));
+                cornerRender.get()->updatePosition(3, vec3(vrp4.x, vrp4.y, vrp4.z));
+                cornerRender.get()->computeAll();
             }
 
-            if(computeAnim) {
-                secondCube.getFields()->back().make_cube(fpsCam.getBBox(), 0);
-                secondCube.update(deltaT);
-            }
-            secondCube.update_visual();
+            
 
             if(depthMapId != 0) {
                 shadowMap.renderTexture(win, scene);

@@ -262,7 +262,7 @@ namespace glimac {
                 computeBBox();
                 bool collide = updateCollision(walls);
                 // bool collide = false;
-                if(m_FootPosition.y < 0) {
+                if(m_FootPosition.y < -5) {
                     m_FootPosition.y = 0;
                     m_verticalSpeed = 0;
                 }

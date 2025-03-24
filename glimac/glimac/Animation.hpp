@@ -24,6 +24,7 @@ namespace glimac {
         none,
         rope,
         grid,
+        point,
         cube
     };
 
@@ -53,6 +54,17 @@ namespace glimac {
 
             std::shared_ptr<Instance> getInstance() {
                 return m_instance;
+            }
+
+            void make_point(vec3 p, float mass) {
+                if(m_type != AnimType::none) {
+                    std::cout << "Anim is already set (" << m_type << ")" << std::endl;
+                    return;
+                }
+                m_type = AnimType::point;
+                m_instance.get()->add(Transform(p, vec3(), vec3(particuleSize)));
+                m_particules.push_back(new Particule(mass, p, ParticuleComputeType::leapfrog));
+                std::cout << "New Point Anim with " << m_particules.size() << " particule and " << m_links.size() << " links" << std::endl;
             }
 
             void make_rope(vec3 p1, vec3 p2, uint count, float mass, float k, float z) {
@@ -357,6 +369,19 @@ namespace glimac {
                 // }
             }
 
+            void addField(FieldType type, rigidBody *rb, float k) {
+                if(rb == nullptr) return;
+                m_fields.push_back(Field());
+                switch (type)
+                {
+                case FieldType::field_convex:
+                    m_fields.back().make_convex(rb, k);
+                    break;
+                default:
+                    break;
+                }
+            }
+
             void addField(FieldType type, BBox3f box, float k) {
                 m_fields.push_back(Field());
                 switch (type)
@@ -385,9 +410,9 @@ namespace glimac {
                 case FieldType::field_wall:
                     m_fields.back().make_wall(coords, k);
                     break;
-                // case FieldType::field_cube:
-                //     m_fields.back().make_cube(coords, k);
-                //     break;
+                case FieldType::field_cube:
+                    m_fields.back().make_cube(coords, k);
+                    break;
                 default:
                     break;
                 }
@@ -411,6 +436,8 @@ namespace glimac {
                     // m_instance.get()->updatePosition(index, m_particules.at(index)->m_pos);
                     // m_instance.get()->compute(index);
                 }
+
+                // std::cout << "PARTICULE POSITION { " << m_particules.at(0)->m_pos.x << ", " << m_particules.at(0)->m_pos.y << ", " << m_particules.at(0)->m_pos.z << " } " << std::endl;
             }
 
             void update(float h) {
@@ -442,6 +469,7 @@ namespace glimac {
                     break;
                 case AnimType::none:
                     break;
+                case AnimType::point:
                 case AnimType::rope:
                 case AnimType::grid:
                 default:

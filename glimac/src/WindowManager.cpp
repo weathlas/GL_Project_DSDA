@@ -70,7 +70,7 @@ namespace glimac {
 
         auto out = m_keys;
         // prevent the scrollwheel event to be duplicated
-        m_keys &= ~(scrollDown | scrollUp | switchMode | keySun | keyDebug | keyTab | keyEscape);
+        m_keys &= ~(scrollDown | scrollUp | switchMode | keySun | keyDebug | keyTab | keyEscape | keyNextFrame);
         return out;
     }
 
@@ -205,6 +205,9 @@ namespace glimac {
             case GLFW_KEY_TAB:
                 m_keys |= keyTab;
                 break;
+            case GLFW_KEY_F:
+                m_keys |= keyNextFrame;
+                break;
             
             default:
                 break;
@@ -259,6 +262,9 @@ namespace glimac {
                 break;
             case GLFW_KEY_TAB:
                 m_keys &= ~keyTab;
+                break;
+            case GLFW_KEY_F:
+                m_keys &= ~keyNextFrame;
                 break;
             
             default:

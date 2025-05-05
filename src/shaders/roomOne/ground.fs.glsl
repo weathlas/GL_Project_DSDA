@@ -97,10 +97,11 @@ void main() {
     
 
     vec3 p = lightViewPosition.xyz / lightViewPosition.w;
-    float haveLightFromSun = 0.0;
+    float haveLightFromSun = 1.0;
     if(p.x >= 0.0 && p.x <= 1.0 && p.y >= 0.0 && p.y <= 1.0) {
         haveLightFromSun = texture(uLightDepthMap, p.xy).r > p.z ? 1.0:0.0;
     }
+
 
     vec3 sunColor = vec3(1, 1, 1);
     float diffuseFromSun = min(1.0, pow(diffuseFromLight(uSunLightPos, sunColor, 0.0, 0.0).r, 0.2));

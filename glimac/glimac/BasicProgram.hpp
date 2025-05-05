@@ -54,11 +54,22 @@ namespace glimac
         DEFAULT           = (LIGHTS | SHADOWS | TEXTURE | ALTERNATE_TEXTURE | NORMAL)
     };
 
+    // constexpr ProgramType operator+(const ProgramType& a, const ProgramType& b) {
+    //     if (a == ProgramType::ONE)
+    //         return ProgramType::ONE;
+    //     else if (b == ProgramType::ONE)
+    //         return ProgramType::TWO; 
+    //     else if (a == b)
+    //         return ProgramType::THREE; 
+    //     else
+    //         return ProgramType::ONE; 
+    // }
+
     struct BasicProgram
     {
         Program m_Program;
 
-        ProgramType m_programType;
+        uint m_programType;
 
         GLint uMVPMatrixLoc = 0;
         GLint uMVMatrixLoc = 0;
@@ -160,8 +171,19 @@ namespace glimac
             glBindTexture(GL_TEXTURE_2D, 0);
         }
 
-        void activateSimple(WindowManager &window, FPSCamera& camera) {
+        void addFlag(ProgramType type) {
+            m_programType |= type;
+        }
+        void removeFlag(ProgramType type) {
+            m_programType &= ~type;
+        }
+
+        void activateBarebone() {
             m_Program.use();
+        }
+
+        void activateSimple(WindowManager &window, FPSCamera& camera) {
+            activateBarebone();
             glUniformMatrix4fv(uNormalMatrixLoc, 1, GL_FALSE, glm::value_ptr(camera.getNormalMatrix()));
             glUniform3fv(uCameraPositionLoc, 1, glm::value_ptr(camera.getPos()));
             glUniform2fv(uWindowDimensionsLoc, 1, glm::value_ptr(window.getDimensions()));
@@ -180,12 +202,15 @@ namespace glimac
             glUniform1f(uClippingPlaneActiveLoc, 0.0f);
         }
 
-        void activate(WindowManager &window, FPSCamera& camera, const mat4 &shadowMatrix, Light &lights, vec3 &sunPos) {
-            activateSimple(window, camera);
-
+        void activateTextureUniforms() {
             if (m_programType & TEXTURE)           glUniform1i(uBaseTextureLoc, Location::enumDiffuseTextureLoc);
             if (m_programType & ALTERNATE_TEXTURE) glUniform1i(uAlternateTextureLoc, Location::enumRoughnessTextureLoc);
             if (m_programType & NORMAL)            glUniform1i(uNormalMapLoc, Location::enumNormalMapLoc);
+        }
+
+        void activate(WindowManager &window, FPSCamera& camera, const mat4 &shadowMatrix, Light &lights, vec3 &sunPos) {
+            activateSimple(window, camera);
+            activateTextureUniforms();
             if (m_programType & LIGHTS)            glUniformMatrix3fv(uLightsArrayLoc, lights.size(), GL_FALSE, lights.data());
             if (m_programType & LIGHTS)            glUniform1i(uLightsCountLoc, lights.size());
             if (m_programType & SHADOWS) {

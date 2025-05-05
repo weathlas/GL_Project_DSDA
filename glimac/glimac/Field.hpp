@@ -23,18 +23,18 @@ namespace glimac {
         field_wall,
         field_cube,
         field_convex,
+        field_wind,
         field_magnet // might be too complex
     };
 
     const float gravityConstant = 6.67f;
-    const float marginBBOX = 0.0f;
+    const float marginBBOX = 0.01f;
+
+    const int DIM_TEXTURE = 1024;
 
     class Field {
 
         public:
-            float m_k, m_z, m_s;
-            vec3 m_world_pos, m_world_direction;
-            rigidBody * convexHull;
             // std::vector<Particule*> m_particules;
 
             Field() {
@@ -47,7 +47,11 @@ namespace glimac {
                 m_s = s;
             }
 
-            ~Field(){}
+            ~Field() {
+                if(m_shadowMap) {
+                    m_shadowMap.get()->~ShadowMap();
+                }
+            }
 
             // void connect(Particule *M1) {
             //     m_particules.push_back(M1);
@@ -75,17 +79,91 @@ namespace glimac {
                 m_world_pos = position;
                 m_k = k;
             }
-
+            
             void make_cube(BBox3f box, float k) {
                 m_type = FieldType::field_cube;
                 m_bbox = box;
                 m_k = k;
             }
-
+            
             void make_convex(rigidBody* rb, float k) {
+                if(rb == nullptr) return;
                 m_type = FieldType::field_convex;
                 convexHull = rb;
                 m_k = k;
+            }
+
+            void make_wind(const FilePath &applicationPath, WindowManager *window, std::shared_ptr<Instance> &instance, vec3 direction, BBox3f bbox, float k) {
+                m_type = FieldType::field_wind;
+                m_world_direction = normalize(direction);
+                m_bbox = bbox;
+                m_k = k;
+                m_window = window;
+                m_shadowMap = std::make_shared<ShadowMap>(applicationPath, "src/shaders/utils/normal.vs.glsl", "src/shaders/utils/normal_normalized.fs.glsl");
+                m_shadowMap.get()->init(DIM_TEXTURE, DIM_TEXTURE);
+                m_shadowMap.get()->setOrthoRadius(length(m_bbox.size()));
+                auto center = 0.5f*(vec3(m_bbox.upper)+vec3(m_bbox.lower));
+                m_shadowMap.get()->computeTransforms(LightStruct(vec3(-m_world_direction), vec3(1), vec3(100, 0.85, LightType::directionalLight)), center);
+                m_scene = Scene();
+                m_scene.addInstance(instance);
+
+                m_depthData = std::vector<float>(DIM_TEXTURE * DIM_TEXTURE);
+                m_colorData = std::vector<vec3>(DIM_TEXTURE * DIM_TEXTURE);
+                update_field();
+            }
+            
+            void change_box(BBox3f box) {
+                // std::cout << "Old BBOX: " << length(m_bbox.size()) << " New BBOX: " << length(box.size()) << std::endl;
+                m_bbox = box;
+            }
+            
+            void change_k(float k) {
+                m_k = k;
+            }
+            
+            void change_z(float z) {
+                m_z = z;
+            }
+            
+            void change_s(float s) {
+                m_s = s;
+            }
+            
+            void change_pos(vec3 pos) {
+                m_world_pos = pos;
+            }
+            
+            void change_direction(vec3 direction) {
+                m_world_direction = normalize(direction);
+            }
+            
+            void change_convexhull(rigidBody *rb) {
+                if(rb == nullptr) return;
+                convexHull = rb;
+            }
+            
+            void update_field() {
+                float value = 0.0f;
+                switch(m_type)
+                {
+                case FieldType::field_wind:
+                    // std::cout<<"updating wind"<<std::endl;
+                    value = length(m_bbox.size());
+                    m_shadowMap.get()->setPlanes(-value, value);
+                    m_shadowMap.get()->setOrthoRadius(value/2);
+                    m_shadowMap.get()->computeTransforms(LightStruct(vec3(-m_world_direction), vec3(1), vec3(100, 0.85, LightType::directionalLight)), 0.5f*(vec3(m_bbox.upper)+vec3(m_bbox.lower)));
+                    m_shadowMap.get()->renderTexture(*m_window, m_scene);
+
+                    glBindTexture(GL_TEXTURE_2D, m_shadowMap.get()->getDepthMap());
+                    glGetTexImage(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, GL_FLOAT, m_depthData.data());
+
+                    glBindTexture(GL_TEXTURE_2D, m_shadowMap.get()->getColorMap());
+                    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_FLOAT, m_colorData.data());
+
+                    break;
+                default:
+                    break;
+                }
             }
 
             void update(Particule* p, float h) {
@@ -111,14 +189,39 @@ namespace glimac {
                 case FieldType::field_convex:
                     update_field_convex(p, h);
                     break;
+                case FieldType::field_wind:
+                    update_field_wind(p, h);
+                    break;
                 default:
                     break;
                 }
+            }
+
+            FieldType getType() {
+                return m_type;
+            }
+
+            GLuint getDebugColorTexture() {
+                return m_shadowMap.get()->getColorMap();
+            }
+
+            GLuint getDebugDepthTexture() {
+                return m_shadowMap.get()->getDepthMap();
             }
             
         private:
             FieldType m_type;
             BBox3f m_bbox;
+
+            std::shared_ptr<ShadowMap> m_shadowMap;
+            std::vector<float> m_depthData;
+            std::vector<vec3> m_colorData;
+            Scene m_scene;
+            WindowManager *m_window;
+
+            float m_k, m_z, m_s;
+            vec3 m_world_pos, m_world_direction;
+            rigidBody * convexHull;
 
             void update_field_directional(Particule* p) {
                 p->m_forces_acc += m_k * m_world_direction * p->m_mass; 
@@ -163,7 +266,7 @@ namespace glimac {
             }
 
             void update_field_wall(Particule* p, float h) {
-                auto diff = p->m_pos.y - m_world_pos.y;
+                auto diff = p->m_pos.y - m_world_pos.y-marginBBOX;
                 if(diff < 0.0f) {
                     if(p->m_speed.y < 0.0f) {
                         // p->m_forces_acc += p->m_mass * (-p->m_speed.y) / h * vec3(0, 1, 0);
@@ -214,8 +317,9 @@ namespace glimac {
                 // save one sqrt if the particule is not inside the cube (len == 0.0)
                 if(offset.x == 0.0f && offset.y == 0.0f && offset.z == 0.0f) return;
                 auto len = length(offset);
-                vec3 norm = offset * (1.0f/len); // replace normalize 
-                p->m_forces_acc += (p->m_mass * (len/(h*h))) * norm + (-m_k * p->m_mass * (1/h)) * (p->m_speed);
+                vec3 norm = offset * (1.0f/len); // replace normalize
+                auto friction_axis_speed = vec3(p->m_speed.x*(1-abs(norm.x)), p->m_speed.y*(1-abs(norm.y)), p->m_speed.z*(1-abs(norm.z)));
+                p->m_forces_acc += (p->m_mass * (1.0f/(h))) * norm + (-m_k * p->m_mass * (1/h)) * (friction_axis_speed);
                 //  - p->m_speed * p->m_mass;
                 // p->m_mass * (-p->m_speed) / h;
             }
@@ -235,6 +339,75 @@ namespace glimac {
                 vec3 norm = offset * (1.0f/len); // replace normalize 
                 // std::cout<<"############################################## Length for convex is " << len << std::endl;
                 p->m_forces_acc += (p->m_mass * (len/(h*h))) * norm + (-m_k * p->m_mass * (1/h)) * (p->m_speed);
+            }
+
+            bool isVisibleFromDepthData(const glm::vec3& position)
+            {
+                glm::vec4 clip = m_shadowMap.get()->getLightProj() * m_shadowMap.get()->getModelToLight() * glm::vec4(position, 1.0f);
+                glm::vec3 ndc = glm::vec3(clip) / clip.w;
+            
+                if (ndc.x < -1.0f || ndc.x > 1.0f || ndc.y < -1.0f || ndc.y > 1.0f || ndc.z < -1.0f || ndc.z > 1.0f)
+                    return false;
+            
+                // Convert to texture space
+                int u = static_cast<int>((ndc.x * 0.5f + 0.5f) * DIM_TEXTURE);
+                int v = static_cast<int>((ndc.y * 0.5f + 0.5f) * DIM_TEXTURE);
+            
+                // Clamp to texture bounds
+                u = clamp(u, 0, DIM_TEXTURE - 1);
+                v = clamp(v, 0, DIM_TEXTURE - 1);
+            
+                // Depth map is stored row-major, bottom to top
+                float storedDepth = m_depthData[v * DIM_TEXTURE + u];
+            
+                float pointDepth = ndc.z * 0.5f + 0.5f; // remap z from [-1, 1] to [0, 1]
+            
+                return pointDepth <= storedDepth + 0.001f;
+            }
+
+            vec3 getNormalFromColorData(const glm::vec3& position) {
+                glm::vec4 clip = m_shadowMap.get()->getLightProj() * m_shadowMap.get()->getModelToLight() * glm::vec4(position, 1.0f);
+                glm::vec3 ndc = glm::vec3(clip) / clip.w;
+            
+                if (ndc.x < -1.0f || ndc.x > 1.0f || ndc.y < -1.0f || ndc.y > 1.0f || ndc.z < -1.0f || ndc.z > 1.0f)
+                    return vec3(0);
+            
+                int u = int(round((ndc.x * 0.5f + 0.5f) * DIM_TEXTURE));
+                int v = int(round((ndc.y * 0.5f + 0.5f) * DIM_TEXTURE));
+            
+                u = clamp(u, 0, DIM_TEXTURE - 1);
+                v = clamp(v, 0, DIM_TEXTURE - 1);
+            
+                vec3 storedColor = m_colorData[v * DIM_TEXTURE + u];
+
+                if(storedColor.x == 0 && storedColor.y == 0 && storedColor.z == 0) {
+                    return vec3(0);
+                }
+
+                vec3 storedNormal = (storedColor-0.5f)*2.0f; // remap from [0, 1] to [-1, 1]
+                // std::cout << storedColor << std::endl;
+                return storedNormal;
+            }
+
+            void update_field_wind(Particule* p, float h) {
+                if(isVisibleFromDepthData(p->m_pos)) {
+
+                    auto normal = getNormalFromColorData(p->m_pos);
+                    if(normal.x == 0 && normal.y == 0 && normal.z == 0) {
+                        return;
+                    }
+                    // std::cout<<normal<<std::endl;
+                    // change the world normal to a wind space one
+                    // auto windViewNormal = normalize(vec3(m_shadowMap.get()->getLightNormal() * vec4(normal, 0)));
+                    auto dot_result = dot(m_world_direction, normal);
+                    auto dot_exposure = abs(dot_result);
+
+                    if(dot_result < 0) {
+                        normal*=-1;
+                    }
+                    p->m_forces_acc += dot_exposure * m_k * normal * (1/p->m_mass);
+                    // p->m_forces_acc += dot_exposure * m_k * vec3(0, 0, 1) * p->m_mass;
+                }
             }
 
             // void update_field_cube(Particule* p, float h) {

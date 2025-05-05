@@ -70,7 +70,7 @@ namespace glimac {
 
         auto out = m_keys;
         // prevent the scrollwheel event to be duplicated
-        m_keys &= ~(scrollDown | scrollUp | switchMode | keySun | keyDebug | keyTab | keyEscape | keyNextFrame | keyWrap);
+        m_keys &= ~(scrollDown | scrollUp | switchMode | keySun | keyDebug | keyTab | keyEscape | keyWrap | keyFlagWind);
         return out;
     }
 
@@ -104,6 +104,12 @@ namespace glimac {
         return false;
     }
 
+    bool WindowManager::clear() {
+        glClearColor(.0f, .0f, .0f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        return true;
+    }
+
     bool WindowManager::running() {
         return !glfwWindowShouldClose(m_Window);
     }
@@ -115,7 +121,7 @@ namespace glimac {
 
     void WindowManager::updateTitle(vec3 pos, float deltaT, float simuTime) {
         snprintf ( m_title, 255,
-                    "%s %s - [FPS: %3.2f] - x:%3.0f y:%3.0f z:%3.0f, particules: %3.2f",
+                    "%s %s - [FPS: %3.2f] - x:%3.2f y:%3.2f z:%3.2f, particules: %3.2f",
                     "Deux Salles, Deux Ambiances", "v0.3", 1.0f / (float)deltaT , pos.x, pos.y, pos.z, 1.0f / (float)simuTime);
 
         glfwSetWindowTitle (m_Window, m_title);
@@ -206,10 +212,16 @@ namespace glimac {
                 m_keys |= keyTab;
                 break;
             case GLFW_KEY_F:
-                m_keys |= keyNextFrame;
+                m_keys |= keyFan;
                 break;
             case GLFW_KEY_Z:
                 m_keys |= keyWrap;
+                break;
+            case GLFW_KEY_T:
+                m_keys |= keyTexture;
+                break;
+            case GLFW_KEY_C:
+                m_keys |= keyFlagWind;
                 break;
             
             default:
@@ -267,10 +279,16 @@ namespace glimac {
                 m_keys &= ~keyTab;
                 break;
             case GLFW_KEY_F:
-                m_keys &= ~keyNextFrame;
+                m_keys &= ~keyFan;
                 break;
             case GLFW_KEY_Z:
                 m_keys &= ~keyWrap;
+                break;
+            case GLFW_KEY_T:
+                m_keys &= ~keyTexture;
+                break;
+            case GLFW_KEY_C:
+                m_keys &= ~keyFlagWind;
                 break;
             
             default:

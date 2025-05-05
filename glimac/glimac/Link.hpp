@@ -26,7 +26,6 @@ namespace glimac {
 
         public:
             float m_k, m_length, m_z, m_s;
-            vec3 m_world_pos, m_world_direction;
             Particule *m_M1, *m_M2;
 
             Link(Particule *M1, Particule *M2) {

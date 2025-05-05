@@ -49,12 +49,6 @@ GLuint bind_texture(glimac::FilePath path) {
     return out;
 }
 
-void clear_screen() {
-    glClearColor(.0f, .0f, .0f, 1.f);
-    // glClear(GL_COLOR_BUFFER_BIT);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-}
-
 int main(int argc, char * argv[])
 {
 
@@ -79,6 +73,8 @@ int main(int argc, char * argv[])
 
     glfwSwapInterval(0);
 
+    const bool SUPERFLUX = true;
+
 
     /*********************************
      * HERE SHOULD COME THE INITIALIZATION CODE
@@ -91,19 +87,16 @@ int main(int argc, char * argv[])
 /**/BasicProgram programSky(applicationPath, "src/shaders/skybox/skybox_shader.vs.glsl", "src/shaders/skybox/skybox_shader.fs.glsl", ProgramType::TEXTURE);
 /**/BasicProgram programLight(applicationPath, "src/shaders/light/light.vs.glsl", "src/shaders/light/light.fs.glsl", ProgramType::LIGHTS);
 /**/BasicProgram programVoronoi(applicationPath, "src/shaders/roomTwo/voronoi.vs.glsl", "src/shaders/roomTwo/voronoi.fs.glsl", ProgramType::LIGHTS);
-// /**/BasicProgram programVoronoi(applicationPath, "src/shaders/utils/normal.vs.glsl", "src/shaders/utils/normal.fs.glsl", ProgramType::LIGHTS);
+// /**/BasicProgram programNormal(applicationPath, "src/shaders/utils/normal.vs.glsl", "src/shaders/utils/normal.fs.glsl", ProgramType::LIGHTS);
 
+    BasicProgram programSun(applicationPath, "src/shaders/utils/white.vs.glsl", "src/shaders/utils/white.fs.glsl", ProgramType::NONE);
+    BasicProgram programMirror(applicationPath, "src/shaders/mirror/mirror.vs.glsl", "src/shaders/mirror/mirror.fs.glsl");
+    BasicProgram programButtons(applicationPath, "src/shaders/utils/buttons.vs.glsl", "src/shaders/utils/buttons.fs.glsl");
+    std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &programSky, &programLight, &programButtons, &programSun, &programMirror};
 
-BasicProgram programSun(applicationPath, "src/shaders/utils/white.vs.glsl", "src/shaders/utils/white.fs.glsl", ProgramType::NONE);
-BasicProgram programMirror(applicationPath, "src/shaders/mirror/mirror.vs.glsl", "src/shaders/mirror/mirror.fs.glsl");
-BasicProgram programButtons(applicationPath, "src/shaders/utils/buttons.vs.glsl", "src/shaders/utils/buttons.fs.glsl");
-std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &programSky, &programLight, &programButtons, &programSun, &programMirror};
-
-
-// /**/std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programRoom, &programLight, &programSky};
 /**/std::vector<BasicProgram*> allRoomTwoPrograms = {&programRoom, &programVoronoi};
 
-    std::cout << "Loding Textures..." << std::endl;
+    std::cout << "Loading Textures..." << std::endl;
 
     GLuint imageEarthInt = bind_texture(applicationPath.dirPath() + "/assets/textures/EarthMap.jpg");
     GLuint imageCloudInt = bind_texture(applicationPath.dirPath() + "/assets/textures/CloudMap.jpg");
@@ -136,6 +129,9 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
     GLuint imageBenchRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bench_roughness.jpg");
     GLuint imageBenchNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/bench_normal.jpg");
 
+
+    GLuint imageFlagFrenchInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/Flag_of_France.jpg");
+    GLuint imageApertureInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/Companion_Cube.jpg");
 
     GLuint imageWhiteInt = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
     GLuint imageDefaultNormalInt = bind_texture(applicationPath.dirPath() + "/assets/textures/normal.png");
@@ -171,29 +167,12 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
         &imageBenchRoughnessInt,
         &imageBenchNormalInt,
 
+        &imageFlagFrenchInt,
+        &imageApertureInt,
+
         &imageWhiteInt,
         &imageDefaultNormalInt
     };
-
-// /**/std::cout << "Loading Textures..." << std::endl;
-// /**/GLuint imageWhiteInt          = bind_texture(applicationPath.dirPath() + "/assets/textures/white.png");
-// /**/GLuint imageDefaultNormalInt  = bind_texture(applicationPath.dirPath() + "/assets/textures/normal.png");
-// /**/GLuint imageBrickDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_diffuse.jpg");
-// /**/GLuint imageBrickRoughnessInt = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_roughness.jpg");
-// /**/GLuint imageBrickNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/bricks_normal.jpg");
-// /**/GLuint imageGlassDiffuseInt   = bind_texture(applicationPath.dirPath() + "/assets/textures/glass_diffuse.png");
-// /**/GLuint imageGlassNormalInt    = bind_texture(applicationPath.dirPath() + "/assets/textures/glass_normal.jpg");
-// /**/GLuint imageSkyboxInt         = bind_texture(applicationPath.dirPath() + "/assets/textures/alpha-mayoris.jpg");
-// /**/std::vector<GLuint*> allTextures = {
-//         &imageWhiteInt,
-//         &imageDefaultNormalInt,
-//         &imageBrickDiffuseInt,
-//         &imageBrickRoughnessInt,
-//         &imageBrickNormalInt,
-//         &imageGlassDiffuseInt,
-//         &imageGlassNormalInt,
-//         &imageSkyboxInt
-//     };
 
 /**/glimac::Sphere sphere = glimac::Sphere(1, 32, 16);
 /**/glimac::Sphere sphereInverted = glimac::Sphere(-1, 32, 16);
@@ -205,18 +184,6 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
 /**/auto roomInstances = std::make_shared<Instance>(applicationPath.dirPath(), "dsda", imageBrickDiffuseInt, imageBrickRoughnessInt, imageBrickNormalInt);
 /**/auto lightInstances = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
 /**/auto lightInstances2 = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), 0, 0, imageDefaultNormalInt);
-/**/auto graphRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageBrickDiffuseInt, 0, imageDefaultNormalInt);
-/**/auto cornerRender = std::make_shared<Instance>(sphereLowPoly.getVertexCount(), sphereLowPoly.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
-/**/auto graphRenderStatic = std::make_shared<Instance>(sphereLowPolyParticule.getVertexCount(), sphereLowPolyParticule.getDataPointer(), imageDefaultNormalInt, 0, imageDefaultNormalInt);
-// /**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "simpleCube2", imageGlassDiffuseInt, 0, imageGlassNormalInt);
-/**/auto simpleCube = std::make_shared<Instance>(applicationPath.dirPath(), "disc", imageGlassDiffuseInt, 0, imageGlassNormalInt);
-/**/auto meshCylinder = std::make_shared<Instance>(applicationPath.dirPath(), "cylinder", imageGlassNormalInt, 0, imageGlassNormalInt);
-/**/auto meshIco = std::make_shared<Instance>(applicationPath.dirPath(), "ico", imageGlassNormalInt, 0, imageGlassNormalInt);
-/**/auto meshDisc = std::make_shared<Instance>(applicationPath.dirPath(), "disc", imageGlassNormalInt, 0, imageGlassNormalInt);
-/**/auto edgeCollisionRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageGlassDiffuseInt, 0, imageGlassNormalInt);
-/**/auto edgeCollisionLineRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageSkyboxInt, 0, imageDefaultNormalInt);
-/**/auto edgeRender = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageBrickDiffuseInt, 0, imageDefaultNormalInt);
-
     auto earthInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageEarthInt, imageCloudInt, imageDefaultNormalInt);
     auto sunInstances = std::make_shared<Instance>(sphere.getVertexCount(), sphere.getDataPointer(), imageWhiteInt, 0, imageDefaultNormalInt);
 
@@ -240,6 +207,7 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
     auto citadelInstances = std::make_shared<Instance>(applicationPath.dirPath(), "citadel", imageStatueInt, 0, imageDefaultNormalInt);
 
     auto mirrorInstances = std::make_shared<Instance>(applicationPath.dirPath(), "circle", imageGlassDiffuseInt, imageWhiteInt, imageGlassNormalInt);
+    auto arrowInstances = std::make_shared<Instance>(applicationPath.dirPath(), "arrow", imageWhiteInt, imageWhiteInt, imageDefaultNormalInt);
 
 
 
@@ -253,14 +221,6 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
 /**/// Add all objects to the scene
 /**/{
         scene.addInstance(roomInstances);
-        sceneProj.addInstance(graphRender);
-        sceneProj.addInstance(cornerRender);
-        sceneProj.addInstance(graphRenderStatic);
-        scene.addInstance(simpleCube);
-        scene.addInstance(edgeCollisionRender);
-        sceneProj.addInstance(edgeCollisionLineRender);
-        sceneProj.addInstance(edgeRender);
-
         // edgeCollisionRender.get()->setBlendToTransparent();
         // simpleCube.get()->setBlendToTransparent();
 
@@ -277,6 +237,7 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
         scene.addInstance(houseInstances);
         scene.addInstance(domeWireInstances);
         scene.addInstance(benchInstances);
+        scene.addInstance(arrowInstances);
 
         // transparents objects
         scene.addInstance(cubeInstances);
@@ -284,11 +245,6 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
 
         cubeInstances.get()->setBlendToTransparent();
         domeGlassInstances.get()->setBlendToTransparent();
-
-
-        sceneUnused.addInstance(meshCylinder);
-        sceneUnused.addInstance(meshIco);
-        sceneUnused.addInstance(meshDisc);
     }
 
     buttonInstances.get()->setBlendToTransparent();
@@ -343,13 +299,13 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
             }
         }
 
-        int nbRandLight = 150;
+        int nbRandLight = 40;
 
         for (int i = 0; i < nbRandLight; i++) {
             vec3 pos = vec3(linearRand(1.0f, 20.0f), linearRand(.1f, 1.0f), linearRand(-11.0f, 11.0f));
             pos = vec3(pos.x, pos.y/20, pos.z);
             vec3 color = vec3(linearRand(.1f, 1.0f), linearRand(.1f, 1.0f), linearRand(.1f, 1.0f));
-            lightsRoomRight.add(LightStruct(pos, color, vec3(5, 0.25, lightSize)));
+            lightsRoomRight.add(LightStruct(pos, color, vec3(2, 0.4, lightSize)));
             lightInstances2.get()->add(Transform(pos, vec3(0), vec3(lightSize)));
         }
     }
@@ -372,63 +328,59 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
         // skyboxInstances.get()->add(Transform(vec3(0, 1, 0), vec3(135*degToRad, -135*degToRad, 0), vec3(1)));
 
         roomInstances.get()->add();
-
-        titleInstances.get()->add(Transform(vec3(-11, 0, 12), vec3(0), vec3(3)));
-        titleInstances.get()->add(Transform(vec3(0, 1.5, -1.75), vec3(0, glm::pi<float>(), 0), vec3(0.4, 0.4, 1.0)));
-
-        shelveInstances.get()->add(Transform(vec3(-1, 0, -4), vec3(0, glm::pi<float>()/2, 0)));
-
-        houseInstances.get()->add(Transform(vec3(-10.5, heightFoot, 0), vec3(0), vec3(0.2)));
-
-        planeInstances.get()->add(Transform(vec3(1000, 15, -25), vec3(0, 0, -5*degToRad), vec3(1)));
-
-        statueInstances.get()->add(Transform(vec3(-10.5, heightFoot, -11.25), vec3(0, 180*degToRad, 0)));
-        statueInstances.get()->add(Transform(vec3(-1.75, heightFoot, -5), vec3(0, 180*degToRad, 0)));
-
-        statueInstances.get()->add(Transform(vec3(-1.75, heightFoot, -2), vec3(0, 210*degToRad, 0)));
-        statueInstances.get()->add(Transform(vec3(-1.75, heightFoot, 2), vec3(0, -30*degToRad, 0)));
-        statueInstances.get()->add(Transform(vec3(+1.75, heightFoot, -2), vec3(0, 150*degToRad, 0)));
-        statueInstances.get()->add(Transform(vec3(+1.75, heightFoot, 2), vec3(0, 30*degToRad, 0)));
-
-        statueInstances.get()->add(Transform(vec3(+11, heightFoot, -11.25), vec3(0, 180*degToRad, 0)));
-
-        citadelInstances.get()->add(Transform(vec3(0, 1440, -1200), vec3(), vec3(0.48)));
-
         spaceShipInstances.get()->add(Transform(vec3(10.5, 5, 0), vec3(75*degToRad, 0, 15*degToRad), vec3(0.1f)));
-        // spaceShipInstances.get()->add(Transform(vec3(-80, 30, 128), vec3(0, 60*degToRad, 15*degToRad), vec3(3.0f)));
-        spaceShipInstances.get()->add(Transform(vec3(0, 100, 1030), vec3(0, 30*degToRad, 0), vec3(20.0f)));
 
-        // shipInstances.get()->add(Transform(vec3(0, 3.5, 0), vec3(-60*degToRad, 215*degToRad, 0), vec3(0.3f)));
+        if(SUPERFLUX) {
+            titleInstances.get()->add(Transform(vec3(-11, 0, 12), vec3(0), vec3(3)));
+            titleInstances.get()->add(Transform(vec3(0, 1.5, -1.75), vec3(0, glm::pi<float>(), 0), vec3(0.4, 0.4, 1.0)));
 
-        domeGlassInstances.get()->add(Transform());
-        domeWireInstances.get()->add(Transform());
-
-        benchInstances.get()->add(Transform(vec3(1.75, 0.0, -4), vec3(0, 90*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(1.75, 0.0, -7), vec3(0, 90*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(1.75, 0.0, -10), vec3(0, 90*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(3.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(6.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(9.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(13.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(16.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(19.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
-
-        benchInstances.get()->add(Transform(vec3(19.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(13.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(16.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(9.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(6.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(3.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(1.75, 0.0, 10), vec3(0, 90*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(1.75, 0.0, 7), vec3(0, 90*degToRad, 0)));
-        benchInstances.get()->add(Transform(vec3(1.75, 0.0, 4), vec3(0, 90*degToRad, 0)));
-
-        const uint amountParticules = 250;
-        const float particuleSize = 0.01f;
-        for (uint i = 0; i < amountParticules; i++) {
-            // particulesInstances.get()->add(Transform(vec3(linearRand(-21.0f, 0.0f), linearRand(-0.5f, 10.0f), linearRand(-12.0f, 12.0f)), vec3(), vec3(particuleSize)));
-            particulesInstances.get()->add(Transform(vec3(linearRand(-21.0f, 21.0f), linearRand(-0.5f, 10.0f), linearRand(-12.0f, 12.0f)), vec3(), vec3(particuleSize)));
-            // particulesInstances.get()->add(Transform(vec3(linearRand(-0.1f, 0.1f), linearRand(-0.5f, 3.0f), linearRand(-2.0f, 2.0f)), vec3(), vec3(particuleSize)));
+            statueInstances.get()->add(Transform(vec3(-10.5, heightFoot, -11.25), vec3(0, 180*degToRad, 0)));
+            statueInstances.get()->add(Transform(vec3(-1.75, heightFoot, -5), vec3(0, 180*degToRad, 0)));
+    
+            statueInstances.get()->add(Transform(vec3(-1.75, heightFoot, -2), vec3(0, 210*degToRad, 0)));
+            statueInstances.get()->add(Transform(vec3(-1.75, heightFoot, 2), vec3(0, -30*degToRad, 0)));
+            statueInstances.get()->add(Transform(vec3(+1.75, heightFoot, -2), vec3(0, 150*degToRad, 0)));
+            statueInstances.get()->add(Transform(vec3(+1.75, heightFoot, 2), vec3(0, 30*degToRad, 0)));
+    
+            statueInstances.get()->add(Transform(vec3(+11, heightFoot, -11.25), vec3(0, 180*degToRad, 0)));
+    
+            citadelInstances.get()->add(Transform(vec3(0, 1440, -1200), vec3(), vec3(0.48)));
+    
+            // spaceShipInstances.get()->add(Transform(vec3(-80, 30, 128), vec3(0, 60*degToRad, 15*degToRad), vec3(3.0f)));
+            spaceShipInstances.get()->add(Transform(vec3(0, 100, 1030), vec3(0, 30*degToRad, 0), vec3(20.0f)));
+    
+            // shipInstances.get()->add(Transform(vec3(0, 3.5, 0), vec3(-60*degToRad, 215*degToRad, 0), vec3(0.3f)));
+    
+            domeGlassInstances.get()->add(Transform());
+            domeWireInstances.get()->add(Transform());
+    
+            benchInstances.get()->add(Transform(vec3(1.75, 0.0, -4), vec3(0, 90*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(1.75, 0.0, -7), vec3(0, 90*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(1.75, 0.0, -10), vec3(0, 90*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(3.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(6.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(9.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(13.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(16.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(19.0, 0.0, -11.25), vec3(0, 0*degToRad, 0)));
+    
+            benchInstances.get()->add(Transform(vec3(19.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(13.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(16.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(9.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(6.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(3.0, 0.0, 11.25), vec3(0, 0*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(1.75, 0.0, 10), vec3(0, 90*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(1.75, 0.0, 7), vec3(0, 90*degToRad, 0)));
+            benchInstances.get()->add(Transform(vec3(1.75, 0.0, 4), vec3(0, 90*degToRad, 0)));
+            
+            const uint amountParticules = 250;
+            const float particuleSize = 0.01f;
+            for (uint i = 0; i < amountParticules; i++) {
+                // particulesInstances.get()->add(Transform(vec3(linearRand(-21.0f, 0.0f), linearRand(-0.5f, 10.0f), linearRand(-12.0f, 12.0f)), vec3(), vec3(particuleSize)));
+                particulesInstances.get()->add(Transform(vec3(linearRand(-21.0f, 21.0f), linearRand(-0.5f, 10.0f), linearRand(-12.0f, 12.0f)), vec3(), vec3(particuleSize)));
+                // particulesInstances.get()->add(Transform(vec3(linearRand(-0.1f, 0.1f), linearRand(-0.5f, 3.0f), linearRand(-2.0f, 2.0f)), vec3(), vec3(particuleSize)));
+            }
         }
 
         // at each walls of the map
@@ -455,18 +407,15 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
             } 
         }
 
-        // for (float z = max; z >= min; z=z-offset)
-        // {
-        //     for (float x = min; x <= max; x=x+offset) {
-        //         graphRender.get()->add(Transform(vec3(x, 0, z), vec3(0, 45*degToRad, 0), vec3((1.0/cos(45*degToRad))*(offset/2.0))));
-        //     }
-        // }
-        // for (float z = max; z >= min; z=z-offset)
-        // {
-        //     for (float x = min; x <= max; x=x+offset) {
-        //         graphRenderStatic.get()->add(Transform(vec3(x, 0, z), vec3(0, 45*degToRad, 0), vec3(0.00625f)));
-        //     }
-        // }
+
+        shelveInstances.get()->add(Transform(vec3(-1, 0, -4), vec3(0, glm::pi<float>()/2, 0)));
+
+        houseInstances.get()->add(Transform(vec3(-10.5, heightFoot, 0), vec3(0), vec3(0.2)));
+
+        planeInstances.get()->add(Transform(vec3(1000, 15, -25), vec3(0, 0, -5*degToRad), vec3(1)));
+
+
+        arrowInstances.get()->add(Transform(vec3(-11, 0.25, 9)));
     }
 
     // Add all walls
@@ -534,7 +483,7 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
 /**/bool animateSwitch = false;
 /**/double timer = 0.0f;
 /**/double animateTimer = 0.0f;
-/**/bool computeNextFrame = false;
+// /**/bool computeNextFrame = false;
 /**/bool boolRightRoom = false;
 /**/vec2 mousePos = win.mouse();
 
@@ -569,8 +518,6 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
 
     mirror.computeCamera(fpsCam);
 
-    bool fromMirror = false;
-
     std::vector<Button> buttons;
 
     for (size_t i = 0; i < allRoomTwoPrograms.size(); i++) {
@@ -586,119 +533,6 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-    auto resolution = 15;
-    auto maxLen = 1.0f;
-    auto min = -maxLen;
-    auto max = maxLen;
-    auto range = max-min;
-    auto offset = range / resolution;
-
-
-
-    // auto ax = -30.f*degToRad;
-    // auto ay = 45.f*degToRad;
-    // auto az = 7.0f*degToRad;
-
-    // auto ax2 = 60.f*degToRad;
-    // auto ay2 = 40.f*degToRad;
-    // auto az2 = 110.0f*degToRad;
-    // auto ax = -45.f*degToRad;
-    // auto ay = 90.f*degToRad;
-    // auto az = 0.f*degToRad;
-    // auto ax = 0.f*degToRad;
-    // auto ay = 0.f*degToRad;
-    // auto az = 0.f*degToRad;
-    auto ax = -45.f*degToRad;
-    auto ay = 0.f*degToRad;
-    auto az = 0.f*degToRad;
-
-    // auto ax2 = 45.f*degToRad;
-    // auto ay2 = 0.f*degToRad;
-    // auto az2 = 36.6f*degToRad;
-    // auto ax2 = 0.f*degToRad;
-    // auto ay2 = 0.f*degToRad;
-    // auto az2 = 0.f*degToRad;
-    auto ax2 = -45.f*degToRad;
-    auto ay2 = 90.f*degToRad;
-    auto az2 = 0.f*degToRad;
-
-    bool BIG_SWITCH = true;
-    if(argc > 1) {
-        if(argv[1][0] == 'a') {
-            BIG_SWITCH = false;
-        }
-        if(argv[1][0] == 'b') {
-            BIG_SWITCH = true;
-        }
-    }
-    
-
-    
-    // // could be optimized with the length as 1.0 and x/y/z as the position
-    // // or not since there is a disvision by the length of x/y/z
-
-    std::vector<rigidBody> allRigidBodies;
-
-    allRigidBodies.push_back(rigidBody());
-    // rb.com = vecToPoint(pos);
-    auto rb1Pos = vec3(0.0, 0.0, 0.0);
-    auto rb1Motor = posToTranslator(rb1Pos) * anglesToRotor(ax, ay, az);
-
-    allRigidBodies.at(0).setMass(1.0f);
-    // allRigidBodies.at(0).setStatic(true);
-    allRigidBodies.at(0).setMotor(rb1Motor);
-    simpleCube.get()->setupRigidBody(&allRigidBodies.at(0));
-    allRigidBodies.at(0).reduceAll();
-    allRigidBodies.at(0).computeAll();
-
-    // rigidBody rb2;
-
-    // rb.setMass(1000.0f);
-    // rb.setStatic(true);
-    // rb.setMotor(rb1Motor);
-    // simpleCube.get()->getVertex(&rb.points);
-    // simpleCube.get()->getEdgesIndex(&rb.edges_index);
-    // simpleCube.get()->getTrianglesIndex(&rb.triangles_index);
-    // simpleCube.get()->generateTriangles(&rb.triangles_from_Instance);
-    // simpleCube.get()->generateEdges(&rb.edges_from_Instance);
-    // rb.reduceAll();
-    // rb.computeAll();
-
-    std::cout << "Nb points for rb: " << allRigidBodies.at(0).points.size() << " computed: " << allRigidBodies.at(0).points_computed.size() << " edges: " << allRigidBodies.at(0).edges_computed.size() << std::endl;
-
-    allRigidBodies.push_back(rigidBody());
-
-    // rb2.com = vecToPoint(pos+vec3(0, 1.3, 0));
-    auto rb2Pos = vec3(0.0, 4.0, 0.0);
-    auto rb2Motor = posToTranslator(rb2Pos) * anglesToRotor(ax2, ay2, az2);
-    allRigidBodies.at(1).setMass(1.0f);
-    // allRigidBodies.at(1).setStatic(true);
-    allRigidBodies.at(1).setMotor(rb2Motor);
-    if(!BIG_SWITCH) {
-        allRigidBodies.at(1).translator_tick = posToTranslator(0.0f, -2.0f, 0.0f);
-    }
-    // rb2.motor = kln::motor(posToTranslator(0.0f, -0.1f, 0.0f));
-    simpleCube.get()->setupRigidBody(&allRigidBodies.at(1));
-    allRigidBodies.at(1).reduceAll();
-    allRigidBodies.at(1).computeAll();
-
-    std::cout << "Nb points for rb2: " << allRigidBodies.at(1).points.size() << " computed: " << allRigidBodies.at(1).points_computed.size() << " edges: " << allRigidBodies.at(1).edges_computed.size() << std::endl;
-
-    // std::vector<triangle> cubeTriangles;
-    // simpleCube.get()->getTrianglesIndex(&cubeTriangles);
-
-    simpleCube.get()->add(Transform(rb1Pos, vec3(ax, ay, az)));
-    // simpleCube.get()->add(Transform(rb2Pos, vec3(ax2, ay2, az2)));
-
-    if(!BIG_SWITCH) {
-        for(auto &point: allRigidBodies.at(1).points_computed) {
-            cornerRender.get()->add(Transform(pointToVec(point), vec3(0), vec3(0.0625)));
-        }
-    
-        for(auto &point: allRigidBodies.at(1).points_computed) {
-            cornerRender.get()->add(Transform(pointToVec(point), vec3(0), vec3(0.0625)));
-        }
-    }
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -707,23 +541,136 @@ std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &progra
 
 // PARTICULES
 
-auto firstGrid = Animation(imageBrickDiffuseInt, imageBrickRoughnessInt, imageBrickNormalInt);
-float radiusCube = 1.0f;
-float height = 1.5f;
-firstGrid.make_grid(vec3(1, 5+height-radiusCube, -radiusCube), vec3(1, 5+height+radiusCube, -radiusCube), vec3(1, 5+height-radiusCube, radiusCube), vec3(1, 5+height+radiusCube, radiusCube), 18, 3.0, 10000, 15);
-scene.addInstance(firstGrid.getInstance());
-firstGrid.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
-const float wallFriction = 0.68f;
+std::vector<Animation*> allAnimations;
 
-// firstGrid.addField(FieldType::field_convex, &allRigidBodies.at(0), wallFriction);
+float windTheta = 0.0f;
+float windPhy = 0.0f;
+vec3 windDir = vec3(cos(windTheta)*sin(windPhy), sin(windTheta), cos(windTheta)*cos(windPhy));
 
-firstGrid.addField(FieldType::field_wall, vec3(0, -5, 0), wallFriction);
-firstGrid.addField(FieldType::field_wind, applicationPath, &win, vec3(1, 0, 0), 25.0f);
+arrowInstances.get()->updateAngles(0, vec3(-windTheta, windPhy, 0));
+arrowInstances.get()->computeAll();
 
-// player BBox
-firstGrid.addField(FieldType::field_cube, BBox3f(), 0.1);
+auto flagWindPower = 50.0f;
+auto flagAnimation = Animation(imageFlagFrenchInt, imageWhiteInt, imageDefaultNormalInt);
+auto count = 25;
+vec3 flagRootCenter(-11, 2.0, 9);
+// vec3 flagRootCenter(0, 0, 0);
+{
+    // vec3(1, 5+height-radiusCube, -radiusCube*1.5), vec3(1, 5+height+radiusCube, -radiusCube*1.5), vec3(1, 5+height-radiusCube, radiusCube*1.5), vec3(1, 5+height+radiusCube, radiusCube*1.5)
+    allAnimations.push_back(&flagAnimation);
+    float radiusCube = 2.0f;
+    flagAnimation.make_flag(
+        flagRootCenter + vec3(0, 0, 0),
+        flagRootCenter + vec3(0, radiusCube, 0),
+        flagRootCenter + vec3(-radiusCube*1.5, 0, 0),
+        flagRootCenter + vec3(-radiusCube*1.5, radiusCube, 0),
+        count, 0.3, 1000, 15);
 
-firstGrid.activateMultithreaded(2, &fpsCam);
+    scene.addInstance(flagAnimation.getInstance());
+    flagAnimation.getFields()->reserve(walls.size()+10);
+    flagAnimation.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81f);
+    flagAnimation.addField(FieldType::field_directional, vec3(-1, 0, 0), 0.0f);
+    // flagAnimation.addField(FieldType::field_convex, &allRigidBodies.at(0), wallFriction);
+    {
+        const float wallFriction = 0.1f;
+        // for(auto &wall: walls) {
+            //     flagAnimation.addField(FieldType::field_cube, wall, wallFriction);
+            // }
+        flagAnimation.addField(FieldType::field_wall, vec3(0, 0, 0), wallFriction);
+    }
+    flagAnimation.addField(FieldType::field_wind, applicationPath, &win, windDir, flagWindPower);
+    
+    // player BBox
+    flagAnimation.addField(FieldType::field_cube, BBox3f(), 0.1);
+    flagAnimation.activateMultithreaded(6, &fpsCam);
+
+}
+auto flagInstance = std::make_shared<Instance>(count, DynamicType::dynamic_grid, imageFlagFrenchInt, imageWhiteInt, imageDefaultNormalInt);
+// flagInstance.get()->add(Transform(vec3(10, 10, 10)));
+{
+    auto miniFlagsScale = 0.25f;
+    for (int z = -12; z <= 12; z++) {
+        for (int x = -21; x <= 21; x++) {
+            if((x == -1 && z == -4) || (x == -1 && z == -3) || (x == 10 && z == 12) || (x == 11 && z == 12) || (x == 12 && z == 12)) {
+                continue;
+            }
+            if (x == -21 || x == 21) {
+                flagInstance.get()->add(Transform(vec3(x, 3.5, z)-(miniFlagsScale*flagRootCenter), vec3(), vec3(miniFlagsScale)));
+            }
+    
+            if (x != 0 && (z == -12 || z == 12)) {
+                flagInstance.get()->add(Transform(vec3(x, 3.5, z)-(miniFlagsScale*flagRootCenter), vec3(), vec3(miniFlagsScale)));
+            }
+    
+            if ((x == -1 || x == 1) &&(z <= -2 || z >= 2)) {
+                flagInstance.get()->add(Transform(vec3(x, 3.5, z)-(miniFlagsScale*flagRootCenter), vec3(), vec3(miniFlagsScale)));
+            }
+            if (x == 0 && (z == -2 || z == 2)) {
+                flagInstance.get()->add(Transform(vec3(x, 3.5, z)-(miniFlagsScale*flagRootCenter), vec3(), vec3(miniFlagsScale)));
+            }
+        } 
+    }
+}
+
+{
+    auto tmp_pos = flagAnimation.getParticulesPositions();
+    flagInstance.get()->updateDynamicMesh(tmp_pos);
+}
+scene.addInstance(flagInstance);
+
+auto blancketWindPower = 25.0f;
+
+auto blancketAnimation = Animation(imageFlagFrenchInt, imageWhiteInt, imageDefaultNormalInt);
+{
+    allAnimations.push_back(&blancketAnimation);
+    vec3 center(-10.5, 4, 0);
+    vec2 dimensions(6, 4);
+    dimensions*=0.8;
+    blancketAnimation.make_grid(
+        center + vec3(-dimensions.x, 0, -dimensions.y),
+        center + vec3(-dimensions.x, 0,  dimensions.y),
+        center + vec3( dimensions.x, 0, -dimensions.y),
+        center + vec3( dimensions.x, 0,  dimensions.y),
+        50, 1.0, 1000, 35
+    );
+    scene.addInstance(blancketAnimation.getInstance());
+    blancketAnimation.getFields()->reserve(walls.size()+10);
+    blancketAnimation.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+    blancketAnimation.addField(FieldType::field_directional, vec3(-1, 0, 0), 0.0f);
+    {
+        const float wallFriction = 0.85f;
+        for(auto &wall: walls) {
+            blancketAnimation.addField(FieldType::field_cube, wall, wallFriction);
+        }
+    }
+    blancketAnimation.addField(FieldType::field_wind, applicationPath, &win, vec3(0, 1, 0), 0.0f);
+    blancketAnimation.addField(FieldType::field_cube, BBox3f(), 0.1);
+    blancketAnimation.activateMultithreaded(4, &fpsCam);
+}
+
+auto cubeAnimation = Animation(imageApertureInt, 0, imageDefaultNormalInt);
+{
+    allAnimations.push_back(&cubeAnimation);
+    vec3 center(-8, 4, -8);
+    vec3 dimensions(1, 1, 1);
+    dimensions*=0.8;
+    cubeAnimation.make_cube(
+        center, dimensions,
+        4, 0.1, 10000, 3
+    );
+    scene.addInstance(cubeAnimation.getInstance());
+    cubeAnimation.getFields()->reserve(walls.size()+10);
+    cubeAnimation.addField(FieldType::field_directional, vec3(0, -1, 0), 9.81);
+    cubeAnimation.addField(FieldType::field_directional, vec3(-1, 0, 0), 0.0f);
+    {
+        const float wallFriction = 0.1f;
+        for(auto &wall: walls) {
+            cubeAnimation.addField(FieldType::field_cube, wall, wallFriction);
+        }
+    }
+    cubeAnimation.addField(FieldType::field_cube, BBox3f(), 0.0);
+    cubeAnimation.activateMultithreaded(4, &fpsCam);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -750,22 +697,24 @@ firstGrid.activateMultithreaded(2, &fpsCam);
 // }
 // imguiRenderFrame();
 
-bool click = false;
-
+bool showtexture = false;
+bool activateFan = false;
+bool flagWindActivated = true;
 
 /**//* Loop until the user closes the window */
     uint refreshTitle = 0;
     while (win.running()) {
 
         { // INIT CODE
-            clear_screen();
+            win.clear();
             fpsCam.update(win, walls, deltaT);
+            mirror.computeCamera(fpsCam);
             timer = glfwGetTime();
             deltaT = std::min(timer - oldTime, 1.0/24);
             if(oldTime < 0) { // first frame
                 deltaT = 1/60.0f;
             }
-            if (animateSwitch || computeNextFrame) { // the animation is running
+            if (animateSwitch) { // the animation is running
                 animateTimer += deltaT;
             }
             oldTime = timer;
@@ -785,8 +734,10 @@ bool click = false;
                 skyboxInstances.get()->updatePosition(0, fpsCam.getPos());
                 skyboxInstances.get()->computeAll();
                 
-                citadelInstances.get()->updatePosition(0, fpsCam.getPos() + vec3(0, 1440, -1200));
-                citadelInstances.get()->computeAll();
+                if(SUPERFLUX) {
+                    citadelInstances.get()->updatePosition(0, fpsCam.getPos() + vec3(0, 1440, -1200));
+                    citadelInstances.get()->computeAll();
+                }
             }
 
             for (size_t i = 0; i < particulesInstances.get()->size(); i++) {
@@ -836,270 +787,74 @@ bool click = false;
                 if (distanceToPlane < 450) {
                     // clamp((distanceToPlane-450)/450, 0.0, 1.0);
                     // fpsCam.shake(1/(1+distanceToPlane));
-                    fpsCam.shake(0.1 * pow((450.0-distanceToPlane)/450, 4));
+                    auto shakeAmount = 0.1 * pow((450.0-distanceToPlane)/450, 4);
+                    fpsCam.shake(shakeAmount);
                 }
-
-            }
-
-            firstGrid.getFields()->at(firstGrid.getFields()->size()-2).update_field();
-
-            firstGrid.update_visual();
-            
-            if(animateSwitch || computeNextFrame) {
                 
-                // auto ppp1 = rb.getVelocity();
-                // // printVec(ppp);
-                // auto ppp2 = rb2.getVelocity();
-                // // printVec(ppp);
-                
-                // std::cout << "{ " << ppp1.x << ", " << ppp1.y << ", " << ppp1.z << " } vector" << "{ " << ppp2.x << ", " << ppp2.y << ", " << ppp2.z << " } vector" << std::endl;
-                
-                // auto animWithParticules = false;
-                if(BIG_SWITCH) {
-                    auto scaleTime = 1.0f;
-                    
-                    ax = 30.f*degToRad*sin(animateTimer*scaleTime)*3.5;
-                    az = 0.0f*degToRad;
-                    ay = 15.f*degToRad*animateTimer*scaleTime;
-                    
-                    rb1Pos = vec3(-0.5+0.5*cos(animateTimer*scaleTime), 0.0, 0.5*sin(animateTimer*scaleTime));
-                    
-                    rb1Motor = posToTranslator(rb1Pos) * anglesToRotor(ax, ay, az);
-                    // simpleCube.get()->generateTriangles(&rb.triangles_from_Instance);
-                    
-                    allRigidBodies.at(0).setMotor(rb1Motor);
+                distanceToPlane = abs(planeInstances.get()->get(0).m_Position.x);
+                if (distanceToPlane < 450) {
+                    auto shakeAmount = 15.0f * pow((450.0-distanceToPlane)/450, 4);
+                    // std::cout << shakeAmount << std::endl;
+                    blancketAnimation.getFields()->at(1).change_k(shakeAmount);
+                    flagAnimation.getFields()->at(1).change_k(shakeAmount);
+                    cubeAnimation.getFields()->at(1).change_k(shakeAmount);
                 }
                 else {
-                    allRigidBodies.at(0).updateMotor(deltaT);
-                }
-                
-                allRigidBodies.at(0).computeAll();
-                
-                // simpleCube.get()->generateTriangles(&rb2.triangles_from_Instance);
-                allRigidBodies.at(1).updateMotor(deltaT);
-                allRigidBodies.at(1).computeAll();
-                
-                // auto count = collideRigidBody(&rb, &rb2);
-            }
-
-            // if (animateSwitch || computeNextFrame){
-            //     for (size_t i = 0; i < allRigidBodies.size(); i++)
-            //     {
-            //         for (size_t j = i+1; j < allRigidBodies.size(); j++) {
-
-
-            //             auto RB1 = &allRigidBodies.at(i);
-            //             auto RB2 = &allRigidBodies.at(j);
-
-            //             vec3 centerCollisionRB1;
-            //             vec3 centerCollisionRB2;
-
-            //             std::vector<edgeCast> edgeCollision;
-            //             auto nbIntersections = RBCollide(RB1, RB2, &edgeCollision, &centerCollisionRB1, &centerCollisionRB2);
-
-            //             if(nbIntersections>0) {
-            //                 auto displace1 = resolveInternalPoint(RB1, centerCollisionRB1, false);
-            //                 auto displace2 = resolveInternalPoint(RB2, centerCollisionRB2, false);
-            //                 updatePhysic(RB1, RB2, centerCollisionRB1, centerCollisionRB2, displace1, displace2);
-            //                 edgeCollisionRender.get()->add(Transform(displace1 + centerCollisionRB1, vec3(0), vec3(0.300)));
-            //                 edgeCollisionRender.get()->add(Transform(displace2 + centerCollisionRB2, vec3(0), vec3(0.300)));
-            //             }
-            //         }
-            //     }
-            // }
-
-
-            auto nbIntersections = 0;
-            int id = -1;
-            vec3 centerCollisionRB1;
-            vec3 centerCollisionRB2;
-            std::vector<edgeCast> edgeCollision;
-            if(!BIG_SWITCH) {
-                triangle t11{kln::point{0, 0, 0}, kln::point{0, 0, 0}, kln::point{0, 0, 0}};
-                triangle t12{kln::point{0, 0, 0}, kln::point{0, 0, 0}, kln::point{0, 0, 0}};
-                triangle t21{kln::point{0, 0, 0}, kln::point{0, 0, 0}, kln::point{0, 0, 0}};
-                triangle t22{kln::point{0, 0, 0}, kln::point{0, 0, 0}, kln::point{0, 0, 0}};
-                nbIntersections = RBCollide(&allRigidBodies.at(0), &allRigidBodies.at(1), &edgeCollision, &centerCollisionRB1, &centerCollisionRB2, &id, &t11, &t12, &t21, &t22);
-                // auto nbIntersections = 0;
-                edgeCollisionRender.get()->clear();
-                edgeCollisionLineRender.get()->clear();
-            }
-
-
-            if(!BIG_SWITCH && (animateSwitch || computeNextFrame)) {
-                if(nbIntersections>0) {
-
-                    auto displace1 = resolveInternalPoint(&allRigidBodies.at(0), centerCollisionRB1, false);
-                    auto displace2 = resolveInternalPoint(&allRigidBodies.at(1), centerCollisionRB2, false);
-
-                    updatePhysic(&allRigidBodies.at(0), &allRigidBodies.at(1), centerCollisionRB1, centerCollisionRB2, displace1, displace2, id);
-                    edgeCollisionRender.get()->add(Transform(displace1 + centerCollisionRB1, vec3(0), vec3(0.300)));
-                    edgeCollisionRender.get()->add(Transform(displace2 + centerCollisionRB2, vec3(0), vec3(0.300)));
-                }
-            }
-
-
-            if(nbIntersections>0) {
-                // edgeCollisionRender.get()->add(Transform(centerCollision, vec3(0), vec3(0.125)));
-                // edgeCollisionRender.get()->add(Transform(centerCollision, vec3(0), vec3(0.125)));
-
-                // std::cout << "RB2: "<< std::endl;
-
-
-
-                // for(auto &p: edgeCollision) {
-                //     auto contactPoint = pointToVec(p.intersection);
-                //     // edgeCollisionRender.get()->add(Transform(contactPoint, vec3(0), vec3(0.125)));
-                //     // std::cout << "Pos intersection: { " << contactPoint.x << ", " << contactPoint.y << ", " << contactPoint.z << " }" << std::endl;
-                //     size_t count = 10;
-                //     auto len = length(pointToVec(p.e.p2) - pointToVec(p.e.p1));
-                //     for (size_t i = 0; i <= count; i++)
-                //     {
-                //         auto point = (1.0f*(count - i)/(count)) * (p.e.p1) + (1.0f*(i)/(count)) * (p.e.p2);
-                //         edgeCollisionLineRender.get()->add(Transform(pointToVec(point), vec3(0), vec3(0.5f*len/count)));
-                //     }                    
-                // }
-            }
-
-                                                                                    // graphRenderStatic.get()->clear();
-                                                                                    // graphRenderStatic.get()->add(Transform(pointToVec(rb.com), vec3(0), vec3(0.25)));
-                                                                                    // graphRenderStatic.get()->add(Transform(pointToVec(rb2.com), vec3(0), vec3(0.25)));
-
-
-            // if(animateSwitch) {
-                // std::cout << "Collision: " << count << std::endl;
-                // std::cout << "Nb collisions: " << rb.collisions.size() << ", " << rb2.collisions.size() << std::endl;
-
-                // rb.collisions.clear();
-                // rb2.collisions.clear();
-
-                // rb.resolveCollisons();
-                // rb2.resolveCollisons();
-
-                // printMotor(rb2.motor);
-
-
-
-            // }
-
-            simpleCube.get()->updatePosition(0, pointToVec(allRigidBodies.at(0).com));
-            simpleCube.get()->updateAngles(0, vec3(ax, ay, az));
-            simpleCube.get()->computeAll();
-
-            // std::cout << "POINT 2" << std::endl;
-
-                                // simpleCube.get()->updatePosition(1, pointToVec(allRigidBodies.at(1).com));
-                                // // simpleCube.get()->updateAngles(1, vec3(0));
-                                // simpleCube.get()->compute(1);
-
-            // debug render
-            if(!BIG_SWITCH) {
-
-                edgeRender.get()->clear();
-                for(auto &e: allRigidBodies.at(0).edges_computed) {
-                    size_t count = 20;
-                    auto len = length(pointToVec(e.p2) - pointToVec(e.p1));
-                    for (size_t i = 0; i <= count; i++)
-                    {
-                        auto point = (1.0f*(count - i)/(count)) * (e.p1) + (1.0f*(i)/(count)) * (e.p2);
-                        edgeRender.get()->add(Transform(pointToVec(point), vec3(0), vec3(0.5f*len/count)));
-                    } 
-                }
-                for(auto &e: allRigidBodies.at(1).edges_computed) {
-                    size_t count = 20;
-                    auto len = length(pointToVec(e.p2) - pointToVec(e.p1));
-                    for (size_t i = 0; i <= count; i++)
-                    {
-                        auto point = (1.0f*(count - i)/(count)) * (e.p1) + (1.0f*(i)/(count)) * (e.p2);
-                        edgeRender.get()->add(Transform(pointToVec(point), vec3(0), vec3(0.5f*len/count)));
-                    } 
-                }
-                // std::cout << "COM: " << pointToVec(rb.com) << ", " << pointToVec(rb2.com) << std::endl;
-
-                auto indexCorner = 0;
-                for(auto &point: allRigidBodies.at(0).points_computed) {
-                    cornerRender.get()->updatePosition(indexCorner, pointToVec(point));
-                    indexCorner++;
+                    blancketAnimation.getFields()->at(1).change_k(0.0f);
+                    flagAnimation.getFields()->at(1).change_k(0.0f);
+                    cubeAnimation.getFields()->at(1).change_k(0.0f);
                 }
 
-                for(auto &point: allRigidBodies.at(1).points_computed) {
-                    cornerRender.get()->updatePosition(indexCorner, pointToVec(point));
-                    indexCorner++;
-                }
-                cornerRender.get()->computeAll();
             }
 
-
-            if(false && (animateSwitch || computeNextFrame)) {
-                auto indexGraph = 0;
-
-                for (float z = max; z >= min; z=z-offset)
-                {
-                    for (float x = min; x <= max; x=x+offset) {
-                        auto transform = graphRender.get()->get(indexGraph);
-                        auto pos = vec3(transform.m_Position);
-                        pos = vec3(x, 0.12, z);
-                        auto velocity = vec3(transform.m_Velocity);
-                        velocity = vec3(0);
-                        auto point = kln::point(pos.x, pos.y, pos.z);
-
-                        float smallestDistance;
-                        bool firstProjection = true;
-                        vec3 displacement;
-
-                        for(auto &tr: allRigidBodies.at(0).triangles_computed) {
-                            auto result = projectToTriangle(tr, point);
-
-                            // if collided is false, we will ignore the displacement
-                            // otherwise we will use it so no need for another conditional branch
-                            if(firstProjection) {
-                                firstProjection = false;
-                                smallestDistance = result.distance;
-                                displacement = result.offset;
-                                continue;
-                            }
-
-                            // new candidate for the closest plane from a triangle
-                            // if the closest plane is not in collision then there is no need for a collision
-                            // otherwise it is a smaller displacement that resolve the collision
-                            if(result.distance < smallestDistance) {
-                                smallestDistance = result.distance;
-                                displacement = result.offset;
-                                continue;
-                            }
-                        }
-                        
-                        velocity += displacement;
-                        pos += velocity;
-
-                        transform.m_Position = pos;
-                        transform.m_Velocity = velocity;
-                        graphRender.get()->update(transform, indexGraph);
-                        indexGraph++;
-                    }
-                }   
-                graphRender.get()->computeAll();
+            if(activateFan) {
+                blancketAnimation.getFields()->at(blancketAnimation.getFields()->size()-2).change_k(blancketWindPower);
             }
+            else {
+                blancketAnimation.getFields()->at(blancketAnimation.getFields()->size()-2).change_k(0.0f);
+            }
+
+            if(flagWindActivated) {
+                flagAnimation.getFields()->at(flagAnimation.getFields()->size()-2).change_k(flagWindPower);
+            }
+            else {
+                flagAnimation.getFields()->at(flagAnimation.getFields()->size()-2).change_k(0.0f);
+            }
+            // Important otherwise would not render asynchronously
+            // std::cout<<windTheta<<" | "<<windPhy<<std::endl;
+            windDir = vec3(cos(windTheta)*sin(windPhy), sin(windTheta), cos(windTheta)*cos(windPhy));
+            arrowInstances.get()->updateAngles(0, vec3(-windTheta, windPhy, 0));
+            arrowInstances.get()->computeAll();
+            // std::cout<<windDir<<std::endl;
+            flagAnimation.getFields()->at(flagAnimation.getFields()->size()-2).change_direction(windDir);
+            for (size_t i = 0; i < allAnimations.size(); i++)
+            {
+                // std::cout<<"Update visual"<<std::endl;
+                allAnimations.at(i)->updateFields();
+                allAnimations.at(i)->update_visual();
+            }
+            {
+                auto tmp_pos = flagAnimation.getParticulesPositions();
+                flagInstance.get()->updateDynamicMesh(tmp_pos);
+            }
+            
+            
 
             if(depthMapId != 0) {
                 shadowMap.renderTexture(win, scene);
             }
 
-
-            computeNextFrame = false;
         }
 
-        // std::cout << "" << length(firstGrid.computeBB().size()) << std::endl;
-
-        if(click) {
-            renderTexture.render(firstGrid.getFields()->at(firstGrid.getFields()->size()-2).getDebugColorTexture());
+        if(showtexture) {
+            renderTexture.render(flagAnimation.getFields()->at(flagAnimation.getFields()->size()-2).getDebugColorTexture());
             // renderTexture.render(shadowMap.getColorMap());
         }
         
         else { // RENDERING
 
             // mirroir
-            if (true) {
+            if (boolRightRoom) {
                 auto mirrorCam = mirror.getCamera();
                 mirror.startRenderMirrorTexture();
 
@@ -1220,13 +975,35 @@ bool click = false;
 
             if (keys & scrollUp) {
                 animateSwitch = !animateSwitch;
-                firstGrid.setComputeState(animateSwitch);
+                for (size_t i = 0; i < allAnimations.size(); i++)
+                {
+                    allAnimations.at(i)->setComputeState(animateSwitch);
+                }
                 // computeAnim = !computeAnim;
             }
 
-            if (keys & keyFan) {
-                computeNextFrame = true;
+            if(keys & rotateLeft) {
+                windPhy+=degToRad * 90 * deltaT;
             }
+            if(keys & rotateRight) {
+                windPhy-=degToRad * 90 * deltaT;
+            }
+            if(keys & rotateUp) {
+                windTheta+=degToRad * 90 * deltaT;
+                if(windTheta>glm::half_pi<float>()) {
+                    windTheta = glm::half_pi<float>();
+                }
+            }
+            if(keys & rotateDown) {
+                windTheta-=degToRad * 90 * deltaT;
+                if(windTheta<-glm::half_pi<float>()) {
+                    windTheta = -glm::half_pi<float>();
+                }
+            }
+
+            // if(keys & (rotateDown|rotateLeft|rotateRight|rotateUp)) {
+            //     std::cout<<vec3(cos(windTheta)*sin(windPhy), sin(windTheta), cos(windTheta)*cos(windPhy))<<std::endl;
+            // }
 
             if (keys & keyWrap) {
                 fpsCam.makeLookAt(startPoint, startLookPoint);
@@ -1243,23 +1020,18 @@ bool click = false;
             }
             
             if (keys & keyDebug) {
-                firstGrid.reset();
-
-                allRigidBodies.at(0).setMotor(rb1Motor);
-                allRigidBodies.at(0).computeAll();
-                // allRigidBodies.at(1).setMotor(rb2Motor);
-                if(!BIG_SWITCH) {
-                    allRigidBodies.at(1).translator_tick = posToTranslator(0.0f, -2.0f, 0.0f);
+                for (size_t i = 0; i < allAnimations.size(); i++)
+                {
+                    allAnimations.at(i)->reset();
                 }
-                // allRigidBodies.at(1).computeAll();
-
-                // simpleCube.get()->updatePosition(1, pointToVec(allRigidBodies.at(1).com));
-                // simpleCube.get()->updateAngles(1, vec3(ax2, ay2, az2));
-                // simpleCube.get()->compute(1);
             }
-
-            click = keys & leftClick;
-
+            
+            showtexture = keys & keyTexture;
+            activateFan = keys & keyFan;
+            if (keys & keyFlagWind) {
+                flagWindActivated = !flagWindActivated;
+            }
+            
             if (keys & switchMode) {
                 GLint polygonMode[2];
                 glGetIntegerv(GL_POLYGON_MODE, polygonMode);
@@ -1293,7 +1065,7 @@ bool click = false;
         if(refreshTitle == 10) {
             // std::cout << 1.0f/deltaT << std::endl;
             refreshTitle = 0;
-            win.updateTitle(pointToVec(allRigidBodies.at(1).com), deltaT, firstGrid.getDeltaTThreads());
+            win.updateTitle(fpsCam.getPos(), deltaT, cubeAnimation.getDeltaTThreads());
         }
         else {
             refreshTitle++;
@@ -1305,7 +1077,10 @@ bool click = false;
     // {
     //     threadList.at(i).join();
     // }
-    firstGrid.stopMultithreads();
+    for (size_t i = 0; i < allAnimations.size(); i++)
+    {
+        allAnimations.at(i)->stopMultithreads();
+    }
     std::cout << "Thread joined" << std::endl;
 
     skyboxInstances.get()->~Instance();

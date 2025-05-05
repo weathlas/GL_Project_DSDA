@@ -34,8 +34,10 @@ namespace glimac
         keyDebug     = (1u << 17),
         keyEscape    = (1u << 18),
         keyTab       = (1u << 19),
-        keyNextFrame = (1u << 20),
-        keyWrap      = (1u << 21)
+        keyFan       = (1u << 20),
+        keyWrap      = (1u << 21),
+        keyTexture   = (1u << 22),
+        keyFlagWind  = (1u << 23)
     };
 
 }

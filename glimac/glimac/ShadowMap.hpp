@@ -30,8 +30,8 @@ namespace glimac {
         const float sizeSideShadowMap = 25.0f;
 
         public:
-            ShadowMap(const FilePath &applicationPath, const glimac::FilePath &vsFile, const glimac::FilePath &fsFile)
-                        : m_program(applicationPath, vsFile, fsFile, ProgramType::DEPTH_COMPUTE), m_camera(0.0f, 0.0f, 0.0f, 0.0f, true, near_plane, far_plane){
+            ShadowMap(const FilePath &applicationPath, const glimac::FilePath &vsFile, const glimac::FilePath &fsFile, float orthoRadius)
+                        : m_program(applicationPath, vsFile, fsFile, ProgramType::DEPTH_COMPUTE), m_camera(0.0f, 0.0f, 0.0f, 0.0f, true, near_plane, far_plane, orthoRadius){
                 // float bias = 0.0005;
                 // float bias = 0.0005;
                 float bias = 0.0005;
@@ -43,39 +43,50 @@ namespace glimac {
                 // m_lightProjection = glm::ortho(-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
                 // m_lightProjection = glm::perspective(120.0*degToRad, 1.0, 15.0, 1000000.0);// (-sizeSideShadowMap, sizeSideShadowMap, -sizeSideShadowMap, sizeSideShadowMap, near_plane, far_plane);
             }
+
+            ShadowMap(const FilePath &applicationPath, const glimac::FilePath &vsFile, const glimac::FilePath &fsFile) : ShadowMap(applicationPath, vsFile, fsFile, 25.0f) {}
             
             ShadowMap(const FilePath &applicationPath) : ShadowMap(applicationPath, "src/shaders/utils/shadow.vs.glsl", "src/shaders/utils/shadow.fs.glsl") {}
 
             ~ShadowMap(){
                 glDeleteTextures(1, &m_depthMap);
                 glDeleteFramebuffers(1, &m_depthMapFBO);
+                glDeleteTextures(1, &m_colorMap);
+                // glDeleteFramebuffers(1, &m_colorMapFBO);
             }
 
             bool init(unsigned int width, unsigned int height) {
                 m_width = width;
                 m_height = height;
-
+                
+                // Step 2: Create a texture to use as the color attachment
+                glGenTextures(1, &m_colorMap);
+                glBindTexture(GL_TEXTURE_2D, m_colorMap);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_width, m_height, 0, GL_RGB, GL_FLOAT, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                
+                // glGenFramebuffers(1, &m_colorMapFBO);
+                // glBindFramebuffer(GL_FRAMEBUFFER, m_colorMapFBO);
+                
                 glGenTextures(1, &m_depthMap);
                 glBindTexture(GL_TEXTURE_2D, m_depthMap);
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, m_width, m_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-                // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
+                
                 // white outside of the shadow map (no shadows)
                 float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
                 glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
-
+                
                 // Framebuffer setup for shadow mapping
                 glGenFramebuffers(1, &m_depthMapFBO);
                 glBindFramebuffer(GL_FRAMEBUFFER, m_depthMapFBO);
+                glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorMap, 0);
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_depthMap, 0);
-                glDrawBuffer(GL_NONE);
+                glDrawBuffer(GL_COLOR_ATTACHMENT0);
                 glReadBuffer(GL_NONE);
 
                 if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
@@ -96,13 +107,25 @@ namespace glimac {
                 return init(widthShadowMap, heightShadowMap);
             }
 
+            void setOrthoRadius(float r) {
+                m_camera.setOrthoRadius(r);
+            }
+
+            void setPlanes(float near, float far) {
+                m_camera.setPlanes(near, far);
+            }
+
             void computeTransforms(LightStruct light) {
+                return computeTransforms(light, vec3());
+            }
+            void computeTransforms(LightStruct light, vec3 center) {
                 m_lights.updateAt(0, light);
 
-                auto pos = m_lights.getPositionAt(0);
-                auto center = vec3(0);
+                auto pos = m_lights.getPositionAt(0)+center;
 
                 m_camera.makeLookAt(pos, center);
+
+
 
                 // light.pos is considered to be the direction of the light
                 // m_lightModelToView = glm::lookAt(m_lights.getPositionAt(0), vec3(0), vec3( 0.0f, 1.0f,  0.0f));
@@ -163,7 +186,8 @@ namespace glimac {
                 // 1. Render scene to depth map
                 glViewport(0, 0, m_width, m_height);
                 glBindFramebuffer(GL_FRAMEBUFFER, m_depthMapFBO);
-                glClear(GL_DEPTH_BUFFER_BIT);
+                // glBindFramebuffer(GL_FRAMEBUFFER, m_colorMapFBO);
+                glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 
                 // programm.activate(camPos, m_normalMatrix, m_shadowMatrix, m_lights);
                 m_program.activate(window, m_camera, m_shadowMatrix, m_lights, lightPos);
@@ -180,16 +204,19 @@ namespace glimac {
 
                 glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
                 glBindFramebuffer(GL_READ_FRAMEBUFFER, m_depthMapFBO);
-
+                
                 glActiveTexture(GL_TEXTURE2);
                 glBindTexture(GL_TEXTURE_2D, m_depthMap);
-
                 glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, m_width, m_height, 0);
-
                 glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_viewport[2] - m_viewport[0], m_viewport[3] - m_viewport[1], GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+                
+                // glBindFramebuffer(GL_READ_FRAMEBUFFER, m_colorMapFBO);
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, m_colorMap);
+                glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 0, 0, m_width, m_height, 0);
+                glBlitFramebuffer(0, 0, m_width, m_height, 0, 0, m_viewport[2] - m_viewport[0], m_viewport[3] - m_viewport[1], GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
                 glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
                 // 2. Render scene with shadows
@@ -199,6 +226,10 @@ namespace glimac {
 
             vec3 getLightPos() {
                 return m_lights.getPositionAt(0);
+            }
+
+            GLuint getColorMap() {
+                return m_colorMap;
             }
 
             GLuint getDepthMap() {
@@ -235,6 +266,8 @@ namespace glimac {
             GLuint m_height = 0;
             GLuint m_depthMapFBO;
             GLuint m_depthMap;
+            // GLuint m_colorMapFBO;
+            GLuint m_colorMap;
             bool m_initialized;
 
             mat4 m_lightProjToTexture;

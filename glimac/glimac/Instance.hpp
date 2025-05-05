@@ -45,6 +45,7 @@ namespace glimac {
             }
 
         public:
+            bool m_is_dynamic=false;
 
             ~Instance() {
                 m_vertexData.get()->~VertexData();
@@ -60,6 +61,14 @@ namespace glimac {
             
             Instance(size_t vertexCount, const glimac::ShapeVertex * dataPointer, GLuint baseTex, GLuint alternateTex, GLuint normalTex) {
                 m_vertexData = std::make_shared<VertexData>(vertexCount, dataPointer);
+                m_baseTex = baseTex;
+                m_alternateTex = alternateTex;
+                m_normalTex = normalTex;
+            }
+            
+            Instance(size_t vertexCountDimension, DynamicType dynamicType, GLuint baseTex, GLuint alternateTex, GLuint normalTex) {
+                m_vertexData = std::make_shared<VertexData>(vertexCountDimension, dynamicType);
+                m_is_dynamic = true;
                 m_baseTex = baseTex;
                 m_alternateTex = alternateTex;
                 m_normalTex = normalTex;
@@ -225,7 +234,16 @@ namespace glimac {
                 return allBBox;
             }
 
+            void updateDynamicMesh(std::vector<vec3> &positions) {
+                if(m_vertexData.get()->m_dynamic_type == DynamicType::dynamic_none) {
+                    return;
+                }
+                m_vertexData.get()->updateDynamicMesh(positions);
+            }
+
             void drawAll(BasicProgram &program, const mat4 &matMV, const mat4 &matProj, GLuint shadowTex) {
+
+                // if(m_vertexData->type == VertexDataType::DYNAMIC) return;
 
                 glBindVertexArray(m_vertexData->getVao());
 
@@ -244,9 +262,12 @@ namespace glimac {
                     }
                 }
 
-                if(m_vertexData->type == VertexDataType::GEOMETRY) {
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vertexData->getelementBuffer());
 
+                switch (m_vertexData->type)
+                {
+                case VertexDataType::GEOMETRY:
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vertexData->getelementBuffer());
+                    
                     for (size_t i = 0; i < m_matrices.size(); i++) {
                         auto finalMatMV = matMV * m_matrices.at(i);
                         glUniformMatrix4fv(program.uMVPMatrixLoc, 1, GL_FALSE, glm::value_ptr((matProj) * finalMatMV));
@@ -260,8 +281,8 @@ namespace glimac {
                         );
                     }
                     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-                }
-                else {
+                    break;
+                    case VertexDataType::CANONICAL:
                     for (size_t i = 0; i < m_matrices.size(); i++) {
                         auto finalMatMV = matMV * m_matrices.at(i);
                         glUniformMatrix4fv(program.uMVPMatrixLoc, 1, GL_FALSE, glm::value_ptr((matProj) * finalMatMV));
@@ -269,6 +290,33 @@ namespace glimac {
                         glUniformMatrix4fv(program.uModelMatrixLoc, 1, GL_FALSE, glm::value_ptr(m_matrices.at(i)));
                         glDrawArrays(GL_TRIANGLES, 0, m_vertexData->getVertexCount()-1);
                     }
+                    break;
+                    case VertexDataType::DYNAMIC:
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vertexData->getelementBuffer());
+
+                    // Enable the 2 sides to be visible
+                    if(m_vertexData->m_dynamic_type==DynamicType::dynamic_grid) {
+                        glDisable(GL_CULL_FACE); 
+                    }
+                    // // /**/
+                    // // // Draw
+                    for (size_t i = 0; i < m_matrices.size(); i++) {
+                        auto finalMatMV = matMV * m_matrices.at(i);
+                        glUniformMatrix4fv(program.uMVPMatrixLoc, 1, GL_FALSE, glm::value_ptr((matProj) * finalMatMV));
+                        glUniformMatrix4fv(program.uMVMatrixLoc, 1, GL_FALSE, glm::value_ptr(finalMatMV));
+                        glUniformMatrix4fv(program.uModelMatrixLoc, 1, GL_FALSE, glm::value_ptr(m_matrices.at(i)));
+                        glDrawElements(GL_TRIANGLES, m_vertexData->getDynamicTriangleCount(), GL_UNSIGNED_INT, (void*)0);
+                    }
+                    glBindVertexArray(0);
+
+                    // Revert back
+                    if(m_vertexData->m_dynamic_type==DynamicType::dynamic_grid) {
+                        glEnable(GL_CULL_FACE); 
+                    }
+                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                    break;
+                default:
+                    break;
                 }
 
                 if(m_depthFac == GL_FALSE) {

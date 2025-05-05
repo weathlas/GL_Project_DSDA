@@ -113,8 +113,10 @@ namespace glimac {
 
             bool m_ortho;
 
+            float m_orthoRadius;
+
         public:
-            FPSCamera(float fov, float win_width, float win_height, float playerHeight, bool isOrtho, float nearPlane, float farPlane) : m_bbox(vec3(-radiusPlayer, 0.0f, -radiusPlayer), vec3(radiusPlayer, 1.78f, radiusPlayer)){
+            FPSCamera(float fov, float win_width, float win_height, float playerHeight, bool isOrtho, float nearPlane, float farPlane, float orthoRadius) : m_bbox(vec3(-radiusPlayer, 0.0f, -radiusPlayer), vec3(radiusPlayer, 1.78f, radiusPlayer)){
                 m_HeadDisplacement = vec3(0, playerHeight, 0);
                 m_ShakeDisplacement = vec3(0);
                 m_FootPosition = vec3(.0f, 0.05f, .0f);
@@ -135,11 +137,13 @@ namespace glimac {
 
                 m_ortho = isOrtho;
 
+                m_orthoRadius = orthoRadius;
+
                 if(m_ortho) {
-                    m_projMatrix = glm::ortho(-25.0f, 25.0f, -25.0f, 25.0f, m_nearPlane, m_farPlane);
+                    m_projMatrix = glm::ortho(-m_orthoRadius, m_orthoRadius, -m_orthoRadius, m_orthoRadius, m_nearPlane, m_farPlane);
                 }
                 else {
-                    m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, 0.08f, 10000.f);
+                    m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, m_nearPlane, m_farPlane);
                 }
 
                 m_viewMatrix = glm::lookAt(m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement, m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement + m_FrontVector, m_UpVector);
@@ -158,6 +162,8 @@ namespace glimac {
                 m_speed = vec3(0);
 
             };
+
+            FPSCamera(float fov, float win_width, float win_height, float playerHeight, bool isOrtho, float nearPlane, float farPlane) : FPSCamera(fov, win_width, win_height, playerHeight, isOrtho, nearPlane, farPlane, 25.0f) {}
 
             FPSCamera(float win_width, float win_height) : FPSCamera(playerDefaultFov, win_width, win_height, playerMaxHeadPos, false, defaultNearPlane, defaultFarPlane) {
             }
@@ -282,13 +288,31 @@ namespace glimac {
                 // trouver le vecteur direction entre cam et point
                 auto dir = normalize(m_FootPosition - point);
 
+                // if(dir == vec3(0, 1, 0) || dir == vec3(0, -1, 0)) {
+                //     m_UpVector = vec3(0, 0, -1);
+                // }
+                // else {
+                //     m_UpVector = vec3(0, 1, 0);
+                // }
+
                 // trouver l'angle phy sur l'axe y
                 float phy = atan2(dot(glm::cross(vec3(0, 0, -1), dir), vec3(0, 1, 0)), glm::dot(vec3(0, 0, -1), dir));
+
+                vec3 dirXZ = vec3(dir.x, 0.0f, dir.z);
+                float dirXZLen = glm::length(dirXZ);
+
+                float theta;
+                if (dirXZLen > 0.0001f) {
+                    auto otherNorm = glm::cross(dir, vec3(0, -1, 0));
+                    theta = atan2(dot(glm::cross(normalize(vec3(dir.x, 0, dir.z)), dir), otherNorm), glm::dot(normalize(vec3(dir.x, 0, dir.z)), dir));
+                }
+                // looking straight up/down
+                else {
+                    theta = dir.y > 0 ? glm::half_pi<float>() : -glm::half_pi<float>();
+                }
                 
-                auto otherNorm = glm::cross(dir, vec3(0, -1, 0));
                 
                 // trouver l'angle theta sur l'axe x
-                float theta = atan2(dot(glm::cross(normalize(vec3(dir.x, 0, dir.z)), dir), otherNorm), glm::dot(normalize(vec3(dir.x, 0, dir.z)), dir));
                 
                 m_fTheta = theta;// * radToDeg;
                 m_fPhy = phy;// * radToDeg;
@@ -297,7 +321,7 @@ namespace glimac {
 
                 updateMatrix();
 
-                std::cout << phy << " / " << theta << " : " << m_FootPosition << std::endl;
+                // std::cout << phy << " / " << theta << " : " << m_FootPosition << std::endl;
 
                 // cos-1 [ (a * b) / (|a| * |b|) ]
 
@@ -356,6 +380,29 @@ namespace glimac {
 
             BBox3f getBBox() {
                 return BBox3f(m_bbox);
+            }
+
+            bool setOrthoRadius(float r) {
+                if(!m_ortho) {
+                    return false;
+                }
+                m_orthoRadius = r;
+                updateMatrix();
+                return true;
+            }
+
+            bool setFarPlane(float far) {
+                m_farPlane = far;
+                return true;
+            }
+
+            bool setNearPlane(float near) {
+                m_nearPlane = near;
+                return true;
+            }
+
+            bool setPlanes(float near, float far) {
+                return setNearPlane(near) && setFarPlane(far);
             }
 
         private:
@@ -443,10 +490,22 @@ namespace glimac {
             }
 
             void computeDirectionVectors() {
-                m_FrontVector = vec3(cos(m_fTheta)*sin(m_fPhy), sin(m_fTheta), cos(m_fTheta)*cos(m_fPhy));
+                if (abs(m_fTheta) == glm::half_pi<float>()) {
+                    m_FrontVector = vec3(0, m_fTheta>0?1:-1, 0);
+                    // m_LeftVector = vec3(1.0f, 0.0f, 0.0f); // Arbitrary horizontal
+                    m_LeftVector = vec3(sin(m_fPhy+ glm::half_pi<float>()), 0, cos(m_fPhy+ glm::half_pi<float>()));
+                    m_UpVector = glm::cross(m_LeftVector, -m_FrontVector);
+
+                } else {
+                    m_FrontVector = vec3(cos(m_fTheta)*sin(m_fPhy), sin(m_fTheta), cos(m_fTheta)*cos(m_fPhy));
+                    m_LeftVector = vec3(sin(m_fPhy+ glm::half_pi<float>()), 0, cos(m_fPhy+ glm::half_pi<float>()));
+                    // m_LeftVector = vec3(sin(m_fPhy + glm::pi<float>() / 2.0f), 0.0f, cos(m_fPhy + glm::pi<float>() / 2.0f));
+                    m_UpVector = glm::cross(m_FrontVector, m_LeftVector);
+                }
+                // m_FrontVector = vec3(cos(m_fTheta)*sin(m_fPhy), sin(m_fTheta), cos(m_fTheta)*cos(m_fPhy));
                 m_GroundFrontVector = vec3(sin(m_fPhy), 0, cos(m_fPhy));
-                m_LeftVector = vec3(sin(m_fPhy+ glm::pi<float>()/2), 0, cos(m_fPhy+ glm::pi<float>()/2));
-                m_UpVector = glm::cross(m_FrontVector, m_LeftVector);
+                // m_LeftVector = vec3(sin(m_fPhy+ glm::half_pi<float>()), 0, cos(m_fPhy+ glm::half_pi<float>()));
+                // m_UpVector = glm::cross(m_FrontVector, m_LeftVector);
             }
     
             void fly(float value, float deltaT) {
@@ -534,7 +593,7 @@ namespace glimac {
                 // m_fTheta += degreeUp*degToRad*deltaT;
                 m_fPhy += degreesLeft*degToRad*0.04;
                 m_fTheta += degreeUp*degToRad*0.04;
-                m_fTheta = clamp<float>(m_fTheta, -glm::pi<float>()/2, glm::pi<float>()/2);
+                m_fTheta = clamp<float>(m_fTheta, -glm::half_pi<float>(), glm::half_pi<float>());
                 computeDirectionVectors();
             }
 
@@ -579,10 +638,10 @@ namespace glimac {
             void updateMatrix() {
 
                 if(m_ortho) {
-                    m_projMatrix = glm::ortho(-25.0f, 25.0f, -25.0f, 25.0f, m_nearPlane, m_farPlane);
+                    m_projMatrix = glm::ortho(-m_orthoRadius, m_orthoRadius, -m_orthoRadius, m_orthoRadius, m_nearPlane, m_farPlane);
                 }
                 else {
-                    m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, 0.08f, 10000.f);
+                    m_projMatrix = perspective(glm::radians(m_fFov+m_fFovRunOffset+m_fFovFlyOffset), 1.0f*m_fWinWidth/m_fWinHeight, m_nearPlane, m_farPlane);
                 }
 
                 m_viewMatrix = glm::lookAt(m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement, m_FootPosition+m_HeadDisplacement + m_ShakeDisplacement + m_FrontVector, m_UpVector);

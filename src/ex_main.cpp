@@ -81,8 +81,8 @@ int main(int /*argc*/, char * argv[])
 
     std::cout << "Compiling Shaders..." << std::endl;
 
-    // BasicProgram programRoom(applicationPath, "src/shaders/roomOne/ground.vs.glsl", "src/shaders/roomOne/ground.fs.glsl");
-    BasicProgram programRoom(applicationPath, "src/shaders/roomTwo/voronoi.vs.glsl", "src/shaders/roomTwo/voronoi.fs.glsl", ProgramType::LIGHTS);
+    BasicProgram programRoom(applicationPath, "src/shaders/roomOne/ground.vs.glsl", "src/shaders/roomOne/ground.fs.glsl");
+    // BasicProgram programRoom(applicationPath, "src/shaders/roomTwo/voronoi.vs.glsl", "src/shaders/roomTwo/voronoi.fs.glsl", ProgramType::LIGHTS);
     BasicProgram programSky(applicationPath, "src/shaders/skybox/skybox_shader.vs.glsl", "src/shaders/skybox/skybox_shader.fs.glsl", ProgramType::TEXTURE);
 
     BasicProgram programLight(applicationPath, "src/shaders/light/light.vs.glsl", "src/shaders/light/light.fs.glsl", ProgramType::LIGHTS);
@@ -90,9 +90,9 @@ int main(int /*argc*/, char * argv[])
     BasicProgram programSun(applicationPath, "src/shaders/utils/white.vs.glsl", "src/shaders/utils/white.fs.glsl", ProgramType::NONE);
     BasicProgram programMirror(applicationPath, "src/shaders/mirror/mirror.vs.glsl", "src/shaders/mirror/mirror.fs.glsl");
     BasicProgram programButtons(applicationPath, "src/shaders/utils/buttons.vs.glsl", "src/shaders/utils/buttons.fs.glsl");
-    std::vector<BasicProgram*> allPrograms = {&programVoronoi, &programRoom, &programSky, &programLight, &programButtons};
+    std::vector<BasicProgram*> allPrograms = {&programRoom, &programVoronoi, &programSky, &programLight, &programButtons};
 
-    std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programRoom};
+    std::vector<BasicProgram*> allRoomTwoPrograms = {&programRoom, &programVoronoi};
     // std::vector<BasicProgram*> allRoomTwoPrograms = {&programVoronoi, &programMirrorTex, &programSimpleDepth, &programShadow, &programShadowTest, &programRoom, &programSky, &programNormal, &programDepth, &programLight};
     
     std::cout << "Loding Textures..." << std::endl;
@@ -233,19 +233,19 @@ int main(int /*argc*/, char * argv[])
     // Add all objects to the scene
     {
         scene.addInstance(roomInstances);
-        // scene.addInstance(earthInstances);
-        // scene.addInstance(particulesInstances);
-        // scene.addInstance(shelveInstances);
-        // scene.addInstance(collumnInstances);
-        // scene.addInstance(titleInstances);
-        // scene.addInstance(spaceShipInstances);
-        // scene.addInstance(planeInstances);
-        // scene.addInstance(statueInstances);
-        // scene.addInstance(citadelInstances);
-        // scene.addInstance(footInstances);
-        // scene.addInstance(houseInstances);
-        // scene.addInstance(domeWireInstances);
-        // scene.addInstance(benchInstances);
+        scene.addInstance(earthInstances);
+        scene.addInstance(particulesInstances);
+        scene.addInstance(shelveInstances);
+        scene.addInstance(collumnInstances);
+        scene.addInstance(titleInstances);
+        scene.addInstance(spaceShipInstances);
+        scene.addInstance(planeInstances);
+        scene.addInstance(statueInstances);
+        scene.addInstance(citadelInstances);
+        scene.addInstance(footInstances);
+        scene.addInstance(houseInstances);
+        scene.addInstance(domeWireInstances);
+        scene.addInstance(benchInstances);
 
         // NOP
         // scene.addInstance(buttonInstances);
@@ -253,8 +253,8 @@ int main(int /*argc*/, char * argv[])
         // scene.addInstance(mirrorInstances);
 
         // transparents objects
-        // scene.addInstance(cubeInstances);
-        // scene.addInstance(domeGlassInstances);
+        scene.addInstance(cubeInstances);
+        scene.addInstance(domeGlassInstances);
 
         cubeInstances.get()->setBlendToTransparent();
         domeGlassInstances.get()->setBlendToTransparent();
@@ -263,7 +263,7 @@ int main(int /*argc*/, char * argv[])
 
         // Animation objects
         // scene.addInstance(firstRope.getInstance());
-        scene.addInstance(firstGrid.getInstance());
+        // scene.addInstance(firstGrid.getInstance());
         // scene.addInstance(firstCube.getInstance());
     }
 
@@ -381,47 +381,47 @@ int main(int /*argc*/, char * argv[])
 
     // Add all the walls
     {
-                // {
-                //     auto bbox = spaceShipInstances.get()->getBBox().at(0);
-                //     vec3 size = bbox.size();
-                //     auto fooCenter = center(bbox);
-                //     cubeInstances.get()->add(Transform(vec3(center(bbox)), vec3(), size));
+                {
+                    auto bbox = spaceShipInstances.get()->getBBox().at(0);
+                    vec3 size = bbox.size();
+                    auto fooCenter = center(bbox);
+                    cubeInstances.get()->add(Transform(vec3(center(bbox)), vec3(), size));
 
-                //     footInstances.get()->add(Transform(vec3(fooCenter.x, 0, fooCenter.z), vec3(0), vec3(size.x*(1/0.9), 1, size.z*(1/0.9))));
+                    footInstances.get()->add(Transform(vec3(fooCenter.x, 0, fooCenter.z), vec3(0), vec3(size.x*(1/0.9), 1, size.z*(1/0.9))));
 
-                //     walls.push_back(bbox);
-                // }
-                // for (auto bbox : houseInstances.get()->getBBox()) {
-                //     vec3 size = bbox.size();
-                //     // cubeInstances.get()->add(Transform(vec3(center(bbox)), vec3(), size));
+                    walls.push_back(bbox);
+                }
+                for (auto bbox : houseInstances.get()->getBBox()) {
+                    vec3 size = bbox.size();
+                    // cubeInstances.get()->add(Transform(vec3(center(bbox)), vec3(), size));
 
-                //     auto fooCenter = center(bbox);
-                //     footInstances.get()->add(Transform(vec3(fooCenter.x, 0, fooCenter.z), vec3(0), vec3(size.x*(1/0.9), 1, size.z*(1/0.9))));
+                    auto fooCenter = center(bbox);
+                    footInstances.get()->add(Transform(vec3(fooCenter.x, 0, fooCenter.z), vec3(0), vec3(size.x*(1/0.9), 1, size.z*(1/0.9))));
 
-                //     walls.push_back(bbox);
-                // }
-                // for (auto bbox : statueInstances.get()->getBBox()) {
-                //     vec3 size = bbox.size();
-                //     cubeInstances.get()->add(Transform(vec3(center(bbox)), vec3(), size));
+                    walls.push_back(bbox);
+                }
+                for (auto bbox : statueInstances.get()->getBBox()) {
+                    vec3 size = bbox.size();
+                    cubeInstances.get()->add(Transform(vec3(center(bbox)), vec3(), size));
 
-                //     auto fooCenter = center(bbox);
-                //     footInstances.get()->add(Transform(vec3(fooCenter.x, 0, fooCenter.z), vec3(0), vec3(size.x*(1/0.9), 1, size.z*(1/0.9))));
+                    auto fooCenter = center(bbox);
+                    footInstances.get()->add(Transform(vec3(fooCenter.x, 0, fooCenter.z), vec3(0), vec3(size.x*(1/0.9), 1, size.z*(1/0.9))));
 
 
-                //     walls.push_back(bbox);
-                // }
+                    walls.push_back(bbox);
+                }
 
-                // for (auto bbox : footInstances.get()->getBBox()) {
-                //     walls.push_back(bbox);
-                // }
+                for (auto bbox : footInstances.get()->getBBox()) {
+                    walls.push_back(bbox);
+                }
 
-                // for (auto bbox : shelveInstances.get()->getBBox()) {
-                //     walls.push_back(bbox);
-                // }
+                for (auto bbox : shelveInstances.get()->getBBox()) {
+                    walls.push_back(bbox);
+                }
 
-                // for (auto bbox : benchInstances.get()->getBBox()) {
-                //     walls.push_back(bbox);
-                // }
+                for (auto bbox : benchInstances.get()->getBBox()) {
+                    walls.push_back(bbox);
+                }
 
         // for (auto bbox : collumnInstances.get()->getBBox()) {
 
@@ -443,12 +443,12 @@ int main(int /*argc*/, char * argv[])
 
         const float wallThickness = 1.0f;
         walls.push_back(BBox3f(vec3(-21, -wallThickness*10, -12), vec3(21, 0, 12)));
-        // walls.push_back(BBox3f(vec3(-21, 0, 12), vec3(21, 3, 12+wallThickness)));
-        // walls.push_back(BBox3f(vec3(-21, 0, -12-wallThickness), vec3(21, 3, -12)));
-        // walls.push_back(BBox3f(vec3(-21-wallThickness, 0, -12), vec3(-21, 3, 12)));
-        // walls.push_back(BBox3f(vec3(21, 0, -12), vec3(21+wallThickness, 3, 12)));
-        // walls.push_back(BBox3f(vec3(-1, 0, 2), vec3(1, 3, 12)));
-        // walls.push_back(BBox3f(vec3(-1, 0, -12), vec3(1, 3, -2)));
+        walls.push_back(BBox3f(vec3(-21, 0, 12), vec3(21, 3, 12+wallThickness)));
+        walls.push_back(BBox3f(vec3(-21, 0, -12-wallThickness), vec3(21, 3, -12)));
+        walls.push_back(BBox3f(vec3(-21-wallThickness, 0, -12), vec3(-21, 3, 12)));
+        walls.push_back(BBox3f(vec3(21, 0, -12), vec3(21+wallThickness, 3, 12)));
+        walls.push_back(BBox3f(vec3(-1, 0, 2), vec3(1, 3, 12)));
+        walls.push_back(BBox3f(vec3(-1, 0, -12), vec3(1, 3, -2)));
     }
 
     Light lightsRoomLeft;
@@ -510,7 +510,7 @@ int main(int /*argc*/, char * argv[])
         // int numberBeforeRandLights = lightInstances.get()->size();
 
         // int nbRandLight = 1;
-        int nbRandLight = 15;
+        int nbRandLight = 150;
 
         for (int i = 0; i < nbRandLight; i++) {
             vec3 pos = vec3(linearRand(1.0f, 20.0f), linearRand(.1f, 1.0f), linearRand(-11.0f, 11.0f));
@@ -619,135 +619,135 @@ int main(int /*argc*/, char * argv[])
             oldMouse = win.mouse();
             // ModelToViewVMatrix = fpsCam.getViewMatrix();
             // NormalMatrix = glm::transpose(glm::inverse(ModelToViewVMatrix));
-            // currentCamPos = fpsCam.getPos();
+            currentCamPos = fpsCam.getPos();
             // projMatrix = fpsCam.getProjMatrix();
         }
 
         { // UPDATES
 
-            // // Skyboc objects update
-            // {
-            //     earthInstances.get()->updatePosition(0, vec3(1500, 1500, 1500) + fpsCam.getPos());
-            //     earthInstances.get()->computeLast();
+            // Skyboc objects update
+            {
+                earthInstances.get()->updatePosition(0, vec3(1500, 1500, 1500) + fpsCam.getPos());
+                earthInstances.get()->computeLast();
 
-            //     sunInstances.get()->updatePosition(0, vec3(1500, 1500, -1500) + fpsCam.getPos());
-            //     sunInstances.get()->computeLast();
+                sunInstances.get()->updatePosition(0, vec3(1500, 1500, -1500) + fpsCam.getPos());
+                sunInstances.get()->computeLast();
 
-            //     skyboxInstances.get()->updatePosition(0, fpsCam.getPos());
-            //     skyboxInstances.get()->computeAll();
+                skyboxInstances.get()->updatePosition(0, fpsCam.getPos());
+                skyboxInstances.get()->computeAll();
                 
-            //     citadelInstances.get()->updatePosition(0, fpsCam.getPos() + vec3(0, 1440, -1200));
-            //     citadelInstances.get()->computeAll();
+                citadelInstances.get()->updatePosition(0, fpsCam.getPos() + vec3(0, 1440, -1200));
+                citadelInstances.get()->computeAll();
+            }
+
+            // std::cout << vec3(40*cos(timer*0.2), 40, -40*sin(timer*0.2)) << std::endl;
+
+            // shadowMap.computeTransforms(LightStruct(vec3(40*cos(timer*0.2), 40*cos(timer*1.2), -40*sin(timer*0.2)), vec3(1), vec3(100, 0.85, LightType::directionalLight)), fpsCam);
+            // shadowMatrix = shadowMap.getShadowMatrix();
+            // sunPos = shadowMap.getLightPos();
+
+            // sunPos = vec3(1, 1, -1);
+            // std::cout << sunPos << std::endl;
+
+            for (size_t i = 0; i < particulesInstances.get()->size(); i++) {
+                particulesInstances.get()->updateAngles(i, vec3(0, timer, 0));
+                float initialHeight = particulesInstances.get()->get(i).m_Position.y;
+                float newHeight = initialHeight + 0.89*deltaT;
+                if (newHeight > 10.0f) {
+                    newHeight -= (10.0f - -0.5f);
+                }
+                particulesInstances.get()->addPosition(i, vec3(0, newHeight-initialHeight, 0));
+
+            }
+            particulesInstances.get()->computeAll();
+
+            for (size_t i = 0; i < lightInstances2.get()->size(); i++) {
+                vec3 oldPos = lightInstances2.get()->get(i).m_Position;
+                float t = (int(oldPos.x*oldPos.z)%7);
+                vec3 newPos = vec3(oldPos.x, (2+cos(timer*(1+t))+cos(timer))*0.85, oldPos.z);
+                lightInstances2.get()->updatePosition(i, newPos);
+                lightInstances2.get()->compute(i);
+                lightsRoomRight.updatePosition(i, newPos);
+            }
+
+            earthInstances.get()->updateAngles(0, vec3(0, timer*15.0, 0)*degToRad);
+
+            lightsRoomLeft.updatePosition(2, vec3(-10.5+5*cos(timer/1.0), 1, 5*sin(timer/1.0)));
+            lightInstances.get()->updatePosition(2, vec3(-10.5+5*cos(timer/1.0), 1, 5*sin(timer/1.0)));
+            lightInstances.get()->compute(2);
+
+            // if (fromMirror) {
+            //     lightsRoomLeft.updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
+            //     lightInstances.get()->updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
+            //     lightInstances.get()->compute(1);
             // }
 
-            // // std::cout << vec3(40*cos(timer*0.2), 40, -40*sin(timer*0.2)) << std::endl;
+            fpsCam.shake(0.0f);
+            if (animateSwitch) {
 
-            // // shadowMap.computeTransforms(LightStruct(vec3(40*cos(timer*0.2), 40*cos(timer*1.2), -40*sin(timer*0.2)), vec3(1), vec3(100, 0.85, LightType::directionalLight)), fpsCam);
-            // // shadowMatrix = shadowMap.getShadowMatrix();
-            // // sunPos = shadowMap.getLightPos();
+                vec3 planePos = planeInstances.get()->get(0).m_Position;
+                planePos += 931 * kmToMs * vec3(-1, 0, 0) * deltaT;
 
-            // // sunPos = vec3(1, 1, -1);
-            // // std::cout << sunPos << std::endl;
+                if (planePos.x < -2000) {
+                    planePos = vec3(1000, linearRand(9.0f, 15.0f), linearRand(-30.0f, 30.0f));
+                }
 
-            // for (size_t i = 0; i < particulesInstances.get()->size(); i++) {
-            //     particulesInstances.get()->updateAngles(i, vec3(0, timer, 0));
-            //     float initialHeight = particulesInstances.get()->get(i).m_Position.y;
-            //     float newHeight = initialHeight + 0.89*deltaT;
-            //     if (newHeight > 10.0f) {
-            //         newHeight -= (10.0f - -0.5f);
-            //     }
-            //     particulesInstances.get()->addPosition(i, vec3(0, newHeight-initialHeight, 0));
-
-            // }
-            // particulesInstances.get()->computeAll();
-
-            // for (size_t i = 0; i < lightInstances2.get()->size(); i++) {
-            //     vec3 oldPos = lightInstances2.get()->get(i).m_Position;
-            //     float t = (int(oldPos.x*oldPos.z)%7);
-            //     vec3 newPos = vec3(oldPos.x, (2+cos(timer*(1+t))+cos(timer))*0.85, oldPos.z);
-            //     lightInstances2.get()->updatePosition(i, newPos);
-            //     lightInstances2.get()->compute(i);
-            //     lightsRoomRight.updatePosition(i, newPos);
-            // }
-
-            // earthInstances.get()->updateAngles(0, vec3(0, timer*15.0, 0)*degToRad);
-
-            // lightsRoomLeft.updatePosition(2, vec3(-10.5+5*cos(timer/1.0), 1, 5*sin(timer/1.0)));
-            // lightInstances.get()->updatePosition(2, vec3(-10.5+5*cos(timer/1.0), 1, 5*sin(timer/1.0)));
-            // lightInstances.get()->compute(2);
-
-            // // if (fromMirror) {
-            // //     lightsRoomLeft.updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
-            // //     lightInstances.get()->updatePosition(1, vec3(fpsCam.getPos().x, 0.25, fpsCam.getPos().z));
-            // //     lightInstances.get()->compute(1);
-            // // }
-
-            // fpsCam.shake(0.0f);
-            // if (animateSwitch) {
-
-            //     vec3 planePos = planeInstances.get()->get(0).m_Position;
-            //     planePos += 931 * kmToMs * vec3(-1, 0, 0) * deltaT;
-
-            //     if (planePos.x < -2000) {
-            //         planePos = vec3(1000, linearRand(9.0f, 15.0f), linearRand(-30.0f, 30.0f));
-            //     }
-
-            //     planeInstances.get()->updatePosition(0, planePos);
-            //     planeInstances.get()->updateAngles(0, vec3(sin(animateTimer)*10.0f*degToRad, 0, -5*degToRad));
-            //     planeInstances.get()->computeLast();
+                planeInstances.get()->updatePosition(0, planePos);
+                planeInstances.get()->updateAngles(0, vec3(sin(animateTimer)*10.0f*degToRad, 0, -5*degToRad));
+                planeInstances.get()->computeLast();
 
 
-            //     float distanceToPlane = length(planeInstances.get()->get(0).m_Position - currentCamPos);
+                float distanceToPlane = length(planeInstances.get()->get(0).m_Position - currentCamPos);
 
-            //     if (distanceToPlane < 450) {
-            //         // clamp((distanceToPlane-450)/450, 0.0, 1.0);
-            //         // fpsCam.shake(1/(1+distanceToPlane));
-            //         fpsCam.shake(0.1 * pow((450.0-distanceToPlane)/450, 4));
-            //     }
+                if (distanceToPlane < 450) {
+                    // clamp((distanceToPlane-450)/450, 0.0, 1.0);
+                    // fpsCam.shake(1/(1+distanceToPlane));
+                    fpsCam.shake(0.1 * pow((450.0-distanceToPlane)/450, 4));
+                }
 
-            // }
+            }
 
-            // skyboxInstances.get()->updateAngles(0, vec3(skyBoxAngles.x*degToRad, skyBoxAngles.y*degToRad, skyBoxAngles.z*degToRad));
-            // skyboxInstances.get()->computeAll();
+            skyboxInstances.get()->updateAngles(0, vec3(skyBoxAngles.x*degToRad, skyBoxAngles.y*degToRad, skyBoxAngles.z*degToRad));
+            skyboxInstances.get()->computeAll();
 
             // auto updateGridCorner = 6 + sin(timer)*1.5;
 
-            if((ropeFollowPlayer && false) || depthMapId == 0) {
-                // firstRope.setPos(fpsCam.getPos());
-                // firstGrid.setPosFirst(fpsCam.getPos());
-                // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, -5, 0));
+                                // if((ropeFollowPlayer && false) || depthMapId == 0) {
+                                //     // firstRope.setPos(fpsCam.getPos());
+                                //     // firstGrid.setPosFirst(fpsCam.getPos());
+                                //     // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, -5, 0));
 
-                // firstRope.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
-                firstGrid.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
-                // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
-                firstGrid.setTypeFirst(ParticuleComputeType::fixed);
-                // firstCube.setTypeFirst(ParticuleComputeType::fixed);
-            }
-            else {
-                firstGrid.setTypeFirst(ParticuleComputeType::leapfrog);
-                // firstCube.setTypeFirst(ParticuleComputeType::leapfrog);
-            }
-            // firstGrid.setPos(vec3(2, updateGridCorner, 2));
+                                //     // firstRope.setPosFirst(fpsCam.getPos() + vec3(0, -0.1, 0));
+                                //     firstGrid.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
+                                //     // firstCube.setPosFirst(fpsCam.getPos() + vec3(0, 0, 0));
+                                //     firstGrid.setTypeFirst(ParticuleComputeType::fixed);
+                                //     // firstCube.setTypeFirst(ParticuleComputeType::fixed);
+                                // }
+                                // else {
+                                //     firstGrid.setTypeFirst(ParticuleComputeType::leapfrog);
+                                //     // firstCube.setTypeFirst(ParticuleComputeType::leapfrog);
+                                // }
+                                // // firstGrid.setPos(vec3(2, updateGridCorner, 2));
 
-            // auto animTimerDebug = glfwGetTime();
-            for (uint i = 0; i < animIterPerFrame; i++)
-            {
+                                // // auto animTimerDebug = glfwGetTime();
+                                // for (uint i = 0; i < animIterPerFrame; i++)
+                                // {
 
-                // Ka = h^2 * k/m
-                // Za = h * z/m
+                                //     // Ka = h^2 * k/m
+                                //     // Za = h * z/m
 
-                // auto timeStartOneIteration = glfwGetTime();
+                                //     // auto timeStartOneIteration = glfwGetTime();
 
-                // firstRope.update(deltaT/animIterPerFrame);
-                firstGrid.update(deltaT/animIterPerFrame);
-                // firstCube.update(deltaT/animIterPerFrame);
+                                //     // firstRope.update(deltaT/animIterPerFrame);
+                                //     firstGrid.update(deltaT/animIterPerFrame);
+                                //     // firstCube.update(deltaT/animIterPerFrame);
 
-                // std::cout << glfwGetTime() - timeStartOneIteration << std::endl;
-                // break;
+                                //     // std::cout << glfwGetTime() - timeStartOneIteration << std::endl;
+                                //     // break;
 
-            }
-            // firstRope.update(deltaT);
-            // std::cout << "all iterations: " << glfwGetTime() - animTimerDebug << std::endl;
+                                // }
+                                // // firstRope.update(deltaT);
+                                // // std::cout << "all iterations: " << glfwGetTime() - animTimerDebug << std::endl;
             
         }
 
@@ -758,7 +758,7 @@ int main(int /*argc*/, char * argv[])
             // }
 
             // mirroir
-            if (false) {
+            if (true) {
                 // auto mirrorCamPos = mirror.getMirrorCamPos();
                 // auto mirrorModelToViewMatrix = mirror.getViewMatrix();
                 // auto mirrorTexjMatrix = mirror.getMirrorProj();
@@ -886,10 +886,10 @@ int main(int /*argc*/, char * argv[])
             }
 
             else {
-                // programSky.activate(win, fpsCam, shadowMatrix, lightsRoomRight, sunPos);
-                // glCullFace(GL_FRONT);
-                // skyboxInstances.get()->drawAll(programSky, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), 0);
-                // glCullFace(GL_BACK);
+                programSky.activate(win, fpsCam, shadowMatrix, lightsRoomRight, sunPos);
+                glCullFace(GL_FRONT);
+                skyboxInstances.get()->drawAll(programSky, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), 0);
+                glCullFace(GL_BACK);
 
                 // // if the sun is active
                 // if (depthMapId != 0) {
@@ -919,24 +919,24 @@ int main(int /*argc*/, char * argv[])
                 // auto tempProg = mirror.getProgram();
                 // tempProg->activateSimple(mirrorCamPos, mirrorNormalMatrix);
                 // programmMirror.activate(win, currentCamPos, NormalMatrix, mirrorModelToViewMatrix, lightsRoomRight);
-                        // programMirror.activate(win, fpsCam, mirror.getMirrorProj(), lightsRoomRight, sunPos);
+                        programMirror.activate(win, fpsCam, mirror.getMirrorProj(), lightsRoomRight, sunPos);
                 // programmMirror.activate(win, currentCamPos, mirrorNormalMatrix, mirrorModelToViewMatrix, lightsRoomRight);
                 // auto mirrorCamPos = mirror.getMirrorCamPos();
                 // auto mirrorModelToViewMatrix = mirror.getViewMatrix();
                 // auto mirrorNormalMatrix = mirror.getNormalMatrix();
                 // auto mirrorProjMatrix = mirror.getMirrorProj();
-                // GLint polygonMode[2];
-                // glGetIntegerv(GL_POLYGON_MODE, polygonMode);
-                // if(polygonMode[1] == GL_LINE) {
-                //     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-                // }
-                        // mirrorInstances.get()->drawAll(programMirror, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), mirrorMapId);
-                // if(polygonMode[1] == GL_LINE) {
-                //     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                // }
+                GLint polygonMode[2];
+                glGetIntegerv(GL_POLYGON_MODE, polygonMode);
+                if(polygonMode[1] == GL_LINE) {
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+                }
+                        mirrorInstances.get()->drawAll(programMirror, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), mirrorMapId);
+                if(polygonMode[1] == GL_LINE) {
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+                }
 
-                        // programButtons.activate(win, fpsCam, shadowMatrix, lightsRoomLeft, sunPos);
-                        // buttonInstances.get()->drawAll(programButtons, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), depthMapId);
+                        programButtons.activate(win, fpsCam, shadowMatrix, lightsRoomLeft, sunPos);
+                        buttonInstances.get()->drawAll(programButtons, fpsCam.getViewMatrix(), fpsCam.getProjMatrix(), depthMapId);
             }
 
         }

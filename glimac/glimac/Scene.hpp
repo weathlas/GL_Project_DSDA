@@ -42,7 +42,7 @@ namespace glimac {
                 program.activate(window, camera, shadowMatrix, lights, sunPos);
 
                 for (size_t i = 0; i < m_instances.size(); i++) {
-                    // std::cout << "Drawing " << i << std::endl;
+                    // std::cout << "Drawing " << i+1 << "/" << m_instances.size() << " | Dynamic: " << m_instances.at(i).get()->m_is_dynamic << " . " <<std::endl;
                     m_instances.at(i)->drawAll(program, camera.getViewMatrix(), camera.getProjMatrix(), shadowTex);
                 }
             }

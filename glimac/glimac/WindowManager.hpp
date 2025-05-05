@@ -41,6 +41,8 @@ namespace glimac {
 
             bool isInitialized();
 
+            bool clear();
+
             bool close();
 
             bool running();

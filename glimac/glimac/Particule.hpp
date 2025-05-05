@@ -30,7 +30,6 @@ namespace glimac {
             vec3 m_pos;
             vec3 m_speed;
             // vec3 m_accel
-            std::mutex* m_mutex;
             vec3 m_forces_acc;
 
             Particule(float mass, vec3 pos, vec3 speed, ParticuleComputeType type) {
@@ -112,6 +111,8 @@ namespace glimac {
 
             vec3 m_initial_pos;
             vec3 m_initial_speed;
+
+            std::mutex* m_mutex;
 
             void update_leapfrog(float h) {
                 m_speed += h * m_forces_acc / m_mass;

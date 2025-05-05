@@ -35,6 +35,15 @@ void main() {
 
 
     normal = normalize(mat3(uModelMatrix) * aVertexNormal);
+
+    // Flip the normal if the fragment is from a back face
+    if (dot(normal, normalize(uCameraPosition - wPosition.xyz)) < 0.0) {
+        normal = -normal;
+    }
+
+    // if (!gl_FrontFacing) {
+    //     normal = -normal;
+    // }
     vec3 tangent = normalize(mat3(uModelMatrix) * aVertexTangeant);
     vec3 bitangent = cross(normal, tangent); // Reconstruct bitangent
     TBN = mat3(tangent, bitangent, normal);

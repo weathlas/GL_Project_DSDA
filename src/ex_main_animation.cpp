@@ -420,14 +420,15 @@ int main(int argc, char * argv[])
     // Add all walls
     {
         const float wallThickness = 1.0f;
+        const float AddWallHeight = 0.0f;
         // walls.push_back(BBox3f(vec3(-220, -wallThickness*10, -130), vec3(220, -5, 130)));
         walls.push_back(BBox3f(vec3(-220, -wallThickness*10, -130), vec3(220, 0, 130)));
-        walls.push_back(BBox3f(vec3(-1, -1, -12), vec3(1, 3, -2)));
-        walls.push_back(BBox3f(vec3(-1, -1, 2), vec3(1, 3, 12)));
-        walls.push_back(BBox3f(vec3(-22, -1, 12), vec3(22, 3, 12+wallThickness)));
-        walls.push_back(BBox3f(vec3(-22, -1, -12-wallThickness), vec3(22, 3, -12)));
-        walls.push_back(BBox3f(vec3(-21-wallThickness, -1, -13), vec3(-21, 3, 13)));
-        walls.push_back(BBox3f(vec3(21, -1, -13), vec3(21+wallThickness, 3, 13)));
+        walls.push_back(BBox3f(vec3(-1, -1, -12), vec3(1, 3+AddWallHeight, -2)));
+        walls.push_back(BBox3f(vec3(-1, -1, 2), vec3(1, 3+AddWallHeight, 12)));
+        walls.push_back(BBox3f(vec3(-22, -1, 12), vec3(22, 3+AddWallHeight, 12+wallThickness)));
+        walls.push_back(BBox3f(vec3(-22, -1, -12-wallThickness), vec3(22, 3+AddWallHeight, -12)));
+        walls.push_back(BBox3f(vec3(-21-wallThickness, -1, -13), vec3(-21, 3+AddWallHeight, 13)));
+        walls.push_back(BBox3f(vec3(21, -1, -13), vec3(21+wallThickness, 3+AddWallHeight, 13)));
         {
             auto bbox = spaceShipInstances.get()->getBBox().at(0);
             vec3 size = bbox.size();

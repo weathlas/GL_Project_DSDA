@@ -412,25 +412,25 @@ namespace glimac {
                             
                             if(offset==1||offset==2||offset==5) {
                                 // First triangle
-                                m_index.push_back(i0);
-                                m_index.push_back(i1);
-                                m_index.push_back(i2);
+                                output.push_back(i0);
+                                output.push_back(i1);
+                                output.push_back(i2);
                     
                                 // Second triangle
-                                m_index.push_back(i1);
-                                m_index.push_back(i3);
-                                m_index.push_back(i2);
+                                output.push_back(i1);
+                                output.push_back(i3);
+                                output.push_back(i2);
                             }
                             else {
                                 // First triangle
-                                m_index.push_back(i0);
-                                m_index.push_back(i2);
-                                m_index.push_back(i1);
+                                output.push_back(i0);
+                                output.push_back(i2);
+                                output.push_back(i1);
                     
                                 // Second triangle
-                                m_index.push_back(i1);
-                                m_index.push_back(i2);
-                                m_index.push_back(i3);
+                                output.push_back(i1);
+                                output.push_back(i2);
+                                output.push_back(i3);
     
                             }
                         }

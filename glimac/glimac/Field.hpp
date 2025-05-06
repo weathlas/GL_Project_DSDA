@@ -319,7 +319,7 @@ namespace glimac {
                 auto len = length(offset);
                 vec3 norm = offset * (1.0f/len); // replace normalize
                 auto friction_axis_speed = vec3(p->m_speed.x*(1-abs(norm.x)), p->m_speed.y*(1-abs(norm.y)), p->m_speed.z*(1-abs(norm.z)));
-                p->m_forces_acc += (p->m_mass * (1.0f/(h))) * norm + (-m_k * p->m_mass * (1/h)) * (friction_axis_speed);
+                p->m_forces_acc += (p->m_mass * ((len/(h*h)))) * norm + (-m_k * p->m_mass * (1/h)) * (friction_axis_speed);
                 //  - p->m_speed * p->m_mass;
                 // p->m_mass * (-p->m_speed) / h;
             }
@@ -338,7 +338,7 @@ namespace glimac {
                 }
                 vec3 norm = offset * (1.0f/len); // replace normalize 
                 // std::cout<<"############################################## Length for convex is " << len << std::endl;
-                p->m_forces_acc += (p->m_mass * (len/(h*h))) * norm + (-m_k * p->m_mass * (1/h)) * (p->m_speed);
+                p->m_forces_acc += (p->m_mass * (len/(h))) * norm + (-m_k * p->m_mass * (1/h)) * (p->m_speed);
             }
 
             bool isVisibleFromDepthData(const glm::vec3& position)

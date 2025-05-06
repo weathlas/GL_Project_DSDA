@@ -414,8 +414,7 @@ int main(int argc, char * argv[])
 
         planeInstances.get()->add(Transform(vec3(1000, 15, -25), vec3(0, 0, -5*degToRad), vec3(1)));
 
-
-        arrowInstances.get()->add(Transform(vec3(-11, 0.25, 9)));
+        arrowInstances.get()->add();
     }
 
     // Add all walls
@@ -543,17 +542,18 @@ int main(int argc, char * argv[])
 
 std::vector<Animation*> allAnimations;
 
+vec3 flagRootCenter(-11, 2.0, 6);
 float windTheta = 0.0f;
 float windPhy = 0.0f;
 vec3 windDir = vec3(cos(windTheta)*sin(windPhy), sin(windTheta), cos(windTheta)*cos(windPhy));
 
+arrowInstances.get()->updatePosition(0, vec3(flagRootCenter.x, 0.25, flagRootCenter.z));
 arrowInstances.get()->updateAngles(0, vec3(-windTheta, windPhy, 0));
 arrowInstances.get()->computeAll();
 
 auto flagWindPower = 50.0f;
 auto flagAnimation = Animation(imageFlagFrenchInt, imageWhiteInt, imageDefaultNormalInt);
 auto count = 25;
-vec3 flagRootCenter(-11, 2.0, 9);
 // vec3 flagRootCenter(0, 0, 0);
 {
     // vec3(1, 5+height-radiusCube, -radiusCube*1.5), vec3(1, 5+height+radiusCube, -radiusCube*1.5), vec3(1, 5+height-radiusCube, radiusCube*1.5), vec3(1, 5+height+radiusCube, radiusCube*1.5)
@@ -564,7 +564,7 @@ vec3 flagRootCenter(-11, 2.0, 9);
         flagRootCenter + vec3(0, radiusCube, 0),
         flagRootCenter + vec3(-radiusCube*1.5, 0, 0),
         flagRootCenter + vec3(-radiusCube*1.5, radiusCube, 0),
-        count, 0.3, 1000, 15);
+        count, 0.5, 2000, 15);
 
     scene.addInstance(flagAnimation.getInstance());
     flagAnimation.getFields()->reserve(walls.size()+10);
@@ -582,7 +582,7 @@ vec3 flagRootCenter(-11, 2.0, 9);
     
     // player BBox
     flagAnimation.addField(FieldType::field_cube, BBox3f(), 0.1);
-    flagAnimation.activateMultithreaded(6, &fpsCam);
+    flagAnimation.activateMultithreaded(4, &fpsCam);
 
 }
 auto flagInstance = std::make_shared<Instance>(count, DynamicType::dynamic_grid, imageFlagFrenchInt, imageWhiteInt, imageDefaultNormalInt);
@@ -631,7 +631,7 @@ auto blancketAnimation = Animation(imageFlagFrenchInt, imageWhiteInt, imageDefau
         center + vec3(-dimensions.x, 0,  dimensions.y),
         center + vec3( dimensions.x, 0, -dimensions.y),
         center + vec3( dimensions.x, 0,  dimensions.y),
-        50, 1.0, 1000, 35
+        30, 1.0, 1000, 35
     );
     scene.addInstance(blancketAnimation.getInstance());
     blancketAnimation.getFields()->reserve(walls.size()+10);
@@ -645,7 +645,7 @@ auto blancketAnimation = Animation(imageFlagFrenchInt, imageWhiteInt, imageDefau
     }
     blancketAnimation.addField(FieldType::field_wind, applicationPath, &win, vec3(0, 1, 0), 0.0f);
     blancketAnimation.addField(FieldType::field_cube, BBox3f(), 0.1);
-    blancketAnimation.activateMultithreaded(4, &fpsCam);
+    blancketAnimation.activateMultithreaded(2, &fpsCam);
 }
 
 auto cubeAnimation = Animation(imageApertureInt, 0, imageDefaultNormalInt);
@@ -669,7 +669,7 @@ auto cubeAnimation = Animation(imageApertureInt, 0, imageDefaultNormalInt);
         }
     }
     cubeAnimation.addField(FieldType::field_cube, BBox3f(), 0.0);
-    cubeAnimation.activateMultithreaded(4, &fpsCam);
+    cubeAnimation.activateMultithreaded(1, &fpsCam);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -793,7 +793,7 @@ bool flagWindActivated = true;
                 
                 distanceToPlane = abs(planeInstances.get()->get(0).m_Position.x);
                 if (distanceToPlane < 450) {
-                    auto shakeAmount = 15.0f * pow((450.0-distanceToPlane)/450, 4);
+                    auto shakeAmount = 45.0f * pow((450.0-distanceToPlane)/450, 4);
                     // std::cout << shakeAmount << std::endl;
                     blancketAnimation.getFields()->at(1).change_k(shakeAmount);
                     flagAnimation.getFields()->at(1).change_k(shakeAmount);
@@ -1065,7 +1065,7 @@ bool flagWindActivated = true;
         if(refreshTitle == 10) {
             // std::cout << 1.0f/deltaT << std::endl;
             refreshTitle = 0;
-            win.updateTitle(fpsCam.getPos(), deltaT, cubeAnimation.getDeltaTThreads());
+            win.updateTitle(fpsCam.getPos(), deltaT, flagAnimation.getDeltaTThreads());
         }
         else {
             refreshTitle++;

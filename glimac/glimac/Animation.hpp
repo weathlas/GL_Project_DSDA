@@ -152,12 +152,12 @@ namespace glimac {
                 for (uint i = 1; i < count-1; i++) {
                     auto pos = p1 + diff * (1.0f*i/(count-1));
                     if(!m_is_dynamic)m_instance.get()->add(Transform(pos, vec3(), vec3(particuleSize)));
-                    if(i==1) {
-                        m_particules.push_back(new Particule(mass, pos+vec3(0, 2.0, 0), ParticuleComputeType::leapfrog));    
-                    }
-                    else {
+                    // if(i==1) {
+                    //     m_particules.push_back(new Particule(mass, pos+vec3(0, 2.0, 0), ParticuleComputeType::leapfrog));    
+                    // }
+                    // else {
                         m_particules.push_back(new Particule(mass, pos, ParticuleComputeType::leapfrog));
-                    }
+                    // }
                 }
                 if(!m_is_dynamic)m_instance.get()->add(Transform(p2, vec3(), vec3(particuleSize)));
                 m_particules.push_back(new Particule(mass, p2, ParticuleComputeType::fixed));
@@ -902,8 +902,8 @@ namespace glimac {
                     auto canStartNextStep = false;
                     auto canUpdateParticule = false;
 
-                    auto refreshVisualDelta = 1.0/60.0;
-                    auto nextRefresh = 0.0;
+                    // auto refreshVisualDelta = 1.0/60.0;
+                    // auto nextRefresh = 0.0;
                 
                     auto timer = 0.0f;
                     auto oldTime = 0.0f;
@@ -1003,17 +1003,17 @@ namespace glimac {
                             }
                             if(index == 0) {
 
-                                if(nextRefresh < timer) {
-                                    nextRefresh = timer + refreshVisualDelta;
-                                    // updateFields();
-                                    // update_visual();
-                                }
-
-
+                                // if(nextRefresh < timer) {
+                                //     nextRefresh = timer + refreshVisualDelta;
+                                //     // updateFields();
+                                //     // update_visual();
+                                // }
                                 // std::cout << 1.0/(glfwGetTime() - timer) << std::endl;
-                                // std::cout << "deltaTThreads " << deltaTThreads << " nb links: " << getLinksCount() << std::endl;
                                 m_deltaTThreads = glfwGetTime() - timer;
+                                // std::cout << "deltaTThreads " << m_deltaTThreads << " nb links: " << getLinksCount() << std::endl;
                                 // animFrameTime = glfwGetTime() - oldTime;
+
+
                                 if(camera) {
                                     getFields()->back().make_cube(camera->getBBox(), 0);
                                 }

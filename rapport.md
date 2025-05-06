@@ -2,13 +2,17 @@
 
 Le programme à lancer est `ex_main_animation.cpp`
 
+Il fonctionne au total sur 8 threads (1 principale, 4 pour le drapeau, 2 pour le drap et 1 pour le cube) et peu moins bien marcher si la machine possède moins de coeurs
+
 Pour le projet de simulation j'ai décider de faire un drapeau où le calcul de vent serait fait avec une texture de profondeur et de normals calculé sur le GPU avec openGL
 
 J'ai aussi décider de faire une simulation simple de soft bodies
 
 Les différents simulation ne possèdent pas de self collisons
 
-Pour la suite du rapport, je vais présenter les différents classes liées à la partie simulation du programme, comme une sorte de doc/ explication de l'API
+Les photos sont dans le dossier `assets/captures`
+
+Pour la suite du rapport, je vais présenter les différents classes liées à la partie simulation du programme, comme une sorte de doc
 
 # Classe `Particule`
 
@@ -381,7 +385,10 @@ Les animation supporté par un rendu de maillage dynamique parmis les méthodes 
 
     ![flag_1](./assets/captures/flag_1.png)
     ![flag_2](./assets/captures/flag_2.png)
-    ![flag_2](./assets/captures/flag_3.png)
+    ![flag_3](./assets/captures/flag_3.png)
+    ![flag_4](./assets/captures/flag_4.png)
+    ![flag_5](./assets/captures/flag_5.png)
+    ![flag_6](./assets/captures/flag_6.png)
 
     Ci dessus l'aperçu de la texture de normals du drapeau
 
@@ -717,6 +724,10 @@ int main() {
 
     Pour cela il est préférable de mettre les simulations en pause avant de chager de fenêtre
 
+- Vent en haut/bas
+
+    Mettre un champs de vent directement en haut ou directement en bas à un comportement non souhaité
+
 - Interaction joueur cube
 
     L'interaction du joueur avec le cube et les particules en général sont très violentes
@@ -747,3 +758,9 @@ int main() {
     - `C`: Toggle vent pour le drapeau
     - `F`: Activer le ventilateur du drap
     - `Flèches Haut/Bas/Gauche/Droite`: Changer la direction du vent
+
+# Compositions
+
+![compo_1](./assets/captures/compo_1.png)
+![compo_2](./assets/captures/compo_2.png)
+![compo_2](./assets/captures/compo_3.png)

@@ -628,150 +628,150 @@ namespace glimac {
         return nbCollide1+nbCollide2;
     }
 
-    int RBCollideNOP(rigidBody* R1, rigidBody* R2, std::vector<edgeCast> * lst, vec3* I1, vec3* I2) {
-        auto nbCollide1 = 0;
-        auto nbCollide2 = 0;
-        std::vector<edgeCast> allIntersectionsR1;
-        std::vector<edgeCast> allIntersectionsR2;
-        *I1 = vec3(0);
-        *I2 = vec3(0);
+    // int RBCollideNOP(rigidBody* R1, rigidBody* R2, std::vector<edgeCast> * lst, vec3* I1, vec3* I2) {
+    //     auto nbCollide1 = 0;
+    //     auto nbCollide2 = 0;
+    //     std::vector<edgeCast> allIntersectionsR1;
+    //     std::vector<edgeCast> allIntersectionsR2;
+    //     *I1 = vec3(0);
+    //     *I2 = vec3(0);
 
-        for (size_t i = 0; i < R1->points_computed.size(); i++) {
-            auto c = collision(false);
-            auto point = kln::point(R1->points_computed[i]).normalized();
+    //     for (size_t i = 0; i < R1->points_computed.size(); i++) {
+    //         auto c = collision(false);
+    //         auto point = kln::point(R1->points_computed[i]).normalized();
 
-            float smallestDistance;
-            bool firstProjection = true;
-            vec3 displacement;
+    //         float smallestDistance;
+    //         bool firstProjection = true;
+    //         vec3 displacement;
 
-            for (auto &tr: R2->triangles_computed) {
+    //         for (auto &tr: R2->triangles_computed) {
 
-                auto result = projectToTriangle(tr, point);
+    //             auto result = projectToTriangle(tr, point);
 
-                // if collided is false, we will ignore the displacement
-                // otherwise we will use it so no need for another conditional branch
-                if(firstProjection) {
-                    firstProjection = false;
-                    smallestDistance = result.distance;
-                    displacement = result.offset;
-                    c = result;
-                    continue;
-                }
+    //             // if collided is false, we will ignore the displacement
+    //             // otherwise we will use it so no need for another conditional branch
+    //             if(firstProjection) {
+    //                 firstProjection = false;
+    //                 smallestDistance = result.distance;
+    //                 displacement = result.offset;
+    //                 c = result;
+    //                 continue;
+    //             }
 
-                // new candidate for the closest plane from a triangle
-                // if the closest plane is not in collision then there is no need for a collision
-                // otherwise it is a smaller displacement that resolve the collision
-                if(result.distance < smallestDistance) {
-                    smallestDistance = result.distance;
-                    displacement = result.offset;
-                    c = result;
-                    continue;
-                }
-            }
+    //             // new candidate for the closest plane from a triangle
+    //             // if the closest plane is not in collision then there is no need for a collision
+    //             // otherwise it is a smaller displacement that resolve the collision
+    //             if(result.distance < smallestDistance) {
+    //                 smallestDistance = result.distance;
+    //                 displacement = result.offset;
+    //                 c = result;
+    //                 continue;
+    //             }
+    //         }
 
-            if(displacement != vec3(0)) {
-                nbCollide1++;
-                *I2 = pointToVec(point);
-                // std::cout << "Point collided: 1" << std::endl;
-                break;
-            }
-            // else {
-            //     std::cout << "Point did not collide for 1: " << c.collided << " | " << c.distance << " | x:" << c.offset.x << " y:" << c.offset.x << " z:" << c.offset.x << std::endl;
-            // }
-        }
-        if(nbCollide1 == 0) {
-            for (size_t i = 0; i < R1->edges_computed.size(); i++) {
-                for (auto &tr: R2->triangles_computed) {
-                    auto result = collideEdgeTriangle(tr, R1->edges_computed[i]);
-                    if (result.collided) {
-                        if(lst != nullptr) {
-                            allIntersectionsR1.push_back(result);
-                            lst->push_back(result);
-                        }
-                        nbCollide1++;
-                    }
-                }
-            }
-        }
+    //         if(displacement != vec3(0)) {
+    //             nbCollide1++;
+    //             *I2 = pointToVec(point);
+    //             // std::cout << "Point collided: 1" << std::endl;
+    //             break;
+    //         }
+    //         // else {
+    //         //     std::cout << "Point did not collide for 1: " << c.collided << " | " << c.distance << " | x:" << c.offset.x << " y:" << c.offset.x << " z:" << c.offset.x << std::endl;
+    //         // }
+    //     }
+    //     if(nbCollide1 == 0) {
+    //         for (size_t i = 0; i < R1->edges_computed.size(); i++) {
+    //             for (auto &tr: R2->triangles_computed) {
+    //                 auto result = collideEdgeTriangle(tr, R1->edges_computed[i]);
+    //                 if (result.collided) {
+    //                     if(lst != nullptr) {
+    //                         allIntersectionsR1.push_back(result);
+    //                         lst->push_back(result);
+    //                     }
+    //                     nbCollide1++;
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        for (size_t i = 0; i < R2->points_computed.size(); i++) {
-            auto c = collision(false);
-            auto point = kln::point(R2->points_computed[i]).normalized();
+    //     for (size_t i = 0; i < R2->points_computed.size(); i++) {
+    //         auto c = collision(false);
+    //         auto point = kln::point(R2->points_computed[i]).normalized();
 
-            float smallestDistance;
-            bool firstProjection = true;
-            vec3 displacement;
+    //         float smallestDistance;
+    //         bool firstProjection = true;
+    //         vec3 displacement;
 
-            for (auto &tr: R1->triangles_computed) {
+    //         for (auto &tr: R1->triangles_computed) {
 
-                auto result = projectToTriangle(tr, point);
+    //             auto result = projectToTriangle(tr, point);
 
-                // if collided is false, we will ignore the displacement
-                // otherwise we will use it so no need for another conditional branch
-                if(firstProjection) {
-                    firstProjection = false;
-                    smallestDistance = result.distance;
-                    displacement = result.offset;
-                    c = result;
-                    continue;
-                }
+    //             // if collided is false, we will ignore the displacement
+    //             // otherwise we will use it so no need for another conditional branch
+    //             if(firstProjection) {
+    //                 firstProjection = false;
+    //                 smallestDistance = result.distance;
+    //                 displacement = result.offset;
+    //                 c = result;
+    //                 continue;
+    //             }
 
-                // new candidate for the closest plane from a triangle
-                // if the closest plane is not in collision then there is no need for a collision
-                // otherwise it is a smaller displacement that resolve the collision
-                if(result.distance < smallestDistance) {
-                    smallestDistance = result.distance;
-                    displacement = result.offset;
-                    c = result;
-                    continue;
-                }
-            }
+    //             // new candidate for the closest plane from a triangle
+    //             // if the closest plane is not in collision then there is no need for a collision
+    //             // otherwise it is a smaller displacement that resolve the collision
+    //             if(result.distance < smallestDistance) {
+    //                 smallestDistance = result.distance;
+    //                 displacement = result.offset;
+    //                 c = result;
+    //                 continue;
+    //             }
+    //         }
 
-            if(displacement != vec3(0)) {
-                nbCollide2++;
-                *I1 = pointToVec(point);
-                // std::cout << "Point collided: 2" << std::endl;
-                break;
-            }
-            // else {
-            //     std::cout << "Point did not collide for 2: " << c.collided << " | " << c.distance << " | x:" << c.offset.x << " y:" << c.offset.x << " z:" << c.offset.x << std::endl;
-            // }
-        }
+    //         if(displacement != vec3(0)) {
+    //             nbCollide2++;
+    //             *I1 = pointToVec(point);
+    //             // std::cout << "Point collided: 2" << std::endl;
+    //             break;
+    //         }
+    //         // else {
+    //         //     std::cout << "Point did not collide for 2: " << c.collided << " | " << c.distance << " | x:" << c.offset.x << " y:" << c.offset.x << " z:" << c.offset.x << std::endl;
+    //         // }
+    //     }
 
-        if(nbCollide2 == 0) {
-            for (size_t i = 0; i < R2->edges_computed.size(); i++) {
-                for (auto &tr: R1->triangles_computed) {
-                    auto result = collideEdgeTriangle(tr, R2->edges_computed[i]);
-                    if (result.collided) {
-                        if(lst != nullptr) {
-                            allIntersectionsR2.push_back(result);
-                            lst->push_back(result);
-                        }
-                        nbCollide2++;
-                    }
-                }
-            }
-        }
+    //     if(nbCollide2 == 0) {
+    //         for (size_t i = 0; i < R2->edges_computed.size(); i++) {
+    //             for (auto &tr: R1->triangles_computed) {
+    //                 auto result = collideEdgeTriangle(tr, R2->edges_computed[i]);
+    //                 if (result.collided) {
+    //                     if(lst != nullptr) {
+    //                         allIntersectionsR2.push_back(result);
+    //                         lst->push_back(result);
+    //                     }
+    //                     nbCollide2++;
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        if(nbCollide1>1) {
-            for(auto& p: allIntersectionsR1) {
-                *I2+= pointToVec(p.intersection);
-            }
-            *I2/=allIntersectionsR1.size();
-        }
-        if(nbCollide2>1) {
-            for(auto& p: allIntersectionsR2) {
-                *I1+= pointToVec(p.intersection);
-            }
-            *I1/=allIntersectionsR2.size();
-        }
+    //     if(nbCollide1>1) {
+    //         for(auto& p: allIntersectionsR1) {
+    //             *I2+= pointToVec(p.intersection);
+    //         }
+    //         *I2/=allIntersectionsR1.size();
+    //     }
+    //     if(nbCollide2>1) {
+    //         for(auto& p: allIntersectionsR2) {
+    //             *I1+= pointToVec(p.intersection);
+    //         }
+    //         *I1/=allIntersectionsR2.size();
+    //     }
 
-        // if(nbCollide1 > 0 || nbCollide2 > 0) {
-        //     std::cout << "NB edge collide: " << (nbCollide1+nbCollide2) << " = " << nbCollide1 << " + " << nbCollide2 << std::endl;
-        // }
+    //     // if(nbCollide1 > 0 || nbCollide2 > 0) {
+    //     //     std::cout << "NB edge collide: " << (nbCollide1+nbCollide2) << " = " << nbCollide1 << " + " << nbCollide2 << std::endl;
+    //     // }
 
-        return nbCollide1+nbCollide2;
-    }
+    //     return nbCollide1+nbCollide2;
+    // }
 
     vec3 resolveInternalPoint(rigidBody* R, vec3& p, bool caca) {
         // auto pos = pointToVec(R->com);
@@ -823,81 +823,81 @@ namespace glimac {
         return displacement;
     }
 
-    void updatePhysic(rigidBody* R1, rigidBody* R2, vec3& p1,  vec3& p2, vec3& displacementR1, vec3& displacementR2, int id) {
-        auto R1ContactPoint = p1 + -displacementR1;
-        auto R2ContactPoint = p2 + -displacementR2;
+    // void updatePhysic(rigidBody* R1, rigidBody* R2, vec3& p1,  vec3& p2, vec3& displacementR1, vec3& displacementR2, int id) {
+    //     auto R1ContactPoint = p1 + -displacementR1;
+    //     auto R2ContactPoint = p2 + -displacementR2;
 
-        auto weirdNormal = normalize(displacementR2 - displacementR1);
-        auto NORMAL = normalize(pointToVec(R1->com) - pointToVec(R2->com));
+    //     auto weirdNormal = normalize(displacementR2 - displacementR1);
+    //     auto NORMAL = normalize(pointToVec(R1->com) - pointToVec(R2->com));
 
-        auto normalR1 = normalize(pointToVec(R1->com) - p1);
-        auto normalR2 = normalize(pointToVec(R2->com) - p2);
+    //     auto normalR1 = normalize(pointToVec(R1->com) - p1);
+    //     auto normalR2 = normalize(pointToVec(R2->com) - p2);
 
-        auto restitutionA = 1.0f;
-        auto restitutionB = 1.0f;
+    //     auto restitutionA = 1.0f;
+    //     auto restitutionB = 1.0f;
 
-        auto normal = p2 - p1;
-        auto depth = length(normal);
-        normal*= 1/depth;
-        float e = std::min(restitutionA, restitutionB);
+    //     auto normal = p2 - p1;
+    //     auto depth = length(normal);
+    //     normal*= 1/depth;
+    //     float e = std::min(restitutionA, restitutionB);
         
-        auto sumDisplacement = displacementR2 - displacementR1;
+    //     auto sumDisplacement = displacementR2 - displacementR1;
 
-        switch (id)
-        {
+    //     switch (id)
+    //     {
 
-        case 0: // The point is inside R1 (displace 1)
-            NORMAL = -normalize(displacementR1);
-            break;
-            case 1: // The point is inside R2 (displace 2)
-            NORMAL = normalize(displacementR2);
-            break;
-        case 2: // EDGE VS EDGE
-            NORMAL = -normalize(sumDisplacement);
-            break;
-        default:
-            break;
-        }
-        
-        
+    //     case 0: // The point is inside R1 (displace 1)
+    //         NORMAL = -normalize(displacementR1);
+    //         break;
+    //         case 1: // The point is inside R2 (displace 2)
+    //         NORMAL = normalize(displacementR2);
+    //         break;
+    //     case 2: // EDGE VS EDGE
+    //         NORMAL = -normalize(sumDisplacement);
+    //         break;
+    //     default:
+    //         break;
+    //     }
         
         
         
-        vec3 relativeVelocity = R2->getVelocity() - R1->getVelocity();
-        float j = -(1 + 0.8) * dot(relativeVelocity, NORMAL);
-        j/=(R1->inverseMass + R2->inverseMass);
+        
+        
+    //     vec3 relativeVelocity = R2->getVelocity() - R1->getVelocity();
+    //     float j = -(1 + 0.8) * dot(relativeVelocity, NORMAL);
+    //     j/=(R1->inverseMass + R2->inverseMass);
 
-        std::cout << "Impulse: " << j << ", dot: " << dot(relativeVelocity, NORMAL) << " | ";
-        printVec(NORMAL);
+    //     std::cout << "Impulse: " << j << ", dot: " << dot(relativeVelocity, NORMAL) << " | ";
+    //     printVec(NORMAL);
 
-        {
-            auto translation = posToTranslator(displacementR1);
-            auto normalizedTranslation = normalize(displacementR1);
+    //     {
+    //         auto translation = posToTranslator(displacementR1);
+    //         auto normalizedTranslation = normalize(displacementR1);
 
-            if(!R1->is_static) {
+    //         if(!R1->is_static) {
 
-                auto response = j * R1->inverseMass * NORMAL;
+    //             auto response = j * R1->inverseMass * NORMAL;
 
-                R1->com = translation(R1->com);
-                R1->motor = translation * R1->motor;
-                R1->translator_tick = (posToTranslator(response)) * R1->translator_tick;
-            }
-        }
+    //             R1->com = translation(R1->com);
+    //             R1->motor = translation * R1->motor;
+    //             R1->translator_tick = (posToTranslator(response)) * R1->translator_tick;
+    //         }
+    //     }
 
-        {
-            auto translation = posToTranslator(displacementR2);
-            auto normalizedTranslation = normalize(displacementR2);
+    //     {
+    //         auto translation = posToTranslator(displacementR2);
+    //         auto normalizedTranslation = normalize(displacementR2);
 
-            if(!R2->is_static) {
+    //         if(!R2->is_static) {
 
-                auto response = -j * R2->inverseMass * NORMAL;
+    //             auto response = -j * R2->inverseMass * NORMAL;
 
-                R2->com = translation(R2->com);
-                R2->motor = translation * R2->motor;
-                R2->translator_tick = (posToTranslator(response)) * R2->translator_tick;
-            }
-        }
+    //             R2->com = translation(R2->com);
+    //             R2->motor = translation * R2->motor;
+    //             R2->translator_tick = (posToTranslator(response)) * R2->translator_tick;
+    //         }
+    //     }
 
-    }
+    // }
 
 }

@@ -13,8 +13,7 @@ out vec4 wPosition;
 
 void main() {
 
-    vec4 output = uMVPMatrix * vec4(aVertexPosition, 1);
-    gl_Position = output;
+    gl_Position = uMVPMatrix * vec4(aVertexPosition, 1);
 
     wPosition = (uModelMatrix * vec4(aVertexPosition, 1));
 }

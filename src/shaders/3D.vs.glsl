@@ -14,8 +14,7 @@ void main() {
     vColor = (uNormalMatrix * vec4(aVertexNormal, 0)).rgb;
     // vColor = vec3(aVertexTexture.xy, 0);
 
-    vec4 output = uMVPMatrix * vec4(aVertexPosition, 1);
+    gl_Position = uMVPMatrix * vec4(aVertexPosition, 1);
     // gl_Position = vec4(uMVMatrix * uMVPMatrix * vec4(aVertexPosition.xyz, 1));
     // gl_Position = vec4(0.1*(aVertexPosition.x/(1+aVertexPosition.z)), 0.1*(aVertexPosition.y/(1+aVertexPosition.z)), 0, 1);
-    gl_Position = output;
 }

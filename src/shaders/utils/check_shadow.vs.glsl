@@ -19,10 +19,8 @@ void main() {
 
     vUV = aVertexTexture;
 
-    vec4 output = uMVPMatrix * vec4(aVertexPosition, 1);
-
-    gl_Position = output;
-    screenPos = output.xyz;
+    gl_Position = uMVPMatrix * vec4(aVertexPosition, 1);
+    screenPos = gl_Position.xyz;
 
     normal = normalize(mat3(uModelMatrix) * aVertexNormal);
 

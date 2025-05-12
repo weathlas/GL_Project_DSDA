@@ -16,9 +16,7 @@ out vec3 camPos;
 void main()
 {
     vUV = aVertexTexture;
-
-    vec4 output = uMVPMatrix * vec4(aVertexPosition, 1);
-	gl_Position = output;
+	gl_Position = uMVPMatrix * vec4(aVertexPosition, 1);
     normal = aVertexNormal;
     wPosition = aVertexPosition;
 }

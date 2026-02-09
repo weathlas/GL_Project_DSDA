@@ -13,7 +13,7 @@
 #include <glimac/Geometry.hpp>
 #include <glimac/Instance.hpp>
 #include <glimac/WindowManager.hpp>
-// #include <glimac/ShadowMap.hpp>
+#include <glimac/ShadowMap.hpp>
 #include <glimac/Texture.hpp>
 #include <glimac/TextureMini.hpp>
 #include <glimac/common.hpp>

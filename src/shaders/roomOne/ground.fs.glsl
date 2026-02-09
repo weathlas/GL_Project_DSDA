@@ -90,8 +90,7 @@ void main() {
     vec3 ambient = vec3(0);
 
     float specularStrength = Ks * max(1-(texture(uAlternateTexture, vec2(vUV.x, 1 - vUV.y)).x), 0.0);
-    // specularStrength = 3.0;
-    float diffuseStrength = Kd * 1.0;// * max(1-(texture(uAlternateTexture, vec2(vUV.x, 1 - vUV.y)).x), 0.0);
+    float diffuseStrength = Kd * max(1-(texture(uAlternateTexture, vec2(vUV.x, 1 - vUV.y)).x), 0.0);
 
     vec3 combinedTextureColor = texture(uBaseTexture, vec2(vUV.x, 1 - vUV.y)).xyz;
     
@@ -102,28 +101,11 @@ void main() {
         haveLightFromSun = texture(uLightDepthMap, p.xy).r > p.z ? 1.0:0.0;
     }
 
-
     vec3 sunColor = vec3(1, 1, 1);
-    float diffuseFromSun = min(1.0, pow(diffuseFromLight(uSunLightPos, sunColor, 0.0, 0.0).r, 0.2));
-    vec3 specularFromSun = specularFromLight(uSunLightPos, sunColor, 0.0, 0.0);
-    // diffuseSum += diffuseFromSun;
-    // specularSum += 
-
-    // haveLightFromSun = 0.0;
-
+    float diffuseFromSun = min(1.0, diffuseFromLight(uSunLightPos, sunColor, 1.0, 0.0).r);
+    vec3 specularFromSun = specularFromLight(uSunLightPos, sunColor, 1.0, 0.0);
     vec3 colorFromSun = (sunColor * diffuseFromSun) + (vec3(0.02, 0.02, 0.1) * (1 - diffuseFromSun));
 
-    // vec3 colorFromSun = diffuseFromSun > 0.0 ? vec3(1) : vec3(0.02, 0.02, 0.1);
-
-    // vec3 shadowColor = haveLightFromSun ? vec3(0.02, 0.02, 0.1) : vec3(1);
-    // shadowColor = vec3(1);
-
-    // float dotProduct = dot(normalize(normal), normalize(vec3(1, 1, -1)));
-                // float dotProduct = dot(normalize(normal), normalize(uSunLightPos));
-                // float alignedWithSun = dotProduct > 0 ? 1.0 : max(0.0, 1 + dotProduct*3);
-    // float alignedWithSun = min(1, dot(normalize(normal), normalize(vec3(1, 1, -1)))+0.25);
-
-    // ambient += vec3(Ka * alignedWithSun) * colorFromSun * haveLightFromSun;
     diffuseSum += colorFromSun * haveLightFromSun;
     specularSum += specularFromSun * haveLightFromSun;
 
@@ -145,14 +127,4 @@ void main() {
     fFragColor.g *= (id == 1)?1.0:fac;
     fFragColor.b *= (id == 2)?1.0:fac;
     fFragColor.rgb *= fac;
-
-    // float diffuseFromSun = max(dot(normalTextureCoordsToVector(vec2(vUV.x, 1 - vUV.y)), lightDirTangentSpace(uSunLightPos-wPosition.xyz)), 0.0);
-
-    // fFragColor.rgb = texture(uNormalMap, vec2(vUV.x, 1 - vUV.y)).rgb;
-
-    // fFragColor.rgb = vec3(diffuseFromSun);
-    // fFragColor.rgb = normal;
-    // fFragColor.rgb = vec3(-tangent.x, -tangent.y, -tangent.z);
-    // fFragColor.rgb = vec3(-bitangent.x, -bitangent.y, -bitangent.z);
-    // fFragColor.rgb = vec3(-normal.x, -normal.y, -normal.z);
 }

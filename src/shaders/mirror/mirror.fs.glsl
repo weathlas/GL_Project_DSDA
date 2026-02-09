@@ -24,7 +24,7 @@ vec3 viewDir = normalize(uCameraPosition - wPosition);
 
 vec3 realNormal = normalize(normal);
 
-in vec4 testPosVertex;
+// in vec4 testPosVertex;
 
 // vec3 diffuseFromLight(vec3 lightPos, vec3 lightColor, float maxDistance) {
 

@@ -20,14 +20,14 @@ out vec3 wPosition;
 
 out vec4 lightViewPosition;
 
-out vec2 testPosVertex;
+// out vec2 testPosVertex;
 
 void main() {
 
     vec4 viewCoords = (uShadowMatrix * uModelMatrix * vec4(aVertexPosition, 1));
     vec3 homogeneViewCoords = viewCoords.xyz / viewCoords.w;
     // testPosVertex  = homogeneViewCoords.xy / homogeneViewCoords.z;// * 0.5 + vec2(0.5);
-    testPosVertex  = viewCoords.xy / viewCoords.z;// * 0.5 + vec2(0.5);
+    // testPosVertex  = viewCoords.xy / viewCoords.z;// * 0.5 + vec2(0.5);
 
     lightViewPosition = uShadowMatrix * uModelMatrix * vec4(aVertexPosition, 1);
     
